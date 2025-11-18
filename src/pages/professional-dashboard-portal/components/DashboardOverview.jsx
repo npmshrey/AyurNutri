@@ -107,40 +107,15 @@ const DashboardOverview = () => {
             <h2 className="text-2xl font-display font-semibold text-primary mb-2">
               Welcome back, Dr. Patel
             </h2>
-            <p className="text-text-secondary">
-              Today is Wednesday, September 18, 2024. You have {todayStats?.appointments} appointments scheduled.
-            </p>
-          </div>
-          <div className="hidden md:flex items-center space-x-4">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary">127</div>
-              <div className="text-sm text-text-secondary">Active Patients</div>
-            </div>
-            <div className="w-px h-12 bg-border"></div>
-            <div className="text-center">
-              <div className="text-2xl font-bold text-secondary">94%</div>
-              <div className="text-sm text-text-secondary">Success Rate</div>
-            </div>
+            <h2 className="text-black">
+              <b>{todayStats?.appointments}</b> appointments scheduled.
+            </h2>
           </div>
         </div>
       </div>
       {/* Quick Stats Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {quickStats?.map((stat) => (
-          <div key={stat?.id} className="bg-card rounded-lg p-4 border border-border organic-shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-text-secondary mb-1">{stat?.title}</p>
-                <p className="text-2xl font-bold text-text-primary">{stat?.value}</p>
-              </div>
-              <div className={`p-3 rounded-lg ${stat?.bgColor}`}>
-                <Icon name={stat?.icon} size={20} className={stat?.color} />
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      
+      <div className="">
         {/* Upcoming Appointments */}
         <div className="bg-card rounded-lg border border-border organic-shadow">
           <div className="p-4 border-b border-border">
@@ -151,8 +126,8 @@ const DashboardOverview = () => {
           </div>
           <div className="p-4 space-y-3">
             {upcomingAppointments?.map((appointment) => (
-              <div key={appointment?.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                <div className="flex-1">
+              <div key={appointment?.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg border border-border hover:border-green-700  ">
+                <div className="flex-1 ">
                   <div className="flex items-center space-x-2 mb-1">
                     <h4 className="font-medium text-text-primary">{appointment?.patient}</h4>
                     <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
@@ -169,42 +144,6 @@ const DashboardOverview = () => {
             ))}
             <button className="w-full mt-3 p-2 text-sm text-primary hover:bg-primary/5 rounded-lg organic-transition">
               View All Appointments
-            </button>
-          </div>
-        </div>
-
-        {/* Recent Activities */}
-        <div className="bg-card rounded-lg border border-border organic-shadow">
-          <div className="p-4 border-b border-border">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-semibold text-text-primary">Recent Activities</h3>
-              <Icon name="Activity" size={20} className="text-text-secondary" />
-            </div>
-          </div>
-          <div className="p-4 space-y-3">
-            {recentActivities?.map((activity) => (
-              <div key={activity?.id} className="flex items-start space-x-3">
-                <div className="flex-shrink-0 w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Icon 
-                    name={activity?.type === 'appointment' ? 'User' : activity?.type === 'plan' ? 'FileText' : 'TrendingUp'} 
-                    size={14} 
-                    className="text-primary" 
-                  />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-2 mb-1">
-                    <p className="text-sm font-medium text-text-primary">{activity?.patient}</p>
-                    <span className="text-xs px-2 py-0.5 bg-accent/20 text-accent rounded">
-                      {activity?.dosha}
-                    </span>
-                  </div>
-                  <p className="text-sm text-text-secondary">{activity?.action}</p>
-                  <p className="text-xs text-text-secondary mt-1">{activity?.time}</p>
-                </div>
-              </div>
-            ))}
-            <button className="w-full mt-3 p-2 text-sm text-primary hover:bg-primary/5 rounded-lg organic-transition">
-              View All Activities
             </button>
           </div>
         </div>

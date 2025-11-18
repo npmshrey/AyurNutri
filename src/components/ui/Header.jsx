@@ -16,11 +16,7 @@ const Header = ({ className = '' }) => {
     { name: 'Success Stories', path: '/patient-success-stories', icon: 'Users' }
   ];
 
-  const moreMenuItems = [
-    { name: 'Settings', path: '/settings', icon: 'Settings' },
-    { name: 'Help Center', path: '/help', icon: 'HelpCircle' },
-    { name: 'Contact', path: '/contact', icon: 'Mail' }
-  ];
+
 
   useEffect(() => {
     const handleScroll = () => {
@@ -102,39 +98,7 @@ const Header = ({ className = '' }) => {
               </Link>
             ))}
             
-            {/* More Menu */}
-            <div className="relative group">
-              <button className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-text-secondary hover:text-primary hover:bg-muted/50 organic-transition">
-                <Icon name="MoreHorizontal" size={16} />
-                <span>More</span>
-              </button>
-              
-              <div className="absolute right-0 top-full mt-1 w-48 bg-popover border border-border rounded-lg organic-shadow opacity-0 invisible group-hover:opacity-100 group-hover:visible organic-transition">
-                <div className="py-2">
-                  <Link
-                    to="/patient-success-stories"
-                    className={`flex items-center space-x-3 px-4 py-2 text-sm organic-transition ${
-                      isActivePath('/patient-success-stories')
-                        ? 'bg-primary/10 text-primary' :'text-text-secondary hover:text-primary hover:bg-muted/50'
-                    }`}
-                  >
-                    <Icon name="Users" size={16} />
-                    <span>Success Stories</span>
-                  </Link>
-                  <hr className="my-1 border-border" />
-                  {moreMenuItems?.map((item) => (
-                    <Link
-                      key={item?.path}
-                      to={item?.path}
-                      className="flex items-center space-x-3 px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-muted/50 organic-transition"
-                    >
-                      <Icon name={item?.icon} size={16} />
-                      <span>{item?.name}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div>
+            
           </nav>
 
           {/* Desktop CTA */}
