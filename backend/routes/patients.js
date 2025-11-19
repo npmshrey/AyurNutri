@@ -1,3 +1,4 @@
+// server/routes/patients.js
 import express from 'express';
 import Patient from '../models/Patient.js';
 
@@ -6,7 +7,6 @@ const router = express.Router();
 // GET /api/patients  -> list patients
 router.get('/', async (req, res) => {
   try {
-    // optional filters (status, dosha, search)
     const { status, dosha, q } = req.query;
     const filter = {};
     if (status && status !== 'all') filter.status = status;
@@ -46,6 +46,29 @@ router.post('/', async (req, res) => {
   }
 });
 
-// (Optional) GET by id, PUT, DELETE routes can be added similarly
+// PUT /api/patients/:id -> update patient
+router.put('/:id', async (req, res) => {
+  try {
+    const updates = req.body;
+    const patient = await Patient.findByIdAndUpdate(req.params.id, updates, { new: true });
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+    res.json(patient);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
+
+// DELETE /api/patients/:id -> delete
+router.delete('/:id', async (req, res) => {
+  try {
+    const patient = await Patient.findByIdAndDelete(req.params.id);
+    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+    res.json({ message: 'Deleted', id: req.params.id });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: 'Server error' });
+  }
+});
 
 export default router;
