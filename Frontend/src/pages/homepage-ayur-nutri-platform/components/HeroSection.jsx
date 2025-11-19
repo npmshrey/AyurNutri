@@ -155,17 +155,9 @@ const HeroSection = () => {
                 iconName="Stethoscope"
                 iconPosition="left"
               >
-                Request Doctor Demo
+                Watch Demo
               </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-secondary text-secondary hover:bg-secondary/10 px-8 py-4 text-lg"
-                iconName="Heart"
-                iconPosition="left"
-              >
-                Start Personal Assessment
-              </Button>
+              
             </div>
 
             {/* Trust Indicators */}
