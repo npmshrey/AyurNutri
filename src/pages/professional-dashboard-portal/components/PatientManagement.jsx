@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import Select from "../../../components/ui/Select";
@@ -7,30 +7,8 @@ const PatientManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [selectedDosha, setSelectedDosha] = useState("all");
-  const [patients, setPatients] = useState([
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      age: 34,
-      dosha: "Vata-Pitta",
-      condition: "Digestive Issues",
-      status: "active",
-      lastVisit: "2024-09-15",
-      nextAppointment: "2024-09-22",
-      progress: 78,
-    },
-    {
-      id: 2,
-      name: "Michael Chen",
-      age: 42,
-      dosha: "Kapha",
-      condition: "Weight Management",
-      status: "followup",
-      lastVisit: "2024-09-10",
-      nextAppointment: "2024-09-25",
-      progress: 65,
-    },
-  ]);
+  const [patients, setPatients] = useState([]);
+  const [loading, setLoading] = useState(false);
 
   const [showNewPatientModal, setShowNewPatientModal] = useState(false);
   const [newPatient, setNewPatient] = useState({
@@ -90,41 +68,86 @@ const PatientManagement = () => {
   };
 
   const getDoshaColor = (dosha) => {
-    if (dosha?.includes("Vata")) return "bg-blue-100 text-blue-800";
-    if (dosha?.includes("Pitta")) return "bg-red-100 text-red-800";
-    if (dosha?.includes("Kapha")) return "bg-green-100 text-green-800";
+    if (dosha?.toLowerCase().includes("vata")) return "bg-blue-100 text-blue-800";
+    if (dosha?.toLowerCase().includes("pitta")) return "bg-red-100 text-red-800";
+    if (dosha?.toLowerCase().includes("kapha")) return "bg-green-100 text-green-800";
     return "bg-gray-100 text-gray-800";
   };
+
+  // fetch patients from server
+  const fetchPatients = async () => {
+    try {
+      setLoading(true);
+      const qParams = new URLSearchParams();
+      if (selectedFilter && selectedFilter !== "all") qParams.set("status", selectedFilter);
+      if (selectedDosha && selectedDosha !== "all") qParams.set("dosha", selectedDosha);
+      if (searchTerm) qParams.set("q", searchTerm);
+
+      const res = await fetch(`/api/patients?${qParams.toString()}`);
+      if (!res.ok) throw new Error('Failed to fetch patients');
+      const data = await res.json();
+      setPatients(data);
+    } catch (err) {
+      console.error(err);
+      // optionally show toast / UI error
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchPatients();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedFilter, selectedDosha]); // refetch when filter/dosha changes
 
   // open modal
   const handleNewPatient = () => setShowNewPatientModal(true);
 
-  // handle save
-  const handleSavePatient = () => {
-    if (!newPatient.name || !newPatient.age || !newPatient.condition) {
-      alert("Please fill all fields!");
-      return;
-    }
+  // save to server
+  const handleSavePatient = async () => {
+    try {
+      if (!newPatient.name || !newPatient.age || !newPatient.condition) {
+        alert("Please fill all fields!");
+        return;
+      }
 
-    const newId = patients.length + 1;
-    setPatients([
-      ...patients,
-      {
-        id: newId,
+      // create payload — cast age to number
+      const payload = {
         ...newPatient,
+        age: Number(newPatient.age),
         lastVisit: new Date().toISOString(),
-        nextAppointment: null,
         progress: 0,
-      },
-    ]);
-    setNewPatient({
-      name: "",
-      age: "",
-      dosha: "vata",
-      condition: "",
-      status: "new",
-    });
-    setShowNewPatientModal(false);
+      };
+
+      const res = await fetch('/api/patients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || 'Failed to save patient');
+      }
+
+      const saved = await res.json();
+
+      // update UI (optimistic)
+      setPatients(prev => [saved, ...prev]);
+
+      // reset modal
+      setNewPatient({
+        name: "",
+        age: "",
+        dosha: "vata",
+        condition: "",
+        status: "new",
+      });
+      setShowNewPatientModal(false);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || 'Error saving patient');
+    }
   };
 
   return (
@@ -139,28 +162,42 @@ const PatientManagement = () => {
             Manage your patients and track their progress
           </p>
         </div>
-        <Button
-          variant="default"
-          iconName="UserPlus"
-          iconPosition="left"
-          onClick={handleNewPatient}
-        >
-          Add New Patient
-        </Button>
+        <div className="flex items-center gap-2">
+          <Input
+            placeholder="Search patients..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') fetchPatients(); }}
+          />
+          <Select
+            options={filterOptions}
+            value={selectedFilter}
+            onChange={(val) => setSelectedFilter(val)}
+          />
+          <Select
+            options={doshaOptions}
+            value={selectedDosha}
+            onChange={(val) => setSelectedDosha(val)}
+          />
+          <Button variant="default" iconName="UserPlus" iconPosition="left" onClick={handleNewPatient}>
+            Add New Patient
+          </Button>
+        </div>
       </div>
 
       {/* Patient List */}
       <div className="bg-card rounded-lg border border-border organic-shadow">
-        <div className="p-4 border-b border-border">
+        <div className="p-4 border-b border-border flex justify-between items-center">
           <h3 className="text-lg font-semibold text-text-primary">
             Patients ({patients?.length})
           </h3>
+          {loading && <span className="text-sm text-text-secondary">Loading...</span>}
         </div>
 
         <div className="divide-y divide-border">
           {patients?.map((patient) => (
             <div
-              key={patient?.id}
+              key={patient?._id || patient?.id}
               className="p-4 hover:bg-muted/30 organic-transition"
             >
               <div className="flex items-center justify-between">
@@ -195,6 +232,9 @@ const PatientManagement = () => {
               </div>
             </div>
           ))}
+          {patients?.length === 0 && !loading && (
+            <div className="p-4 text-center text-text-secondary">No patients found</div>
+          )}
         </div>
       </div>
 
