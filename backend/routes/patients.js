@@ -1,14 +1,15 @@
 // server/routes/patients.js
-import express from 'express';
-import Patient from '../models/Patient.js';
+const express = require('express');
+const Patient = require('../models/Patient');
 
 const router = express.Router();
 
-// GET /api/patients  -> list patients
+// GET /api/patients -> list patients
 router.get('/', async (req, res) => {
   try {
     const { status, dosha, q } = req.query;
     const filter = {};
+
     if (status && status !== 'all') filter.status = status;
     if (dosha && dosha !== 'all') filter.dosha = new RegExp(dosha, 'i');
     if (q) filter.name = new RegExp(q, 'i');
@@ -24,7 +25,17 @@ router.get('/', async (req, res) => {
 // POST /api/patients -> create patient
 router.post('/', async (req, res) => {
   try {
-    const { name, age, dosha, condition, status, lastVisit, nextAppointment, progress } = req.body;
+    const {
+      name,
+      age,
+      dosha,
+      condition,
+      status,
+      lastVisit,
+      nextAppointment,
+      progress
+    } = req.body;
+
     if (!name) return res.status(400).json({ error: 'Name is required' });
 
     const patient = new Patient({
@@ -35,7 +46,7 @@ router.post('/', async (req, res) => {
       status: status || 'new',
       lastVisit: lastVisit ? new Date(lastVisit) : null,
       nextAppointment: nextAppointment ? new Date(nextAppointment) : null,
-      progress: progress ?? 0,
+      progress: progress ?? 0
     });
 
     const saved = await patient.save();
@@ -51,7 +62,10 @@ router.put('/:id', async (req, res) => {
   try {
     const updates = req.body;
     const patient = await Patient.findByIdAndUpdate(req.params.id, updates, { new: true });
-    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    if (!patient)
+      return res.status(404).json({ error: 'Patient not found' });
+
     res.json(patient);
   } catch (err) {
     console.error(err);
@@ -63,7 +77,10 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const patient = await Patient.findByIdAndDelete(req.params.id);
-    if (!patient) return res.status(404).json({ error: 'Patient not found' });
+
+    if (!patient)
+      return res.status(404).json({ error: 'Patient not found' });
+
     res.json({ message: 'Deleted', id: req.params.id });
   } catch (err) {
     console.error(err);
@@ -71,4 +88,4 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-export default router;
+module.exports = router;

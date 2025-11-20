@@ -1,3 +1,4 @@
+// src/components/ui/Header.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Icon from '../AppIcon';
@@ -12,15 +13,7 @@ const Header = ({ className = '' }) => {
     { name: 'Intelligence Center', path: '/ayurvedic-intelligence-center', icon: 'Brain' },
     { name: 'Professional Portal', path: '/professional-dashboard-portal', icon: 'Stethoscope' },
     { name: 'Wellness Hub', path: '/personal-wellness-hub', icon: 'Heart' }
-    // { name: 'Research Library', path: '/clinical-research-library', icon: 'BookOpen' }
-    // { name: 'Success Stories', path: '/patient-success-stories', icon: 'Users' }
   ];
-
-  // const moreMenuItems = [
-  //   { name: 'Settings', path: '/settings', icon: 'Settings' },
-  //   { name: 'Help Center', path: '/help', icon: 'HelpCircle' },
-  //   { name: 'Contact', path: '/contact', icon: 'Mail' }
-  // ];
 
   useEffect(() => {
     const handleScroll = () => {
@@ -31,17 +24,9 @@ const Header = ({ className = '' }) => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const toggleMobileMenu = () => {
-    setIsMobileMenuOpen(!isMobileMenuOpen);
-  };
-
-  const closeMobileMenu = () => {
-    setIsMobileMenuOpen(false);
-  };
-
-  const isActivePath = (path) => {
-    return location?.pathname === path;
-  };
+  const toggleMobileMenu = () => setIsMobileMenuOpen(v => !v);
+  const closeMobileMenu = () => setIsMobileMenuOpen(false);
+  const isActivePath = (path) => location?.pathname === path;
 
   const Logo = () => (
     <Link 
@@ -73,93 +58,59 @@ const Header = ({ className = '' }) => {
 
   return (
     <header 
-      className={`fixed top-0 left-0 right-0 z-50 organic-transition ${
-        isScrolled 
-          ? 'bg-background/95 backdrop-blur-md elevated-shadow border-b border-border' 
-          : 'bg-background/80 backdrop-blur-sm'
-      } ${className}`}
+      className={`fixed top-0 left-0 right-0 z-50 organic-transition ${isScrolled ? 'bg-background/95 backdrop-blur-md elevated-shadow border-b border-border' : 'bg-background/80 backdrop-blur-sm'} ${className}`}
     >
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-          {/* Logo */}
-          <div className="flex-shrink-0">
+        {/* Use a 3-column grid so logo (left), nav (center), CTAs (right) align nicely */}
+        <div className="grid grid-cols-3 items-center h-16 px-4 sm:px-6 lg:px-8">
+          {/* Left: Logo */}
+          <div className="col-span-1 flex items-center">
             <Logo />
           </div>
 
-          {/* Desktop Navigation */}
-          <nav className="hidden lg:flex items-center space-x-1">
-            {navigationItems?.slice(0, 4)?.map((item) => (
-              <Link
-                key={item?.path}
-                to={item?.path}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium organic-transition ${
-                  isActivePath(item?.path)
-                    ? 'bg-primary/10 text-primary border border-primary/20' :'text-text-secondary hover:text-primary hover:bg-muted/50'
-                }`}
-              >
-                <Icon name={item?.icon} size={16} />
-                <span>{item?.name}</span>
-              </Link>
-            ))}
-            
-            {/* More Menu
-            <div className="relative group">
-              <button className="flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium text-text-secondary hover:text-primary hover:bg-muted/50 organic-transition">
-                <Icon name="MoreHorizontal" size={16} />
-                <span>More</span>
-              </button>
-              
-              <div className="absolute right-0 top-full mt-1 w-48 bg-popover border border-border rounded-lg organic-shadow opacity-0 invisible group-hover:opacity-100 group-hover:visible organic-transition">
-                <div className="py-2">
-                  <Link
-                    to="/patient-success-stories"
-                    className={`flex items-center space-x-3 px-4 py-2 text-sm organic-transition ${
-                      isActivePath('/patient-success-stories')
-                        ? 'bg-primary/10 text-primary' :'text-text-secondary hover:text-primary hover:bg-muted/50'
-                    }`}
-                  >
-                    <Icon name="Users" size={16} />
-                    <span>Success Stories</span>
-                  </Link>
-                  <hr className="my-1 border-border" />
-                  {moreMenuItems?.map((item) => (
-                    <Link
-                      key={item?.path}
-                      to={item?.path}
-                      className="flex items-center space-x-3 px-4 py-2 text-sm text-text-secondary hover:text-primary hover:bg-muted/50 organic-transition"
-                    >
-                      <Icon name={item?.icon} size={16} />
-                      <span>{item?.name}</span>
-                    </Link>
-                  ))}
-                </div>
-              </div>
-            </div> */}
+          {/* Center: Desktop Navigation (centered) */}
+          <nav className="col-span-1 hidden lg:flex items-center justify-center">
+            <div className="flex items-center space-x-1 bg-background/80 backdrop-blur-sm rounded-xl p-2 organic-shadow">
+              {navigationItems.map((item) => (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium organic-transition whitespace-nowrap ${
+                    isActivePath(item.path)
+                      ? 'bg-primary/10 text-primary border border-primary/20'
+                      : 'text-text-secondary hover:text-primary hover:bg-muted/50'
+                  }`}
+                >
+                  <Icon name={item.icon} size={16} />
+                  <span>{item.name}</span>
+                </Link>
+              ))}
+            </div>
           </nav>
 
-          {/* Desktop CTA */}
-          <div className="hidden lg:flex items-center space-x-3">
-            <Button variant="ghost" size="sm">
-              Sign In
-            </Button>
-            <Button variant="default" size="sm" className="bg-brand-gold hover:bg-brand-gold/90">
-              Create Account
-            </Button>
-          </div>
+          {/* Right: CTA and Mobile Menu Button */}
+          <div className="col-span-1 flex items-center justify-end space-x-3">
+            {/* Desktop CTA */}
+            <div className="hidden lg:flex items-center space-x-3">
+              <Button variant="default" size="sm" className="bg-brand-gold hover:bg-brand-gold/90">
+                Sign In
+              </Button>
+            </div>
 
-          {/* Mobile Menu Button */}
-          <div className="lg:hidden">
-            <button
-              onClick={toggleMobileMenu}
-              className="p-2 rounded-md text-text-secondary hover:text-primary hover:bg-muted/50 organic-transition"
-              aria-label="Toggle mobile menu"
-            >
-              <Icon name={isMobileMenuOpen ? "X" : "Menu"} size={24} />
-            </button>
+            {/* Mobile Menu Button */}
+            <div className="lg:hidden">
+              <button
+                onClick={toggleMobileMenu}
+                className="p-2 rounded-md text-text-secondary hover:text-primary hover:bg-muted/50 organic-transition"
+                aria-label="Toggle mobile menu"
+              >
+                <Icon name={isMobileMenuOpen ? "X" : "Menu"} size={24} />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Navigation (full width below header) */}
         {isMobileMenuOpen && (
           <div className="lg:hidden border-t border-border bg-background/95 backdrop-blur-md">
             <div className="px-4 py-4 space-y-2">
@@ -177,21 +128,9 @@ const Header = ({ className = '' }) => {
                   <span>{item?.name}</span>
                 </Link>
               ))}
-              
+
               <hr className="my-3 border-border" />
-              
-              {moreMenuItems?.map((item) => (
-                <Link
-                  key={item?.path}
-                  to={item?.path}
-                  onClick={closeMobileMenu}
-                  className="flex items-center space-x-3 px-3 py-3 rounded-md text-base font-medium text-text-secondary hover:text-primary hover:bg-muted/50 organic-transition"
-                >
-                  <Icon name={item?.icon} size={20} />
-                  <span>{item?.name}</span>
-                </Link>
-              ))}
-              
+
               <div className="pt-4 space-y-3">
                 <Button variant="ghost" fullWidth onClick={closeMobileMenu}>
                   Sign In

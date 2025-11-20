@@ -11,13 +11,12 @@
 
 
 
-// src/App.jsx
 import React, { useEffect } from "react";
 import Routes from "./Routes";
 
 const App = () => {
   useEffect(() => {
-    const labelsToRemove = ['Research Library', 'Continuing Education', 'Customization'];
+    const labelsToRemove = ['Research Library', 'Continuing Education', 'Customization', 'Dosha Explorer'];
 
     const removeSidebarItems = () => {
       // look for likely sidebar containers
