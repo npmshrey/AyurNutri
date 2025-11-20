@@ -13,7 +13,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Import routers
-import patientsRouter from "../routes/patients.js";
+import patientsRouter from './routes/patients.js';
+
 
 // Init app
 const app = express();

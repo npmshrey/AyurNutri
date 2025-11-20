@@ -1,6 +1,6 @@
 // server/routes/patients.js
-const express = require('express');
-const Patient = require('../models/Patient');
+import express from 'express';
+import Patient from '../models/Patient.js';
 
 const router = express.Router();
 
@@ -26,17 +26,13 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
   try {
     const {
-      name,
-      age,
-      dosha,
-      condition,
-      status,
-      lastVisit,
-      nextAppointment,
-      progress
+      name, age, dosha, condition, status,
+      lastVisit, nextAppointment, progress
     } = req.body;
 
-    if (!name) return res.status(400).json({ error: 'Name is required' });
+    if (!name) {
+      return res.status(400).json({ error: 'Name is required' });
+    }
 
     const patient = new Patient({
       name,
@@ -51,6 +47,7 @@ router.post('/', async (req, res) => {
 
     const saved = await patient.save();
     res.status(201).json(saved);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -61,12 +58,19 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const updates = req.body;
-    const patient = await Patient.findByIdAndUpdate(req.params.id, updates, { new: true });
 
-    if (!patient)
+    const patient = await Patient.findByIdAndUpdate(
+      req.params.id,
+      updates,
+      { new: true }
+    );
+
+    if (!patient) {
       return res.status(404).json({ error: 'Patient not found' });
+    }
 
     res.json(patient);
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
@@ -78,14 +82,16 @@ router.delete('/:id', async (req, res) => {
   try {
     const patient = await Patient.findByIdAndDelete(req.params.id);
 
-    if (!patient)
+    if (!patient) {
       return res.status(404).json({ error: 'Patient not found' });
+    }
 
     res.json({ message: 'Deleted', id: req.params.id });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Server error' });
   }
 });
 
-module.exports = router;
+export default router;

@@ -1,4 +1,5 @@
-const mongoose = require('mongoose');
+// server/models/Patient.js
+import mongoose from "mongoose";
 
 const PatientSchema = new mongoose.Schema(
   {
@@ -6,7 +7,7 @@ const PatientSchema = new mongoose.Schema(
     age: { type: Number },
     dosha: { type: String },
     condition: { type: String },
-    status: { type: String, default: 'new' },
+    status: { type: String, default: "new" },
     lastVisit: { type: Date, default: null },
     nextAppointment: { type: Date, default: null },
     progress: { type: Number, default: 0 }
@@ -14,4 +15,6 @@ const PatientSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('Patient', PatientSchema);
+const Patient = mongoose.model("Patient", PatientSchema);
+
+export default Patient;
