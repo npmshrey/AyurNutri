@@ -19,7 +19,8 @@ const Routes = () => {
       <ErrorBoundary>
         <ScrollToTop />
         <RouterRoutes>
-          <Route path="/" element={<AyurvedicIntelligenceCenter />} />
+          <Route path="/" element={<HomepageAyurNutriPlatform />} />
+          {/* <Route path="/" element={<AyurvedicIntelligenceCenter />} /> */}
           <Route path="/ayurvedic-intelligence-center" element={<AyurvedicIntelligenceCenter />} />
           <Route path="/personal-wellness-hub" element={<PersonalWellnessHub />} />
           <Route path="/homepage-ayur-nutri-platform" element={<HomepageAyurNutriPlatform />} />
