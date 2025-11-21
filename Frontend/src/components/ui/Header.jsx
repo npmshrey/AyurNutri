@@ -92,9 +92,12 @@ const Header = ({ className = '' }) => {
           <div className="col-span-1 flex items-center justify-end space-x-3">
             {/* Desktop CTA */}
             <div className="hidden lg:flex items-center space-x-3">
-              <Button variant="default" size="sm" className="bg-brand-gold hover:bg-brand-gold/90">
+              <Link to="/signin">
+                <Button variant="default" size="sm" className="bg-brand-gold hover:bg-brand-gold/90">
                 Sign In
               </Button>
+              </Link>
+            
             </div>
 
             {/* Mobile Menu Button */}
