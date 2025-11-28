@@ -1,62 +1,153 @@
-// src/pages/sign-in/SignupDoctor.jsx
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Icon from "../../components/AppIcon";
+import axios from "axios";
+import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
+
 const SignupDoctor = () => {
-  const navigate = useNavigate();
-  const [form, setForm] = useState({
-    hospitalId: "", username: "", name: "", email: "", password: "", specialization: "", licenseNo: ""
-  });
+ const navigate = useNavigate();
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [gender, setGender] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
+ 
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg("");
 
-  const handleChange = (key) => (val) => setForm(prev => ({ ...prev, [key]: val }));
+    if (!fullName || !email || !password) {
+      setErrorMsg("Name, email, and password are required.");
+      return;
+    }
 
-  const submit = (e) => {
-    e?.preventDefault();
-    console.log("DOCTOR SIGNUP:", form);
-    // TODO: call API -> navigate on success
-    // navigate('/signin');
+    if (password.length < 6) {
+      setErrorMsg("Password should be at least 6 characters long.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMsg("Passwords do not match.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      const res = await axios.post(`${API_BASE}/api/auth/signup/doctor`, {
+        fullName,
+        email,
+        password,
+        phoneNumber: phoneNumber || undefined,
+        gender: gender || undefined,
+      });
+
+      const { token, user } = res.data || {};
+      if (token) localStorage.setItem("authToken", token);
+      if (user) localStorage.setItem("currentUser", JSON.stringify(user));
+
+      // Doctor portal
+      navigate("/professional-dashboard-portal");
+    } catch (err) {
+      console.error("DOCTOR SIGNUP ERROR:", err);
+      const msg =
+        err?.response?.data?.message ||
+        "Sign up failed. Please check your details and try again.";
+      setErrorMsg(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <div className="min-h-screen flex items-start justify-center bg-background/60 py-12">
-      <div className="w-full px-4">
-        <div className="mx-auto max-w-lg">
-          <div className="bg-card rounded-2xl border-4 border-border p-6 sm:p-8 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10">
-                <Icon name="Stethoscope" size={18} className="text-primary" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-primary">Doctor / Practitioner Signup</h2>
-                <div className="text-xs text-text-secondary">Register as a healthcare provider</div>
-              </div>
-            </div>
+ return (
+  <div className="min-h-screen bg-[#fdf7ee] bg-gradient-to-b from-[#fdf7ee] via-[#f6f0e5] to-[#f3ecdf] flex items-center justify-center px-4 py-10">
+    <main className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-10 items-start md:items-center animate-fadeInUp">
+      
+      {/* Left Section */}
+      <div className="md:pr-6">
+        <p className="text-sm uppercase tracking-[0.2em] text-emerald-700/80 font-semibold mb-3">
+          For Doctors
+        </p>
 
-            <form onSubmit={submit} className="space-y-3">
-              <input className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="HOSPITAL ID" value={form.hospitalId} onChange={e => handleChange('hospitalId')(e.target.value)} />
-              <input className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="USERNAME" value={form.username} onChange={e => handleChange('username')(e.target.value)} />
-              <input className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="FULL NAME" value={form.name} onChange={e => handleChange('name')(e.target.value)} />
-              <input className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="EMAIL" value={form.email} onChange={e => handleChange('email')(e.target.value)} />
+        <h1 className="text-4xl font-serif font-semibold text-[#1f2933] leading-tight mb-4">
+          Join the <span className="text-emerald-700">AyurNutri clinical network</span>.
+        </h1>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <input type="password" className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="PASSWORD" value={form.password} onChange={e => handleChange('password')(e.target.value)} />
-                <input className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="SPECIALIZATION" value={form.specialization} onChange={e => handleChange('specialization')(e.target.value)} />
-              </div>
+        <p className="text-[#4b5563] text-base leading-relaxed mb-4">
+          Build evidence-backed nutrition plans, monitor outcomes,
+          and collaborate with a growing ecosystem of Ayurvedic professionals.
+        </p>
 
-              <input className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="LICENSE / REGISTRATION NO." value={form.licenseNo} onChange={e => handleChange('licenseNo')(e.target.value)} />
-
-              <div className="flex items-center justify-center gap-3 mt-2">
-                <Button type="submit" className="bg-primary text-primary-foreground px-6 py-2">REGISTER</Button>
-                <Link to="/signin" className="bg-white border-2 border-border px-4 py-2 rounded-md">BACK TO LOGIN</Link>
-              </div>
-            </form>
-          </div>
-        </div>
+        <ul className="text-sm text-[#374151] space-y-1">
+          <li>• Structured patient management workflows</li>
+          <li>• Precision nutrition recommendations</li>
+          <li>• Integrated clinical research tools</li>
+        </ul>
       </div>
-    </div>
-  );
+
+      {/* Right Form */}
+      <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl border border-emerald-900/10 p-6 sm:p-8">
+        <div className="mb-6">
+          <p className="text-xs uppercase tracking-[0.18em] text-emerald-700/80 font-semibold mb-2">
+            Create Account
+          </p>
+          <h2 className="text-2xl font-semibold text-[#111827]">
+            Doctor Profile
+          </h2>
+          <p className="text-sm text-[#6b7280] mt-1">
+            Share a few details to set up your professional workspace.
+          </p>
+        </div>
+
+        {errorMsg && (
+          <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+            {errorMsg}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input label="Full Name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+
+          <Input label="Email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="doctor@example.com" />
+
+          <Input label="Phone Number (optional)" value={phoneNumber} onChange={(e) => setPhoneNumber(e.target.value)} placeholder="98xxxxxx" />
+
+          <Input label="Gender (optional)" value={gender} onChange={(e) => setGender(e.target.value)} placeholder="e.g. Male, Female, Non-binary" />
+
+          <Input label="Password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Minimum 6 characters" />
+
+          <Input label="Confirm Password" type="password" required value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} placeholder="Re-enter your password" />
+
+          <div className="text-xs sm:text-sm">
+            <span className="text-[#6b7280]">
+              Already part of AyurNutri?{" "}
+              <Link to="/signin/doctor" className="text-emerald-700 font-semibold hover:underline">
+                Sign in
+              </Link>
+            </span>
+          </div>
+
+          <Button
+            type="submit"
+            loading={loading}
+            fullWidth
+            size="lg"
+            className="mt-2 bg-[#0f766e] hover:bg-[#115e59] shadow-md shadow-emerald-700/30"
+          >
+            Create Doctor Account
+          </Button>
+        </form>
+      </div>
+
+    </main>
+  </div>
+);
+
 };
 
 export default SignupDoctor;

@@ -1,62 +1,205 @@
-// src/pages/sign-in/SignupPatient.jsx
+// src/pages/sign-in/SignupPatient.jsx (or your path)
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import Icon from "../../components/AppIcon";
+import axios from "axios";
+import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
+
+// 👇 Use the same backend base as the rest of your app
+// Make sure VITE_API_BASE_URL is set to "http://localhost:9000" in your .env
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
 
 const SignupPatient = () => {
   const navigate = useNavigate();
-  const [form, setForm] = useState({
-    username: "", name: "", email: "", password: "", confirmPassword: "", age: "", gender: ""
-  });
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
+  const [gender, setGender] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleChange = (key) => (val) => setForm(prev => ({ ...prev, [key]: val }));
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setErrorMsg("");
 
-  const submit = (e) => {
-    e?.preventDefault();
-    console.log("PATIENT SIGNUP:", form);
-    // TODO: call API then navigate to signin or dashboard
-    // navigate('/signin');
+    // basic validation
+    if (!fullName || !email || !phoneNumber || !gender || !password) {
+      setErrorMsg("Please fill all required fields.");
+      return;
+    }
+
+    if (password.length < 6) {
+      setErrorMsg("Password should be at least 6 characters long.");
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      setErrorMsg("Passwords do not match.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      // send to backend: /api/auth/signup/patient
+      const res = await axios.post(`${API_BASE}/api/auth/signup/patient`, {
+        fullName: fullName.trim(),
+        email: email.trim(),
+        password,
+        phoneNumber: phoneNumber.trim(),
+        gender: gender.trim(),
+      });
+
+      const { token, user } = res.data || {};
+
+      if (token) {
+        localStorage.setItem("authToken", token);
+      }
+      if (user) {
+        localStorage.setItem("currentUser", JSON.stringify(user));
+      }
+
+      // go to patient dashboard
+      navigate("/personal-wellness-hub");
+    } catch (err) {
+      console.error("PATIENT SIGNUP ERROR:", err);
+      const msg =
+        err?.response?.data?.message ||
+        "Sign up failed. Please check your details and try again.";
+      setErrorMsg(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen flex items-start justify-center bg-background/60 py-12">
-      <div className="w-full px-4">
-        <div className="mx-auto max-w-lg">
-          <div className="bg-card rounded-2xl border-4 border-border p-6 sm:p-8 shadow-sm">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 rounded-full flex items-center justify-center bg-primary/10">
-                <Icon name="User" size={18} className="text-primary" />
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold text-primary">Patient Signup</h2>
-                <div className="text-xs text-text-secondary">Create your AyurNutri account</div>
-              </div>
+    <div className="min-h-screen bg-[#fdf7ee] bg-gradient-to-b from-[#fdf7ee] via-[#f6f0e5] to-[#f3ecdf] flex flex-col">
+      <div className="h-20" />
+
+      <main className="flex-1 flex items-center justify-center px-4 py-10">
+        <div className="max-w-5xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-center animate-fadeInUp">
+          {/* Left text */}
+          <div className="hidden md:block">
+            <p className="text-sm uppercase tracking-[0.2em] text-emerald-700/80 font-semibold mb-3">
+              For Users
+            </p>
+            <h1 className="text-3xl font-serif font-semibold text-[#1f2933] mb-4">
+              Begin your{" "}
+              <span className="text-emerald-700">
+                Ayurvedic wellness journey
+              </span>
+              .
+            </h1>
+            <p className="text-[#4b5563] text-base mb-4">
+              Create a free account to unlock personalized diet plans, guided
+              insights, and holistic recommendations aligned with your dosha.
+            </p>
+            <ul className="text-sm text-[#374151] space-y-1">
+              <li>• Personalized nutrition & lifestyle guidance</li>
+              <li>• Progress dashboards and insights</li>
+              <li>• Easy access to Ayurvedic experts</li>
+            </ul>
+          </div>
+
+          {/* Right form */}
+          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-emerald-900/5 p-6 sm:p-8">
+            <div className="mb-6">
+              <p className="text-xs uppercase tracking-[0.18em] text-emerald-700/80 font-semibold mb-2">
+                Create account
+              </p>
+              <h2 className="text-2xl font-semibold text-[#111827]">
+                User profile
+              </h2>
+              <p className="text-sm text-[#6b7280] mt-1">
+                It only takes a moment to set up your profile.
+              </p>
             </div>
 
-            <form onSubmit={submit} className="space-y-3">
-              <input className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="USERNAME" value={form.username} onChange={e => handleChange('username')(e.target.value)} />
-              <input className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="FULL NAME" value={form.name} onChange={e => handleChange('name')(e.target.value)} />
-              <input className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="EMAIL" value={form.email} onChange={e => handleChange('email')(e.target.value)} />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <input type="password" className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="PASSWORD" value={form.password} onChange={e => handleChange('password')(e.target.value)} />
-                <input type="password" className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="CONFIRM PASSWORD" value={form.confirmPassword} onChange={e => handleChange('confirmPassword')(e.target.value)} />
+            {errorMsg && (
+              <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+                {errorMsg}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <Input
+                label="Full Name"
+                required
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+              />
+
+              <Input
+                label="Email"
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+              />
+
+              <Input
+                label="Phone Number"
+                required
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                placeholder="98xxxxxx"
+              />
+
+              <Input
+                label="Gender"
+                required
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                placeholder="e.g. Male, Female, Non-binary"
+              />
+
+              <Input
+                label="Password"
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Minimum 6 characters"
+              />
+
+              <Input
+                label="Confirm Password"
+                type="password"
+                required
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter your password"
+              />
+
+              <div className="flex items-center justify-between text-xs sm:text-sm">
+                <span className="text-[#6b7280]">
+                  Already have an account?{" "}
+                  <Link
+                    to="/signin"
+                    className="text-emerald-700 font-semibold hover:underline"
+                  >
+                    Sign in
+                  </Link>
+                </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <input className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="AGE" value={form.age} onChange={e => handleChange('age')(e.target.value)} />
-                <input className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="GENDER" value={form.gender} onChange={e => handleChange('gender')(e.target.value)} />
-                <input className="w-full border-2 border-border rounded-md py-2 px-3 text-sm" placeholder="COUNTRY (optional)" />
-              </div>
-
-              <div className="flex items-center justify-center gap-3 mt-2">
-                <Button type="submit" className="bg-primary text-primary-foreground px-6 py-2">CREATE ACCOUNT</Button>
-                <Link to="/signin" className="bg-white border-2 border-border px-4 py-2 rounded-md">BACK TO LOGIN</Link>
-              </div>
+              <Button
+                type="submit"
+                loading={loading}
+                fullWidth
+                size="lg"
+                className="mt-2 bg-[#0f766e] hover:bg-[#115e59] shadow-md shadow-emerald-700/30"
+              >
+                Create User Account
+              </Button>
             </form>
           </div>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

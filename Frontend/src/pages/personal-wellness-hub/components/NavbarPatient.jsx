@@ -1,30 +1,26 @@
-import React from 'react';
-import Button from '../../../components/ui/Button';
-
-/**
- * NavbarPatient - reproduces the top navbar from screenshots:
- * - centered nav links: Dashboard / Food Scan / Analytics / Sessions / Messages
- * - logout button on the right
- * - cream background and subtle shadow
- *
- * Props:
- *  - active: string (one of 'dashboard','food-scan','analytics','sessions','messages')
- *  - onNavigate: function(id)
- *  - logoUrl: optional string path to logo
- */
+import React from "react";
+import Button from "../../../components/ui/Button";
+import useAuth from "../../../hooks/useAuth";
 
 const NavbarPatient = ({
-  active = 'dashboard',
+  active = "dashboard",
   onNavigate = () => {},
-  logoUrl = '/logo.png',
+  logoUrl = "/logo.png",
 }) => {
+  const { user, logout } = useAuth();
+
   const nav = [
-    { id: 'dashboard', label: 'Dashboard' },
-    { id: 'food-scan', label: 'Food Scan' },
-    { id: 'analytics', label: 'Analytics' },
-    { id: 'sessions', label: 'Sessions' },
-    { id: 'messages', label: 'Messages' },
+    { id: "dashboard", label: "Dashboard" },
+    { id: "food-scan", label: "Food Scan" },
+    { id: "analytics", label: "Analytics" },
+    { id: "sessions", label: "Sessions" },
+    { id: "messages", label: "Messages" },
   ];
+
+  const handleLogout = () => {
+    // centralized logout: clears token + user + redirects to /signin
+    logout();
+  };
 
   return (
     <header className="bg-cream border-b border-gray-200 sticky top-0 z-40">
@@ -48,8 +44,8 @@ const NavbarPatient = ({
                     onClick={() => onNavigate(n.id)}
                     className={`text-sm font-medium transition-colors ${
                       active === n.id
-                        ? 'text-emerald-800'
-                        : 'text-emerald-600 hover:text-emerald-800'
+                        ? "text-emerald-800"
+                        : "text-emerald-600 hover:text-emerald-800"
                     }`}
                   >
                     {n.label}
@@ -59,15 +55,19 @@ const NavbarPatient = ({
             </ul>
           </nav>
 
-          {/* Right: logout */}
+          {/* Right: user + logout */}
           <div className="flex items-center gap-3">
+            {user?.fullName && (
+              <span className="hidden sm:inline text-sm text-emerald-800">
+                Hi, {user.fullName}
+              </span>
+            )}
+
             <Button
               variant="default"
               size="sm"
               className="bg-emerald-800 hover:bg-emerald-900 text-white"
-              onClick={() => {
-                /* TODO: implement logout */
-              }}
+              onClick={handleLogout}
             >
               Logout
             </Button>

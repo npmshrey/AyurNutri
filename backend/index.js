@@ -5,45 +5,35 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Load environment variables
+import patientsRouter from "./routes/patients.js";
+import authRouter from "./routes/auth.js";
+import patientPortalRouter from "./routes/patientPortal.js";
+import patientMeRouter from "./routes/patientMe.js";
+
+
 dotenv.config();
 
-// Fix __dirname inside ES modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Import routers
-import patientsRouter from './routes/patients.js';
-
-
-// Init app
 const app = express();
 
-// Middlewares
 app.use(cors());
 app.use(express.json());
 
-// =========================
-//          API ROUTES
-// =========================
 app.use("/api/patients", patientsRouter);
+app.use("/api/auth", authRouter);
+app.use("/api/patient", patientPortalRouter); 
+app.use("/api/patient", patientMeRouter);
 
-// =========================
-//      REACT BUILD SERVE
-// =========================
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../../client/build")));
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../../client/build/index.html"));
-  });
-}
 
-// =========================
-//     MONGODB CONNECT
-// =========================
+app.get("/api/health", (req, res) => {
+  res.json({ status: "ok", ts: new Date().toISOString() });
+});
+
 const PORT = process.env.PORT || 9000;
 const MONGODB_URI =
-  process.env.MONGODB_URI || "mongodb://localhost:27017/patient-db";
+  process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/ayurveda";
 
 mongoose
   .connect(MONGODB_URI)

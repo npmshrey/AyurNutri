@@ -2,6 +2,8 @@
 import React, { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { AnimatePresence, motion } from 'framer-motion';
+import { Navigate } from "react-router-dom";
+import useAuth from "../../hooks/useAuth";
 
 // Local components
 import NavbarPatient from './components/NavbarPatient';
@@ -19,6 +21,15 @@ const pageMotion = {
 };
 
 const PersonalWellnessHub = () => {
+    const { user, isPatient } = useAuth();
+
+  // If somehow a doctor or unauthenticated user gets here:
+  if (!isPatient) {
+    if (user?.role === "doctor") {
+      return <Navigate to="/professional-dashboard-portal" replace />;
+    }
+    return <Navigate to="/signin" replace />;
+  }
   const [active, setActive] = useState('dashboard');
 
   const userData = {
