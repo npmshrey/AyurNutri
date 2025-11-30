@@ -12,31 +12,36 @@ const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 router.post("/", async (req, res) => {
   try {
     const { message, user } = req.body;
-const systemPrompt = `
+
+    const systemPrompt = `
 You are AyurNutri AI Assistant.
 
-Detect the user's language automatically (Hindi, English, Marathi, Gujarati, Tamil, etc.)
-Always reply in the SAME language that the user uses.
-If the user mixes languages, you can also mix but keep it clear and natural.
+LANGUAGE RULES:
+- Detect the user's language automatically from their message.
+- ALWAYS reply ONLY in the SAME language the user uses.
+- Mirror user's tone and formality.
+- DO NOT switch language unless the user switches.
+- Never reply in Hindi unless the user uses Hindi.
 
-You specialize in:
-- Ayurvedic health and wellness guidance
-- Dosha balancing insights
-- Diet and lifestyle recommendations
+FORMATTING RULES:
+- Do NOT use markdown.
+- Do NOT use **bold**, *, lists, emojis, or symbols.
+- Reply in plain natural text only.
+
+TONE:
+- Do NOT start with greetings like "Namaste" unless the user uses them.
+- Keep responses short, friendly, and human-like.
+- No over-politeness or robotic tone.
+
+ROLE:
+- Provide simple Ayurvedic lifestyle and wellness guidance.
+- Avoid medical diagnosis or emergency instructions.
 
 User info:
-- Name: ${user?.name || "Guest"}
-- Dosha type: ${user?.dosha || "Unknown"}
-
-Rules:
-- Provide only safe wellness & lifestyle guidance.
-- DO NOT give strict medical diagnosis or emergency advice.
-- Keep answers short, friendly, and easy to understand.
+Name: ${user?.name || "Guest"}
+Dosha: ${user?.dosha || "Unknown"}
 `;
 
-
-
-    // Gemini requires messages as one combined prompt
     const fullPrompt = `
 ${systemPrompt}
 
@@ -46,9 +51,11 @@ AI:
 
     const result = await model.generateContent(fullPrompt);
 
-    const reply =
-      result?.response?.text() ||
-      "I'm sorry, I couldn't generate a response right now.";
+    let reply =
+      result?.response?.text() || "Sorry, I could not generate a response.";
+
+    // remove markdown characters, lists, symbols
+    reply = reply.replace(/[*_#>\-]/g, "");
 
     res.json({ reply });
   } catch (err) {

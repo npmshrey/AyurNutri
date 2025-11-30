@@ -1,4 +1,5 @@
 // src/components/Chatbot.jsx
+
 import { useState, useEffect, useRef } from "react";
 import { MessageCircle, X, Mic, MicOff, Volume2, VolumeX } from "lucide-react";
 import useAuth from "../../hooks/useAuth";
@@ -8,7 +9,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
 export default function Chatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    { from: "bot", text: "Namaste! How can I support your wellness today?" },
+    { from: "bot", text: "How can I support your wellness today?" },
   ]);
 
   const [input, setInput] = useState("");
@@ -25,7 +26,6 @@ export default function Chatbot() {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    // Ask mic permission
     navigator.mediaDevices.getUserMedia({ audio: true }).catch(() => {
       console.warn("Microphone permission denied");
     });
@@ -34,29 +34,24 @@ export default function Chatbot() {
       window.SpeechRecognition || window.webkitSpeechRecognition;
 
     if (!SpeechRecognition) {
-      console.warn("SpeechRecognition not supported in this browser");
+      console.warn("SpeechRecognition not supported");
       return;
     }
 
     const recognition = new SpeechRecognition();
 
-    // MULTI-LANGUAGE MODE
-    recognition.lang = "hi-IN"; // Hindi + Hinglish + English compatible
+    // FIX: EN-IN works best for English + Hinglish + Indian accents
+    recognition.lang = "en-IN";
     recognition.continuous = false;
-    recognition.interimResults = true; // important for live typing
+    recognition.interimResults = true;
 
     recognition.onstart = () => setIsListening(true);
-
-    recognition.onend = () => {
-      setIsListening(false);
-    };
-
+    recognition.onend = () => setIsListening(false);
     recognition.onerror = (err) => {
       console.error("Voice Error:", err);
       setIsListening(false);
     };
 
-    // LIVE TEXT UPDATE
     recognition.onresult = (event) => {
       let finalText = "";
       let interimText = "";
@@ -67,7 +62,6 @@ export default function Chatbot() {
         else interimText += transcript;
       }
 
-      // show live text in the input box
       setInput(finalText || interimText);
     };
 
@@ -91,6 +85,7 @@ export default function Chatbot() {
     }
   };
 
+  // Speak message only when voiceEnabled = true
   const speakMessage = (text) => {
     if (!voiceEnabled) return;
     if (!window.speechSynthesis) return;
@@ -98,6 +93,7 @@ export default function Chatbot() {
     window.speechSynthesis.cancel();
 
     const speech = new SpeechSynthesisUtterance(text);
+    speech.lang = "en-IN"; // works for Hinglish, English, Indian accent
     window.speechSynthesis.speak(speech);
   };
 
@@ -124,16 +120,20 @@ export default function Chatbot() {
       });
 
       const data = await res.json();
-      const reply = data?.reply || "I’m sorry, something went wrong.";
+      const reply = data?.reply || "Something went wrong.";
 
       setMessages((prev) => [...prev, { from: "bot", text: reply }]);
-      speakMessage(reply);
+
+      // Speak only when toggle is ON
+      if (voiceEnabled) {
+        speakMessage(reply);
+      }
     } catch (error) {
       console.error("Chatbot error:", error);
-      const fallback =
-        "Network issue. Please try again in a few seconds.";
+      const fallback = "Network issue. Please try again.";
       setMessages((prev) => [...prev, { from: "bot", text: fallback }]);
-      speakMessage(fallback);
+
+      if (voiceEnabled) speakMessage(fallback);
     } finally {
       setIsSending(false);
     }
@@ -153,14 +153,12 @@ export default function Chatbot() {
 
       {/* Chat Window */}
       {open && (
-        <div className="fixed bottom-6 right-6 w-80 md:w-96 h-[430px] bg-white shadow-2xl rounded-2xl border border-[#eee] flex flex-col animate-fadeIn">
-          
+        <div className="fixed bottom-6 right-6 w-80 md:w-96 h-[430px] bg-white shadow-2xl rounded-2xl border border-[#eee] flex flex-col">
+
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 bg-[#F9F6ED] border-b border-[#e5e2d3] rounded-t-2xl">
             <div>
-              <h3 className="font-semibold text-[#0D5C33]">
-                AyurNutri Assistant
-              </h3>
+              <h3 className="font-semibold text-[#0D5C33]">AyurNutri Assistant</h3>
               <p className="text-xs text-[#6b6b5f]">
                 Speak or type in Hindi, English, Marathi, or any Indian language.
               </p>
@@ -189,7 +187,7 @@ export default function Chatbot() {
           {/* Input Section */}
           <div className="p-3 border-t border-[#e5e2d3] bg-white flex items-center gap-2">
 
-            {/* Voice Reply Toggle */}
+            {/* Voice Toggle */}
             <button
               type="button"
               onClick={() => setVoiceEnabled((v) => !v)}
