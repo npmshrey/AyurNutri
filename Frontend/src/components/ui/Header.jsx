@@ -153,7 +153,7 @@ const Header = ({ className = "", isHomePage = false }) => {
     );
   })()
 )}
-0000000000000000000000000
+
 
             {/* Logged-in user (ONLY on dashboard pages) */}
             {!isHome && isAuthenticated && (
