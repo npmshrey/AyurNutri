@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from "react";
-
 import Icon from "../../../components/AppIcon";
-
 import Button from "../../../components/ui/Button";
 
 const HeroSection = () => {
@@ -9,7 +7,7 @@ const HeroSection = () => {
   const [isVisible, setIsVisible] = useState(false);
 
   const animationSteps = [
-    { icon: "Leaf", label: "Vata", color: "text-blue-600" },
+    { icon: "Wind", label: "Vata", color: "text-blue-600" },
     { icon: "Flame", label: "Pitta", color: "text-red-600" },
     { icon: "Mountain", label: "Kapha", color: "text-green-600" },
   ];
@@ -17,7 +15,7 @@ const HeroSection = () => {
   useEffect(() => {
     setIsVisible(true);
     const interval = setInterval(() => {
-      setCurrentAnimation((prev) => (prev + 1) % animationSteps?.length);
+      setCurrentAnimation((prev) => (prev + 1) % animationSteps.length);
     }, 2000);
     return () => clearInterval(interval);
   }, []);
@@ -26,40 +24,26 @@ const HeroSection = () => {
     <section className="relative min-h-screen bg-gradient-to-br from-background via-muted/30 to-brand-cream overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
-        <svg
-          className="w-full h-full"
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-        >
+        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
           <defs>
-            <pattern
-              id="organic-pattern"
-              x="0"
-              y="0"
-              width="20"
-              height="20"
-              patternUnits="userSpaceOnUse"
-            >
-              <circle
-                cx="10"
-                cy="10"
-                r="2"
-                fill="currentColor"
-                className="text-primary"
-              />
+            <pattern id="organic-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+              <circle cx="10" cy="10" r="2" fill="currentColor" className="text-primary" />
             </pattern>
           </defs>
           <rect width="100" height="100" fill="url(#organic-pattern)" />
         </svg>
       </div>
+
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
         <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
-          {/* Left Content */}
+
+
+          {/* ============================================================ */}
+          {/* LEFT SIDE (unchanged original content) */}
+          {/* ============================================================ */}
           <div
             className={`space-y-8 organic-transition duration-1000 ${
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-8"
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}
           >
             <div className="space-y-6">
@@ -82,14 +66,12 @@ const HeroSection = () => {
               </p>
             </div>
 
-            {/* Animation Showcase */}
+            {/* Live Transformation Mini-Card */}
             <div className="bg-card/50 backdrop-blur-sm rounded-2xl p-6 border border-border organic-shadow">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-text-primary">
-                  Live Transformation
-                </h3>
+                <h3 className="text-lg font-semibold text-text-primary">Live Transformation</h3>
                 <div className="flex space-x-2">
-                  {animationSteps?.map((_, index) => (
+                  {animationSteps.map((_, index) => (
                     <div
                       key={index}
                       className={`w-2 h-2 rounded-full organic-transition ${
@@ -103,50 +85,33 @@ const HeroSection = () => {
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
                   <div
-                    className={`p-3 rounded-full bg-primary/10 organic-transition ${animationSteps?.[currentAnimation]?.color}`}
+                    className={`p-3 rounded-full bg-primary/10 organic-transition ${animationSteps[currentAnimation].color}`}
                   >
-                    <Icon
-                      name={animationSteps?.[currentAnimation]?.icon}
-                      size={24}
-                    />
+                    <Icon name={animationSteps[currentAnimation].icon} size={24} />
                   </div>
                   <div>
                     <p className="font-medium text-text-primary">
-                      {animationSteps?.[currentAnimation]?.label} Constitution
+                      {animationSteps[currentAnimation].label} Constitution
                     </p>
-                    <p className="text-sm text-text-secondary">
-                      Ayurvedic Assessment
-                    </p>
+                    <p className="text-sm text-text-secondary">Ayurvedic Assessment</p>
                   </div>
                 </div>
 
-                <Icon
-                  name="ArrowRight"
-                  size={20}
-                  className="text-text-secondary animate-pulse"
-                />
+                <Icon name="ArrowRight" size={20} className="text-text-secondary animate-pulse" />
 
                 <div className="flex items-center space-x-3">
                   <div className="p-3 rounded-full bg-secondary/10">
-                    <Icon
-                      name="BarChart3"
-                      size={24}
-                      className="text-secondary"
-                    />
+                    <Icon name="BarChart3" size={24} className="text-secondary" />
                   </div>
                   <div>
-                    <p className="font-medium text-text-primary">
-                      Personalized Plan
-                    </p>
-                    <p className="text-sm text-text-secondary">
-                      Nutritional Precision
-                    </p>
+                    <p className="font-medium text-text-primary">Personalized Plan</p>
+                    <p className="text-sm text-text-secondary">Nutritional Precision</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Primary CTAs */}
+            {/* CTA */}
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 variant="default"
@@ -157,120 +122,118 @@ const HeroSection = () => {
               >
                 Watch Demo
               </Button>
-              
             </div>
 
             {/* Trust Indicators */}
             <div className="flex items-center space-x-6 pt-4">
               <div className="flex items-center space-x-2">
                 <Icon name="Shield" size={16} className="text-success" />
-                <span className="text-sm text-text-secondary">
-                  HIPAA Compliant
-                </span>
+                <span className="text-sm text-text-secondary">HIPAA Compliant</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Icon name="Award" size={16} className="text-success" />
-                <span className="text-sm text-text-secondary">
-                  Clinically Validated
-                </span>
+                <span className="text-sm text-text-secondary">Clinically Validated</span>
               </div>
               <div className="flex items-center space-x-2">
                 <Icon name="Users" size={16} className="text-success" />
-                <span className="text-sm text-text-secondary">
-                  500+ Practitioners
-                </span>
+                <span className="text-sm text-text-secondary">500+ Practitioners</span>
               </div>
             </div>
           </div>
 
-          {/* Right Visual */}
+
+          {/* ============================================================ */}
+          {/* RIGHT SIDE — ANCIENT WISDOM CARD WITH SLIDE-IN FROM RIGHT */}
+          {/* ============================================================ */}
           <div
             className={`relative organic-transition duration-1000 delay-300 ${
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-8"
+              isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"
             }`}
           >
-            <div className="relative">
-              {/* Main Dashboard Preview */}
-              <div className="bg-card rounded-2xl organic-shadow border border-border overflow-hidden">
-                <div className="bg-primary/5 px-6 py-4 border-b border-border">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-3 h-3 bg-red-400 rounded-full"></div>
-                      <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
-                      <div className="w-3 h-3 bg-green-400 rounded-full"></div>
-                    </div>
-                    <span className="text-sm text-text-secondary">
-                      AyurNutri Platform
-                    </span>
-                  </div>
-                </div>
+            <div className="bg-card rounded-3xl organic-shadow border border-border overflow-hidden">
 
-                <div className="p-6 space-y-6">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-semibold text-text-primary">
-                      Patient: Shreyanshu Gupta
-                    </h4>
-                    <span className="text-sm bg-primary/10 text-primary px-3 py-1 rounded-full">
-                      Vata-Pitta
-                    </span>
+              {/* Top bar with 3 dots */}
+              <div className="bg-primary/5 px-6 py-4 border-b border-border rounded-t-3xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-3 h-3 bg-red-400 rounded-full" />
+                    <div className="w-3 h-3 bg-yellow-400 rounded-full" />
+                    <div className="w-3 h-3 bg-green-400 rounded-full" />
                   </div>
-
-                  <div className="grid grid-cols-3 gap-4">
-                    <div className="text-center p-4 bg-muted/50 rounded-lg">
-                      <div className="text-2xl font-bold text-primary">85%</div>
-                      <div className="text-xs text-text-secondary">
-                        Balance Score
-                      </div>
-                    </div>
-                    <div className="text-center p-4 bg-muted/50 rounded-lg">
-                      <div className="text-2xl font-bold text-secondary">
-                      3000
-                      </div>
-                      <div className="text-xs text-text-secondary">
-                        Daily Calories
-                      </div>
-                    </div>
-                    <div className="text-center p-4 bg-muted/50 rounded-lg">
-                      <div className="text-2xl font-bold text-accent">12</div>
-                      <div className="text-xs text-text-secondary">
-                        Weeks Plan
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-text-secondary">
-                        Constitutional Balance
-                      </span>
-                      <span className="text-text-primary">Optimizing</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div
-                        className="bg-gradient-to-r from-primary to-secondary h-2 rounded-full"
-                        style={{ width: "75%" }}
-                      ></div>
-                    </div>
-                  </div>
+                  <span className="text-xs text-text-secondary">Ayurvedic Intelligence</span>
                 </div>
               </div>
 
-              {/* Floating Elements
-              <div className="absolute -top-4 -right-4 bg-secondary/10 backdrop-blur-sm rounded-xl p-4 border border-secondary/20">
-                <div className="flex items-center space-x-2">
-                  <Icon name="Zap" size={16} className="text-secondary" />
-                  <span className="text-sm font-medium text-text-primary">
-                    AI Powered
-                  </span>
+              {/* Ancient Wisdom content */}
+              <div className="px-8 py-7 space-y-6">
+
+                {/* Header */}
+                <div className="flex items-center gap-3">
+                  <div className="h-9 w-9 rounded-2xl bg-emerald-50 flex items-center justify-center">
+                    <Icon name="Leaf" size={20} className="text-emerald-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl sm:text-2xl font-display font-semibold text-text-primary">
+                      Ancient Wisdom
+                    </h3>
+                    <p className="text-sm sm:text-base text-text-secondary">
+                      5,000 years of Ayurvedic knowledge
+                    </p>
+                  </div>
                 </div>
-              </div> */}
 
-              {/* Decorative leaf pill removed */}
+                {/* Dosha row */}
+                <div className="grid grid-cols-3 gap-4 pt-2">
+                  {[
+                    { icon: "Wind", name: "Vata", subtitle: "Movement", color: "text-blue-600" },
+                    { icon: "Flame", name: "Pitta", subtitle: "Transformation", color: "text-red-600" },
+                    { icon: "Mountain", name: "Kapha", subtitle: "Structure", color: "text-green-600" },
+                  ].map((dosha, index) => {
+                    const isActive = currentAnimation === index;
+                    return (
+                      <div
+                        key={dosha.name}
+                        className={`rounded-2xl px-4 py-3 flex flex-col items-center text-center organic-transition ${
+                          isActive ? "bg-primary/5 shadow-sm scale-[1.02]" : "opacity-80"
+                        }`}
+                      >
+                        <Icon name={dosha.icon} size={22} className={`${dosha.color} mb-2`} />
+                        <div className="text-sm font-semibold text-text-primary">{dosha.name}</div>
+                        <div className="text-xs text-text-secondary">{dosha.subtitle}</div>
+                      </div>
+                    );
+                  })}
+                </div>
 
+                {/* Rasa / Virya / Guna */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 pt-4 text-sm">
+                  <div className="space-y-1 text-text-secondary">
+                    <p>Rasa (Taste)</p>
+                    <p>Virya (Potency)</p>
+                    <p>Guna (Qualities)</p>
+                  </div>
+                  <div className="space-y-1 text-right sm:text-left text-text-primary font-medium">
+                    <p>6 Classifications</p>
+                    <p>Hot / Cold Energy</p>
+                    <p>20 Attributes</p>
+                  </div>
+                </div>
+
+                {/* Underline animation */}
+                <div className="pt-2">
+                  <div className="h-px w-full bg-border overflow-hidden rounded-full">
+                    <div
+                      className="h-px w-1/3 bg-gradient-to-r from-primary via-secondary to-primary organic-transition"
+                      style={{ transform: `translateX(${currentAnimation * 120}%)` }}
+                    />
+                  </div>
+                </div>
+
+              </div>
             </div>
           </div>
+
+
         </div>
       </div>
     </section>
