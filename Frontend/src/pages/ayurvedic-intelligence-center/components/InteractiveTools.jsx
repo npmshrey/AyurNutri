@@ -792,6 +792,7 @@ const InteractiveTools = () => {
             value={food1}
             onChange={setFood1}
             placeholder="Select first food"
+            className="border-b border-gray-300 bg-transparent focus:outline-none focus:border-emerald-600"
           />
           <Select
             label="Second Food"
@@ -799,6 +800,7 @@ const InteractiveTools = () => {
             value={food2}
             onChange={setFood2}
             placeholder="Select second food"
+            className="border-b border-gray-300 bg-transparent focus:outline-none focus:border-emerald-600"
           />
         </div>
 
@@ -937,6 +939,7 @@ const InteractiveTools = () => {
           value={selectedSeason}
           onChange={setSelectedSeason}
           placeholder="Select current season"
+          className="border-b border-gray-300 bg-transparent focus:outline-none focus:border-emerald-600"
         />
         <div className="text-center">
           <Button
