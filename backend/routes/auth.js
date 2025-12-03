@@ -6,13 +6,16 @@ import express from "express";
 
 const router = express.Router();
 
+// Helper: Create JWT Token
 function createToken(id, role, email) {
   return jwt.sign({ id, role, email }, process.env.JWT_SECRET, {
     expiresIn: "7d",
   });
 }
 
-/* ========= PATIENT SIGNUP ========= */
+/* ============================
+   PATIENT SIGNUP
+   ============================ */
 router.post("/signup/patient", async (req, res) => {
   try {
     let { fullName, email, password, phoneNumber, gender } = req.body;
@@ -27,10 +30,11 @@ router.post("/signup/patient", async (req, res) => {
       $or: [{ email }, { phoneNumber }],
     });
 
-    if (exists)
+    if (exists) {
       return res
         .status(409)
         .json({ message: "Email or phone already in use" });
+    }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
@@ -46,6 +50,7 @@ router.post("/signup/patient", async (req, res) => {
 
     return res.status(201).json({
       message: "Patient registered successfully",
+      patientId: patient._id, // ⭐ IMPORTANT
       user: {
         id: patient._id,
         role: "patient",
@@ -57,12 +62,14 @@ router.post("/signup/patient", async (req, res) => {
       token,
     });
   } catch (err) {
-    console.log("Signup error", err);
+    console.log("Signup error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-/* ========= PATIENT LOGIN ========= */
+/* ============================
+   PATIENT LOGIN (FIXED)
+   ============================ */
 router.post("/login", async (req, res) => {
   try {
     const { emailOrPhone, password } = req.body;
@@ -74,17 +81,20 @@ router.post("/login", async (req, res) => {
       ],
     });
 
-    if (!patient)
+    if (!patient) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
 
     const ok = await bcrypt.compare(password, patient.passwordHash);
-    if (!ok)
+    if (!ok) {
       return res.status(401).json({ message: "Invalid credentials" });
+    }
 
     const token = createToken(patient._id, "patient", patient.email);
 
-    res.json({
+    return res.json({
       message: "Login successful",
+      patientId: patient._id, // ⭐ CRITICAL FOR BOOKING
       user: {
         id: patient._id,
         role: "patient",
@@ -96,12 +106,14 @@ router.post("/login", async (req, res) => {
       token,
     });
   } catch (err) {
-    console.log("Login error", err);
+    console.log("Login error:", err);
     res.status(500).json({ message: "Server error" });
   }
 });
 
-/* ========= DOCTOR SIGNUP (AUTO VERIFIED) ========= */
+/* ============================
+   DOCTOR SIGNUP (AUTO VERIFIED)
+   ============================ */
 router.post("/signup/doctor", async (req, res) => {
   try {
     let {
@@ -122,7 +134,6 @@ router.post("/signup/doctor", async (req, res) => {
 
     email = email.toLowerCase().trim();
 
-    // 🛠 FIXED: Phone checked only if provided
     const query = [{ email }];
     if (phoneNumber && phoneNumber.trim() !== "") {
       query.push({ phoneNumber });
@@ -138,7 +149,6 @@ router.post("/signup/doctor", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    // AUTO VERIFIED DOCTOR
     const doctor = await Doctor.create({
       fullName,
       email,
@@ -173,7 +183,9 @@ router.post("/signup/doctor", async (req, res) => {
   }
 });
 
-/* ========= DOCTOR LOGIN ========= */
+/* ============================
+   DOCTOR LOGIN
+   ============================ */
 router.post("/login/doctor", async (req, res) => {
   try {
     const { emailOrPhone, password } = req.body;
@@ -188,7 +200,6 @@ router.post("/login/doctor", async (req, res) => {
     if (!doctor)
       return res.status(401).json({ message: "Invalid credentials" });
 
-    // Should always be true in Option A
     if (!doctor.verified)
       return res
         .status(403)
@@ -200,7 +211,7 @@ router.post("/login/doctor", async (req, res) => {
 
     const token = createToken(doctor._id, "doctor", doctor.email);
 
-    res.json({
+    return res.json({
       message: "Login successful",
       user: {
         id: doctor._id,

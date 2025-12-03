@@ -15,7 +15,6 @@ const SignInPage = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Shared input styling (border + rounded)
   const inputClassName =
     "border border-gray-300 rounded-xl bg-white px-3 py-2 " +
     "focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600";
@@ -37,10 +36,14 @@ const SignInPage = () => {
         password,
       });
 
-      const { token, user } = res.data || {};
+      // ⭐ FIXED — extract patientId from backend response
+      const { token, user, patientId } = res.data || {};
 
       if (token) localStorage.setItem("authToken", token);
       if (user) localStorage.setItem("currentUser", JSON.stringify(user));
+
+      // ⭐ CRITICAL FIX — store patientId so booking works
+      if (patientId) localStorage.setItem("patientId", patientId);
 
       navigate("/personal-wellness-hub");
     } catch (err) {
@@ -61,7 +64,7 @@ const SignInPage = () => {
       <main className="flex-1 flex items-center justify-center px-4 py-10">
         <div className="max-w-5xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-center animate-fadeInUp">
           
-          {/* Left: marketing/intro */}
+          {/* Left side text */}
           <div className="hidden md:block">
             <p className="text-sm uppercase tracking-[0.2em] text-emerald-700/80 font-semibold mb-3">
               For Users
@@ -82,7 +85,7 @@ const SignInPage = () => {
             </ul>
           </div>
 
-          {/* Right: form card */}
+          {/* Right side form */}
           <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-emerald-900/5 p-6 sm:p-8">
             <div className="mb-6">
               <p className="text-xs uppercase tracking-[0.18em] text-emerald-700/80 font-semibold mb-2">
@@ -104,7 +107,6 @@ const SignInPage = () => {
 
             <form onSubmit={handleSubmit} className="space-y-4">
 
-              {/* Email or Phone */}
               <Input
                 label="Email or Phone"
                 required
@@ -113,7 +115,6 @@ const SignInPage = () => {
                 className={inputClassName}
               />
 
-              {/* Password + eye toggle */}
               <div className="relative">
                 <Input
                   label="Password"
@@ -128,7 +129,6 @@ const SignInPage = () => {
                   type="button"
                   onClick={() => setShowPassword((prev) => !prev)}
                   className="absolute right-3 top-1/2 -translate-y-1/2 mt-3 cursor-pointer"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                 </button>
