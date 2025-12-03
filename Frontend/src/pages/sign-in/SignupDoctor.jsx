@@ -15,6 +15,10 @@ const SignupDoctor = () => {
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [gender, setGender] = useState("");
+
+  const [regNo, setRegNo] = useState(""); 
+  const [council, setCouncil] = useState("");
+
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -24,22 +28,15 @@ const SignupDoctor = () => {
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // Shared border styling
   const inputClassName =
-    "border border-gray-300 rounded-xl bg-white px-3 py-2 " +
-    "focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600";
+    "border border-gray-300 rounded-xl bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
 
-    if (!fullName || !email || !password) {
-      setErrorMsg("Name, email, and password are required.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setErrorMsg("Password should be at least 6 characters long.");
+    if (!fullName || !email || !password || !regNo || !council) {
+      setErrorMsg("Full name, email, password, registration number, and council are required.");
       return;
     }
 
@@ -57,6 +54,8 @@ const SignupDoctor = () => {
         password,
         phoneNumber: phoneNumber || undefined,
         gender: gender || undefined,
+        reg_no: regNo,
+        council: council
       });
 
       const { token, user } = res.data || {};
@@ -68,8 +67,7 @@ const SignupDoctor = () => {
     } catch (err) {
       console.error("DOCTOR SIGNUP ERROR:", err);
       const msg =
-        err?.response?.data?.message ||
-        "Sign up failed. Please check your details.";
+        err?.response?.data?.message || "Sign up failed. Please check your details.";
       setErrorMsg(msg);
     } finally {
       setLoading(false);
@@ -127,6 +125,7 @@ const SignupDoctor = () => {
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
+              placeholder="Dr. Aarav Sharma"
               className={inputClassName}
             />
 
@@ -136,6 +135,7 @@ const SignupDoctor = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
+              placeholder="doctor@example.com"
               className={inputClassName}
             />
 
@@ -143,10 +143,11 @@ const SignupDoctor = () => {
               label="Phone Number (optional)"
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
+              placeholder="9876543210"
               className={inputClassName}
             />
 
-            {/* Gender dropdown */}
+            {/* Gender */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Gender (optional)
@@ -154,14 +155,44 @@ const SignupDoctor = () => {
               <select
                 value={gender}
                 onChange={(e) => setGender(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-xl bg-white
-                           focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
               >
                 <option value="">Select gender</option>
                 <option value="Male">Male</option>
                 <option value="Female">Female</option>
                 <option value="Non-binary">Non-binary</option>
                 <option value="Prefer not to say">Prefer not to say</option>
+              </select>
+            </div>
+
+            {/* Registration Number */}
+            <Input
+              label="Registration Number"
+              required
+              value={regNo}
+              onChange={(e) => setRegNo(e.target.value)}
+              placeholder="e.g., UPMC12345"
+              className={inputClassName}
+            />
+
+            {/* Medical Council */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Medical Council
+              </label>
+              <select
+                required
+                value={council}
+                onChange={(e) => setCouncil(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
+              >
+                <option value="">Select Council</option>
+                <option value="Uttar Pradesh Medical Council">Uttar Pradesh Medical Council</option>
+                <option value="Punjab Medical Council">Punjab Medical Council</option>
+                <option value="Gujarat Medical Council">Gujarat Medical Council</option>
+                <option value="Kerala Medical Council">Kerala Medical Council</option>
+                <option value="Maharashtra Medical Council">Maharashtra Medical Council</option>
+                <option value="West Bengal Medical Council">West Bengal Medical Council</option>
               </select>
             </div>
 
@@ -173,6 +204,7 @@ const SignupDoctor = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                placeholder="Enter a strong password"
                 className={inputClassName}
               />
               <button
@@ -192,6 +224,7 @@ const SignupDoctor = () => {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
+                placeholder="Re-enter your password"
                 className={inputClassName}
               />
               <button
@@ -203,7 +236,6 @@ const SignupDoctor = () => {
               </button>
             </div>
 
-            {/* Already Have Account */}
             <div className="text-xs sm:text-sm">
               <span className="text-[#6b7280]">
                 Already part of AyurNutri?{" "}
@@ -216,7 +248,6 @@ const SignupDoctor = () => {
               </span>
             </div>
 
-            {/* Submit */}
             <Button
               type="submit"
               loading={loading}

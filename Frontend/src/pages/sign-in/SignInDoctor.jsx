@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-import { Eye, EyeOff } from "lucide-react"; // 👈 added
+import { Eye, EyeOff } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
 
@@ -11,7 +11,7 @@ const SignInDoctor = () => {
   const navigate = useNavigate();
   const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false); // 👈 added
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -20,7 +20,7 @@ const SignInDoctor = () => {
     setErrorMsg("");
 
     if (!emailOrPhone || !password) {
-      setErrorMsg("Please enter your email / phone and password.");
+      setErrorMsg("Please enter your email/phone and password.");
       return;
     }
 
@@ -34,15 +34,17 @@ const SignInDoctor = () => {
 
       const { token, user } = res.data || {};
 
+      // Auto-verified in Option A → no need to check user.verified
       if (token) localStorage.setItem("authToken", token);
       if (user) localStorage.setItem("currentUser", JSON.stringify(user));
 
       navigate("/professional-dashboard-portal");
     } catch (err) {
       console.error("DOCTOR SIGNIN ERROR:", err);
+
       const msg =
-        err?.response?.data?.message ||
-        "Login failed. Please check your credentials.";
+        err?.response?.data?.message || "Login failed. Invalid credentials.";
+
       setErrorMsg(msg);
     } finally {
       setLoading(false);
@@ -83,7 +85,7 @@ const SignInDoctor = () => {
                 Sign In
               </p>
               <h2 className="text-2xl font-semibold text-[#111827]">
-                Doctor account
+                Doctor Account
               </h2>
               <p className="text-sm text-[#6b7280] mt-1">
                 Use your registered professional email or phone.
@@ -99,23 +101,23 @@ const SignInDoctor = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <Input
                 label="Email or Phone"
+                placeholder="e.g. doctor@example.com or 9876543210"
                 className="border border-gray-300 rounded-xl focus:border-emerald-600"
                 required
                 value={emailOrPhone}
                 onChange={(e) => setEmailOrPhone(e.target.value)}
-                // placeholder="enter  email"
               />
 
               {/* Password with eye icon */}
               <div className="relative">
                 <Input
                   label="Password"
+                  placeholder="Enter your password"
                   className="border border-gray-300 rounded-xl focus:border-emerald-600"
-                  type={showPassword ? "text" : "password"} // 👈 change
+                  type={showPassword ? "text" : "password"}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
                 />
 
                 <button

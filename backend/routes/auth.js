@@ -101,26 +101,36 @@ router.post("/login", async (req, res) => {
   }
 });
 
-/* ========= DOCTOR SIGNUP  (RESTORED) ========= */
+/* ========= DOCTOR SIGNUP (AUTO VERIFIED) ========= */
 router.post("/signup/doctor", async (req, res) => {
   try {
-    let { fullName, email, password, phoneNumber, gender } = req.body;
+    let {
+      fullName,
+      email,
+      password,
+      phoneNumber,
+      gender,
+      reg_no,
+      council,
+    } = req.body;
 
-    if (!fullName || !email || !password) {
+    if (!fullName || !email || !password || !reg_no || !council) {
       return res.status(400).json({
-        message: "fullName, email and password are required",
+        message: "fullName, email, password, reg_no, council are required",
       });
     }
 
     email = email.toLowerCase().trim();
-    if (phoneNumber) phoneNumber = phoneNumber.trim();
-    if (gender) gender = gender.trim();
 
-    const existing = await Doctor.findOne({
-      $or: [{ email }, { phoneNumber }],
-    });
+    // 🛠 FIXED: Phone checked only if provided
+    const query = [{ email }];
+    if (phoneNumber && phoneNumber.trim() !== "") {
+      query.push({ phoneNumber });
+    }
 
-    if (existing) {
+    const exists = await Doctor.findOne({ $or: query });
+
+    if (exists) {
       return res
         .status(409)
         .json({ message: "Email or phone number already in use" });
@@ -128,12 +138,16 @@ router.post("/signup/doctor", async (req, res) => {
 
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // AUTO VERIFIED DOCTOR
     const doctor = await Doctor.create({
       fullName,
       email,
-      phoneNumber,
+      phoneNumber: phoneNumber?.trim() || undefined,
       gender,
       passwordHash,
+      reg_no,
+      council,
+      verified: true, // AUTO VERIFIED
     });
 
     const token = createToken(doctor._id, "doctor", email);
@@ -147,6 +161,9 @@ router.post("/signup/doctor", async (req, res) => {
         email,
         phoneNumber,
         gender,
+        reg_no,
+        council,
+        verified: true,
       },
       token,
     });
@@ -171,6 +188,12 @@ router.post("/login/doctor", async (req, res) => {
     if (!doctor)
       return res.status(401).json({ message: "Invalid credentials" });
 
+    // Should always be true in Option A
+    if (!doctor.verified)
+      return res
+        .status(403)
+        .json({ message: "Doctor not verified. Cannot login." });
+
     const ok = await bcrypt.compare(password, doctor.passwordHash);
     if (!ok)
       return res.status(401).json({ message: "Invalid credentials" });
@@ -186,6 +209,9 @@ router.post("/login/doctor", async (req, res) => {
         email: doctor.email,
         phoneNumber: doctor.phoneNumber,
         gender: doctor.gender,
+        reg_no: doctor.reg_no,
+        council: doctor.council,
+        verified: doctor.verified,
       },
       token,
     });
