@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
+import { Eye, EyeOff } from "lucide-react"; // 👈 added
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
 
@@ -10,6 +11,7 @@ const SignInDoctor = () => {
   const navigate = useNavigate();
   const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false); // 👈 added
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -35,7 +37,6 @@ const SignInDoctor = () => {
       if (token) localStorage.setItem("authToken", token);
       if (user) localStorage.setItem("currentUser", JSON.stringify(user));
 
-      // Doctor portal redirect
       navigate("/professional-dashboard-portal");
     } catch (err) {
       console.error("DOCTOR SIGNIN ERROR:", err);
@@ -54,6 +55,7 @@ const SignInDoctor = () => {
 
       <main className="flex-1 flex items-center justify-center px-4 py-10">
         <div className="max-w-5xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-center animate-fadeInUp">
+          
           {/* Left info */}
           <div className="hidden md:block">
             <p className="text-sm uppercase tracking-[0.2em] text-emerald-700/80 font-semibold mb-3">
@@ -97,20 +99,33 @@ const SignInDoctor = () => {
             <form onSubmit={handleSubmit} className="space-y-4">
               <Input
                 label="Email or Phone"
+                className="border border-gray-300 rounded-xl focus:border-emerald-600"
                 required
                 value={emailOrPhone}
                 onChange={(e) => setEmailOrPhone(e.target.value)}
-                placeholder="doctor@example.com or 98xxxxxx"
+                // placeholder="enter  email"
               />
 
-              <Input
-                label="Password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-              />
+              {/* Password with eye icon */}
+              <div className="relative">
+                <Input
+                  label="Password"
+                  className="border border-gray-300 rounded-xl focus:border-emerald-600"
+                  type={showPassword ? "text" : "password"} // 👈 change
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 mt-3 cursor-pointer"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
 
               <div className="flex items-center justify-between text-xs sm:text-sm">
                 <span className="text-[#6b7280]">

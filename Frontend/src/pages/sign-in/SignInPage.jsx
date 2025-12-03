@@ -3,6 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
+import { Eye, EyeOff } from "lucide-react";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
 
@@ -10,8 +11,14 @@ const SignInPage = () => {
   const navigate = useNavigate();
   const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Shared input styling (border + rounded)
+  const inputClassName =
+    "border border-gray-300 rounded-xl bg-white px-3 py-2 " +
+    "focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -35,7 +42,6 @@ const SignInPage = () => {
       if (token) localStorage.setItem("authToken", token);
       if (user) localStorage.setItem("currentUser", JSON.stringify(user));
 
-      // Patient portal redirect
       navigate("/personal-wellness-hub");
     } catch (err) {
       console.error("USER SIGNIN ERROR:", err);
@@ -54,6 +60,7 @@ const SignInPage = () => {
 
       <main className="flex-1 flex items-center justify-center px-4 py-10">
         <div className="max-w-5xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-center animate-fadeInUp">
+          
           {/* Left: marketing/intro */}
           <div className="hidden md:block">
             <p className="text-sm uppercase tracking-[0.2em] text-emerald-700/80 font-semibold mb-3">
@@ -96,22 +103,36 @@ const SignInPage = () => {
             )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
+
+              {/* Email or Phone */}
               <Input
                 label="Email or Phone"
                 required
                 value={emailOrPhone}
                 onChange={(e) => setEmailOrPhone(e.target.value)}
-                placeholder="you@example.com or 98xxxxxx"
+                className={inputClassName}
               />
 
-              <Input
-                label="Password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-              />
+              {/* Password + eye toggle */}
+              <div className="relative">
+                <Input
+                  label="Password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className={inputClassName}
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 mt-3 cursor-pointer"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
 
               <div className="flex items-center justify-between text-xs sm:text-sm">
                 <span className="text-[#6b7280]">
