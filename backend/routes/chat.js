@@ -4,77 +4,67 @@ import ChatMessage from "../models/ChatMessage.js";
 import Patient from "../models/Patient.js";
 import { verifyToken } from "../middlewares/authMiddleware.js";
 import multer from "multer";
-import path from "path";
 
 const router = express.Router();
 
 /* -----------------------------------------------------------
-   MULTER FILE UPLOAD CONFIG
+   MULTER CONFIG
 ----------------------------------------------------------- */
 const storage = multer.diskStorage({
-  destination: "uploads/", // folder to save files
+  destination: "uploads/",
   filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname); // unique filename
+    cb(null, Date.now() + "-" + file.originalname);
   },
 });
-
 const upload = multer({ storage });
 
 /* -----------------------------------------------------------
-   0) GET ALL DOCTORS ASSIGNED TO A PATIENT
+   0) PATIENT → GET MY DOCTORS
 ----------------------------------------------------------- */
 router.get("/patient/my-doctors", verifyToken, async (req, res) => {
   try {
-    if (req.user.role !== "patient") {
+    if (req.user.role !== "patient")
       return res.status(403).json({ message: "Patient access required" });
-    }
 
     const patientId = req.user.id;
 
     const convos = await Conversation.find({ patientId })
-      .populate("doctorId", "fullName email specialty avatar phoneNumber location");
+      .populate("doctorId", "fullName specialty avatar phoneNumber location");
 
     const doctors = convos.map((c) => ({
       id: c.doctorId._id,
       name: c.doctorId.fullName,
-      email: c.doctorId.email,
       specialty: c.doctorId.specialty || "Ayurvedic Specialist",
       avatar: c.doctorId.avatar || "https://i.pravatar.cc/300",
-      phone: c.doctorId.phoneNumber,
-      location: c.doctorId.location || "Clinic",
+      location: c.doctorId.location,
     }));
 
     res.json(doctors);
-
   } catch (err) {
-    console.error("❌ Error fetching doctors for patient:", err);
     res.status(500).json({ message: "Failed to load doctors" });
   }
 });
 
 /* -----------------------------------------------------------
-   ⭐ NEW: LIST ALL PATIENTS (doctor UI)
+   ⭐ DOCTOR → LIST ALL PATIENTS
 ----------------------------------------------------------- */
 router.get("/doctor/all-patients", verifyToken, async (req, res) => {
   try {
-    if (req.user.role !== "doctor") {
+    if (req.user.role !== "doctor")
       return res.status(403).json({ message: "Doctor access required" });
-    }
 
     const patients = await Patient.find({}, "fullName avatar dosha status");
 
-    const formatted = patients.map((p) => ({
-      id: p._id,
-      name: p.fullName,
-      avatar: p.avatar || "https://i.pravatar.cc/300",
-      dosha: p.dosha || "Vata",
-      status: p.status || "offline",
-    }));
-
-    res.json(formatted);
-
+    res.json(
+      patients.map((p) => ({
+        id: p._id,
+        name: p.fullName,
+        avatar: p.avatar || "https://i.pravatar.cc/300",
+        dosha: p.dosha || "Vata",
+        status: p.status || "offline",
+      }))
+    );
   } catch (err) {
-    console.error("❌ Error fetching all patients:", err);
     res.status(500).json({ message: "Failed to load patients" });
   }
 });
@@ -84,58 +74,62 @@ router.get("/doctor/all-patients", verifyToken, async (req, res) => {
 ----------------------------------------------------------- */
 router.get("/doctor/me/conversations", verifyToken, async (req, res) => {
   try {
-    if (req.user.role !== "doctor") {
+    if (req.user.role !== "doctor")
       return res.status(403).json({ message: "Doctor access required" });
-    }
 
-    const doctorId = req.user.id;
-
-    const convos = await Conversation.find({ doctorId })
+    const convos = await Conversation.find({ doctorId: req.user.id })
       .populate("patientId", "fullName avatar dosha status")
       .sort({ lastMessageAt: -1 });
 
-    const formatted = convos.map((c) => ({
-      id: c._id,
-      patientId: c.patientId._id,
-      patient: {
-        name: c.patientId.fullName,
-        avatar: c.patientId.avatar,
-        dosha: c.patientId.dosha || "Vata",
-        status: c.patientId.status || "offline",
-      },
-      lastMessage: c.lastMessage || "",
-      timestamp: c.lastMessageAt,
-      unread: c.unreadCountForDoctor || 0,
-      priority: "normal",
-    }));
-
-    res.json(formatted);
-
+    res.json(
+      convos.map((c) => ({
+        id: c._id,
+        patientId: c.patientId._id,
+        patient: {
+          name: c.patientId.fullName,
+          avatar: c.patientId.avatar,
+          dosha: c.patientId.dosha || "Vata",
+          status: c.patientId.status || "offline",
+        },
+        lastMessage: c.lastMessage,
+        timestamp: c.lastMessageAt,
+        unread: c.unreadCountForDoctor || 0,
+      }))
+    );
   } catch (err) {
-    console.error("❌ Error fetching doctor conversations:", err);
     res.status(500).json({ message: "Failed to load conversations" });
   }
 });
 
 /* -----------------------------------------------------------
-   2) GET ALL THREAD MESSAGES
+   2) GET THREAD MESSAGES (FILTER DELETED)
 ----------------------------------------------------------- */
 router.get("/thread", verifyToken, async (req, res) => {
   try {
     const { patientId, doctorId } = req.query;
 
-    let convo = await Conversation.findOne({ patientId, doctorId });
-
+    const convo = await Conversation.findOne({ patientId, doctorId });
     if (!convo) return res.json([]);
 
     const messages = await ChatMessage.find({
       conversationId: convo._id,
+      deletedFor: { $ne: req.user.id }, // hide user-deleted
     }).sort({ createdAt: 1 });
 
-    res.json(messages);
+    const sanitized = messages.map((m) => {
+      if (m.isDeletedForEveryone) {
+        return {
+          ...m._doc,
+          text: "🚫 Message deleted",
+          fileUrl: null,
+          fileType: null,
+        };
+      }
+      return m;
+    });
 
+    res.json(sanitized);
   } catch (err) {
-    console.error("❌ Error loading messages:", err);
     res.status(500).json({ message: "Failed to load messages" });
   }
 });
@@ -147,15 +141,14 @@ router.post("/send", verifyToken, async (req, res) => {
   try {
     const { patientId, doctorId, text } = req.body;
 
-    if (!patientId || !doctorId || !text)
-      return res.status(400).json({ message: "Missing fields" });
+    if (!text) return res.status(400).json({ message: "No text message" });
 
     let convo = await Conversation.findOne({ patientId, doctorId });
 
     if (!convo) {
       convo = await Conversation.create({
-        doctorId,
         patientId,
+        doctorId,
         lastMessage: text,
         lastMessageAt: new Date(),
       });
@@ -167,6 +160,7 @@ router.post("/send", verifyToken, async (req, res) => {
       doctorId,
       senderRole: req.user.role,
       text,
+      messageType: "text",
     });
 
     convo.lastMessage = text;
@@ -174,59 +168,90 @@ router.post("/send", verifyToken, async (req, res) => {
     await convo.save();
 
     res.json(msg);
-
   } catch (err) {
-    console.error("❌ Error sending message:", err);
     res.status(500).json({ message: "Failed to send message" });
   }
 });
 
 /* -----------------------------------------------------------
-   ⭐ 4) SEND FILE (IMAGE, PDF, AUDIO, DOC…)
+   4) SEND FILE MESSAGE
 ----------------------------------------------------------- */
-router.post(
-  "/send-file",
-  verifyToken,
-  upload.single("file"),
-  async (req, res) => {
-    try {
-      const { patientId, doctorId } = req.body;
+router.post("/send-file", verifyToken, upload.single("file"), async (req, res) => {
+  try {
+    const { patientId, doctorId } = req.body;
 
-      if (!req.file)
-        return res.status(400).json({ message: "No file uploaded" });
+    if (!req.file)
+      return res.status(400).json({ message: "No file uploaded" });
 
-      let convo = await Conversation.findOne({ patientId, doctorId });
+    let convo = await Conversation.findOne({ patientId, doctorId });
 
-      if (!convo) {
-        convo = await Conversation.create({
-          doctorId,
-          patientId,
-          lastMessage: "📎 File Sent",
-          lastMessageAt: new Date(),
-        });
-      }
-
-      const msg = await ChatMessage.create({
-        conversationId: convo._id,
+    if (!convo) {
+      convo = await Conversation.create({
         patientId,
         doctorId,
-        senderRole: req.user.role,
-        text: "",
-        fileUrl: `/uploads/${req.file.filename}`,
-        fileType: req.file.mimetype,
+        lastMessage: "📎 File sent",
+        lastMessageAt: new Date(),
       });
-
-      convo.lastMessage = "📎 File Sent";
-      convo.lastMessageAt = new Date();
-      await convo.save();
-
-      res.json(msg);
-
-    } catch (err) {
-      console.error("❌ File upload error:", err);
-      res.status(500).json({ message: "Failed to upload file" });
     }
+
+    const msg = await ChatMessage.create({
+      conversationId: convo._id,
+      patientId,
+      doctorId,
+      senderRole: req.user.role,
+      fileUrl: `/uploads/${req.file.filename}`,
+      fileType: req.file.mimetype,
+      messageType: "file",
+    });
+
+    convo.lastMessage = "📎 File sent";
+    convo.lastMessageAt = new Date();
+    await convo.save();
+
+    res.json(msg);
+  } catch (err) {
+    res.status(500).json({ message: "Failed to upload file" });
   }
-);
+});
+
+/* -----------------------------------------------------------
+   ⭐ 5) DELETE FOR ME
+----------------------------------------------------------- */
+router.patch("/delete-for-me/:msgId", verifyToken, async (req, res) => {
+  try {
+    const msg = await ChatMessage.findById(req.params.msgId);
+    if (!msg) return res.status(404).json({ message: "Message not found" });
+
+    if (!msg.deletedFor.includes(req.user.id)) {
+      msg.deletedFor.push(req.user.id);
+      await msg.save();
+    }
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: "Delete-for-me failed" });
+  }
+});
+
+/* -----------------------------------------------------------
+   ⭐ 6) DELETE FOR EVERYONE
+----------------------------------------------------------- */
+router.patch("/delete-for-everyone/:msgId", verifyToken, async (req, res) => {
+  try {
+    const msg = await ChatMessage.findById(req.params.msgId);
+    if (!msg) return res.status(404).json({ message: "Message not found" });
+
+    msg.isDeletedForEveryone = true;
+    msg.text = "🚫 Message deleted";
+    msg.fileUrl = null;
+    msg.fileType = null;
+
+    await msg.save();
+
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ message: "Delete-for-everyone failed" });
+  }
+});
 
 export default router;
