@@ -411,11 +411,6 @@ const LiveDemo = () => {
     <section className="py-20 bg-gradient-to-br from-card to-background">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center space-x-2 bg-accent/10 text-accent px-4 py-2 rounded-full text-sm font-medium mb-6">
-            <Icon name="Play" size={16} />
-            <span>Interactive Demo</span>
-          </div>
-          
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-display font-bold text-text-primary mb-6">
             Experience AyurNutri
             <span className="block text-primary">In Action</span>

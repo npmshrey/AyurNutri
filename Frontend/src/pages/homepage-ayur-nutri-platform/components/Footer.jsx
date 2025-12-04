@@ -39,9 +39,8 @@ const Footer = () => {
     }
   };
 
-  // ------------------------
+ 
   // FOOTER LINKS + DATA
-  // ------------------------
   const footerSections = [
     {
       title: 'Platform',
@@ -49,20 +48,8 @@ const Footer = () => {
         { name: 'Intelligence Center', path: '/ayurvedic-intelligence-center' },
         { name: 'Professional Portal', path: '/professional-dashboard-portal' },
         { name: 'Wellness Hub', path: '/personal-wellness-hub' },
-        // { name: 'Research Library', path: '/clinical-research-library' },
-        // { name: 'Success Stories', path: '/patient-success-stories' }
       ]
     },
-    // {
-    //   title: 'Resources',
-    //   links: [
-    //     { name: 'Documentation', path: '/docs' },
-    //     { name: 'API Reference', path: '/api' },
-    //     { name: 'Help Center', path: '/help' },
-    //     { name: 'Training Materials', path: '/training' },
-    //     { name: 'Webinars', path: '/webinars' }
-    //   ]
-    // },
     {
       title: 'Company',
       links: [

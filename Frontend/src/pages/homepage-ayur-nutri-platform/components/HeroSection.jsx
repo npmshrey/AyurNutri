@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
+import bookVideo from "../../../assets/bookshowcase.mp4"; // ⬅️ NEW IMPORT
 
 const HeroSection = () => {
   const [currentAnimation, setCurrentAnimation] = useState(0);
@@ -24,10 +25,27 @@ const HeroSection = () => {
     <section className="relative min-h-screen bg-gradient-to-br from-background via-muted/30 to-brand-cream overflow-hidden">
       {/* Background Pattern */}
       <div className="absolute inset-0 opacity-5">
-        <svg className="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+        <svg
+          className="w-full h-full"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+        >
           <defs>
-            <pattern id="organic-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
-              <circle cx="10" cy="10" r="2" fill="currentColor" className="text-primary" />
+            <pattern
+              id="organic-pattern"
+              x="0"
+              y="0"
+              width="20"
+              height="20"
+              patternUnits="userSpaceOnUse"
+            >
+              <circle
+                cx="10"
+                cy="10"
+                r="2"
+                fill="currentColor"
+                className="text-primary"
+              />
             </pattern>
           </defs>
           <rect width="100" height="100" fill="url(#organic-pattern)" />
@@ -36,14 +54,14 @@ const HeroSection = () => {
 
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
         <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
-
-
           {/* ============================================================ */}
           {/* LEFT SIDE (unchanged original content) */}
           {/* ============================================================ */}
           <div
             className={`space-y-8 organic-transition duration-1000 ${
-              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
+              isVisible
+                ? "opacity-100 translate-y-0"
+                : "opacity-0 translate-y-8"
             }`}
           >
             <div className="space-y-6">
@@ -69,7 +87,9 @@ const HeroSection = () => {
             {/* Live Transformation Mini-Card */}
             <div className="bg-card/50 backdrop-blur-sm rounded-2xl p-6 border border-border organic-shadow">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-text-primary">Live Transformation</h3>
+                <h3 className="text-lg font-semibold text-text-primary">
+                  Live Transformation
+                </h3>
                 <div className="flex space-x-2">
                   {animationSteps.map((_, index) => (
                     <div
@@ -87,25 +107,42 @@ const HeroSection = () => {
                   <div
                     className={`p-3 rounded-full bg-primary/10 organic-transition ${animationSteps[currentAnimation].color}`}
                   >
-                    <Icon name={animationSteps[currentAnimation].icon} size={24} />
+                    <Icon
+                      name={animationSteps[currentAnimation].icon}
+                      size={24}
+                    />
                   </div>
                   <div>
                     <p className="font-medium text-text-primary">
                       {animationSteps[currentAnimation].label} Constitution
                     </p>
-                    <p className="text-sm text-text-secondary">Ayurvedic Assessment</p>
+                    <p className="text-sm text-text-secondary">
+                      Ayurvedic Assessment
+                    </p>
                   </div>
                 </div>
 
-                <Icon name="ArrowRight" size={20} className="text-text-secondary animate-pulse" />
+                <Icon
+                  name="ArrowRight"
+                  size={20}
+                  className="text-text-secondary animate-pulse"
+                />
 
                 <div className="flex items-center space-x-3">
                   <div className="p-3 rounded-full bg-secondary/10">
-                    <Icon name="BarChart3" size={24} className="text-secondary" />
+                    <Icon
+                      name="BarChart3"
+                      size={24}
+                      className="text-secondary"
+                    />
                   </div>
                   <div>
-                    <p className="font-medium text-text-primary">Personalized Plan</p>
-                    <p className="text-sm text-text-secondary">Nutritional Precision</p>
+                    <p className="font-medium text-text-primary">
+                      Personalized Plan
+                    </p>
+                    <p className="text-sm text-text-secondary">
+                      Nutritional Precision
+                    </p>
                   </div>
                 </div>
               </div>
@@ -123,36 +160,20 @@ const HeroSection = () => {
                 Watch Demo
               </Button>
             </div>
-
-            {/* Trust Indicators */}
-            <div className="flex items-center space-x-6 pt-4">
-              <div className="flex items-center space-x-2">
-                <Icon name="Shield" size={16} className="text-success" />
-                <span className="text-sm text-text-secondary">HIPAA Compliant</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Icon name="Award" size={16} className="text-success" />
-                <span className="text-sm text-text-secondary">Clinically Validated</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Icon name="Users" size={16} className="text-success" />
-                <span className="text-sm text-text-secondary">500+ Practitioners</span>
-              </div>
-            </div>
           </div>
 
-
           {/* ============================================================ */}
-          {/* RIGHT SIDE — ANCIENT WISDOM CARD WITH SLIDE-IN FROM RIGHT */}
+          {/* RIGHT SIDE — VIDEO INSIDE THE CARD */}
           {/* ============================================================ */}
           <div
             className={`relative organic-transition duration-1000 delay-300 ${
-              isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"
+              isVisible
+                ? "opacity-100 translate-x-0"
+                : "opacity-0 translate-x-8"
             }`}
           >
             <div className="bg-card rounded-3xl organic-shadow border border-border overflow-hidden">
-
-              {/* Top bar with 3 dots */}
+              {/* Top bar with 3 dots (kept same for mockup look) */}
               <div className="bg-primary/5 px-6 py-4 border-b border-border rounded-t-3xl">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
@@ -160,80 +181,28 @@ const HeroSection = () => {
                     <div className="w-3 h-3 bg-yellow-400 rounded-full" />
                     <div className="w-3 h-3 bg-green-400 rounded-full" />
                   </div>
-                  <span className="text-xs text-text-secondary">Ayurvedic Intelligence</span>
+                  <span className="text-xs text-text-secondary">
+                    Ayurvedic Intelligence
+                  </span>
                 </div>
               </div>
 
-              {/* Ancient Wisdom content */}
-              <div className="px-8 py-7 space-y-6">
-
-                {/* Header */}
-                <div className="flex items-center gap-3">
-                  <div className="h-9 w-9 rounded-2xl bg-emerald-50 flex items-center justify-center">
-                    <Icon name="Leaf" size={20} className="text-emerald-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-xl sm:text-2xl font-display font-semibold text-text-primary">
-                      Ancient Wisdom
-                    </h3>
-                    <p className="text-sm sm:text-base text-text-secondary">
-                      5,000 years of Ayurvedic knowledge
-                    </p>
-                  </div>
+              {/* VIDEO CONTENT */}
+              <div className="bg-card px-4 pb-6 pt-4">
+                <div className="rounded-2xl overflow-hidden bg-black/5">
+                  <video
+                    src={bookVideo}
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    className="w-full h-full object-contain"
+                  />
                 </div>
-
-                {/* Dosha row */}
-                <div className="grid grid-cols-3 gap-4 pt-2">
-                  {[
-                    { icon: "Wind", name: "Vata", subtitle: "Movement", color: "text-blue-600" },
-                    { icon: "Flame", name: "Pitta", subtitle: "Transformation", color: "text-red-600" },
-                    { icon: "Mountain", name: "Kapha", subtitle: "Structure", color: "text-green-600" },
-                  ].map((dosha, index) => {
-                    const isActive = currentAnimation === index;
-                    return (
-                      <div
-                        key={dosha.name}
-                        className={`rounded-2xl px-4 py-3 flex flex-col items-center text-center organic-transition ${
-                          isActive ? "bg-primary/5 shadow-sm scale-[1.02]" : "opacity-80"
-                        }`}
-                      >
-                        <Icon name={dosha.icon} size={22} className={`${dosha.color} mb-2`} />
-                        <div className="text-sm font-semibold text-text-primary">{dosha.name}</div>
-                        <div className="text-xs text-text-secondary">{dosha.subtitle}</div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* Rasa / Virya / Guna */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-2 pt-4 text-sm">
-                  <div className="space-y-1 text-text-secondary">
-                    <p>Rasa (Taste)</p>
-                    <p>Virya (Potency)</p>
-                    <p>Guna (Qualities)</p>
-                  </div>
-                  <div className="space-y-1 text-right sm:text-left text-text-primary font-medium">
-                    <p>6 Classifications</p>
-                    <p>Hot / Cold Energy</p>
-                    <p>20 Attributes</p>
-                  </div>
-                </div>
-
-                {/* Underline animation */}
-                <div className="pt-2">
-                  <div className="h-px w-full bg-border overflow-hidden rounded-full">
-                    <div
-                      className="h-px w-1/3 bg-gradient-to-r from-primary via-secondary to-primary organic-transition"
-                      style={{ transform: `translateX(${currentAnimation * 120}%)` }}
-                    />
-                  </div>
-                </div>
-
               </div>
             </div>
           </div>
-
-
+          {/* ============================================================ */}
         </div>
       </div>
     </section>
