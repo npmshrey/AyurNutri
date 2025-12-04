@@ -27,13 +27,13 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // --------------------------
-// CORS (Updated)
+// FIXED CORS — NOW ALLOWS DELETE
 // --------------------------
 app.use(
   cors({
     origin: "http://localhost:4028",
     credentials: true,
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
   })
 );
 
@@ -79,7 +79,7 @@ const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
     origin: "http://localhost:4028",
-    methods: ["GET", "POST"],
+    methods: ["GET", "POST", "PUT", "DELETE"],
   },
 });
 
