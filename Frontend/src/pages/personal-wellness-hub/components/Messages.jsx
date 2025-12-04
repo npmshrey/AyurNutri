@@ -1,5 +1,8 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import useAuth from "../../../hooks/useAuth";
+import { io } from "socket.io-client";
+
+const socket = io("http://localhost:9000"); // connect to backend
 
 const Messages = () => {
   const { user } = useAuth(); // patient
@@ -13,8 +16,46 @@ const Messages = () => {
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [error, setError] = useState("");
 
+  const chatBoxRef = useRef(null);
+  const [isDoctorTyping, setIsDoctorTyping] = useState(false);
+
   /* ---------------------------------------------------------
-     1) Load patient’s doctors from backend
+     SOCKET INITIALIZATION
+  --------------------------------------------------------- */
+  useEffect(() => {
+    socket.emit("user-online", { userId: user.id, role: "patient" });
+
+    // RECEIVE MESSAGE FROM DOCTOR (REAL-TIME)
+    socket.on("receive-message", (msg) => {
+      if (msg.patientId === user.id && msg.doctorId === activeDoctorId) {
+        setMessages((prev) => [...prev, msg]);
+        scrollToBottom();
+      }
+    });
+
+    // DOCTOR TYPING INDICATOR
+    socket.on("typing", () => {
+      setIsDoctorTyping(true);
+      setTimeout(() => setIsDoctorTyping(false), 1500);
+    });
+
+    return () => {
+      socket.off("receive-message");
+      socket.off("typing");
+    };
+  }, [activeDoctorId]);
+
+  /* ---------------------------------------------------------
+     AUTO SCROLL
+  --------------------------------------------------------- */
+  const scrollToBottom = () => {
+    if (chatBoxRef.current) {
+      chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
+    }
+  };
+
+  /* ---------------------------------------------------------
+     1) Load all doctors
   --------------------------------------------------------- */
   useEffect(() => {
     const fetchDoctors = async () => {
@@ -25,7 +66,6 @@ const Messages = () => {
         const data = await res.json();
 
         setDoctors(data);
-
         if (data.length > 0) {
           setActiveDoctorId(data[0]._id);
         }
@@ -41,7 +81,7 @@ const Messages = () => {
   }, []);
 
   /* ---------------------------------------------------------
-     2) Load chat thread for selected doctor
+     2) Load chat messages
   --------------------------------------------------------- */
   useEffect(() => {
     if (!activeDoctorId) return;
@@ -54,9 +94,7 @@ const Messages = () => {
         const res = await fetch(
           `http://localhost:9000/api/chat/thread?patientId=${user.id}&doctorId=${activeDoctorId}`,
           {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
 
@@ -64,6 +102,8 @@ const Messages = () => {
 
         const data = await res.json();
         setMessages(data);
+        setTimeout(scrollToBottom, 100);
+
       } catch (err) {
         console.error(err);
         setError("Unable to load messages.");
@@ -76,7 +116,7 @@ const Messages = () => {
   }, [activeDoctorId]);
 
   /* ---------------------------------------------------------
-     3) Send message (patient → doctor)
+     3) Send message
   --------------------------------------------------------- */
   const handleSend = async () => {
     if (!text.trim()) return;
@@ -91,7 +131,14 @@ const Messages = () => {
     };
 
     setMessages((prev) => [...prev, optimisticMsg]);
+    scrollToBottom();
     setText("");
+
+    // SEND REAL-TIME MESSAGE 🔥
+    socket.emit("send-message", {
+      ...optimisticMsg,
+      receiverId: activeDoctorId,
+    });
 
     try {
       const token = localStorage.getItem("authToken");
@@ -116,6 +163,8 @@ const Messages = () => {
       setMessages((prev) =>
         prev.map((m) => (m.id === optimisticMsg.id ? saved : m))
       );
+      scrollToBottom();
+
     } catch (err) {
       console.error(err);
       setError("Failed to send message.");
@@ -123,28 +172,28 @@ const Messages = () => {
     }
   };
 
- const activeDoctor = doctors.find((d) => d._id === activeDoctorId);
+  /* ---------------------------------------------------------
+     4) Typing indicator
+  --------------------------------------------------------- */
+  const handleTyping = () => {
+    socket.emit("typing", { receiverId: activeDoctorId });
+  };
 
+  const activeDoctor = doctors.find((d) => d._id === activeDoctorId);
 
   /* ---------------------------------------------------------
      UI
   --------------------------------------------------------- */
-
   return (
     <section className="max-w-7xl mx-auto px-6 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* LEFT: Doctor List */}
+        
+        {/* LEFT DOCTOR LIST */}
         <aside className="lg:col-span-1">
           <div className="bg-beige p-4 rounded-lg mb-4">
             <h4 className="font-semibold">Your Doctors</h4>
-            <p className="text-xs text-text-secondary">
-              Message your providers
-            </p>
+            <p className="text-xs text-text-secondary">Message your providers</p>
           </div>
-
-          {loadingDoctors && (
-            <p className="text-sm text-text-secondary">Loading doctors...</p>
-          )}
 
           {doctors.map((d) => (
             <div
@@ -157,7 +206,6 @@ const Messages = () => {
               }`}
             >
               <div className="font-semibold">{d.fullName}</div>
-
               <div className="text-xs text-text-secondary">
                 {d.specialization || "General Physician"}
               </div>
@@ -165,29 +213,31 @@ const Messages = () => {
           ))}
         </aside>
 
-        {/* RIGHT: Chat Window */}
+        {/* RIGHT CHAT WINDOW */}
         <div className="lg:col-span-2 bg-beige p-6 rounded-lg">
           {!activeDoctor ? (
             <p>Select a doctor to start chatting.</p>
           ) : (
             <>
               <div className="mb-3">
-                <h3 className="font-semibold text-lg">{activeDoctor.name}</h3>
+                <h3 className="font-semibold text-lg">{activeDoctor.fullName}</h3>
                 <p className="text-xs text-text-secondary">
-                  {activeDoctor.specialty} • {activeDoctor.location}
+                  {activeDoctor.specialization}
                 </p>
+
+                {isDoctorTyping && (
+                  <p className="text-xs text-emerald-600">Typing...</p>
+                )}
               </div>
 
-              <div className="h-96 bg-white border rounded p-4 overflow-auto mb-4">
-                {loadingMessages && (
-                  <p className="text-sm text-text-secondary">
-                    Loading messages...
-                  </p>
-                )}
-
+              {/* CHAT MESSAGES */}
+              <div
+                ref={chatBoxRef}
+                className="h-96 bg-white border rounded p-4 overflow-auto mb-4"
+              >
                 {messages.map((m) => (
                   <div
-                    key={m.id}
+                    key={m._id || m.id}
                     className={`mb-4 ${
                       m.senderRole === "patient" ? "text-right" : ""
                     }`}
@@ -208,12 +258,14 @@ const Messages = () => {
                 ))}
               </div>
 
+              {/* MESSAGE INPUT */}
               <div className="flex gap-3">
                 <input
                   className="flex-1 border rounded px-3 py-2"
                   placeholder="Type a message..."
                   value={text}
                   onChange={(e) => setText(e.target.value)}
+                  onKeyDown={handleTyping}
                 />
                 <button
                   onClick={handleSend}
