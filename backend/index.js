@@ -7,7 +7,7 @@ import { fileURLToPath } from "url";
 import http from "http";
 import { Server } from "socket.io";
 
-// EXISTING ROUTES
+// ROUTES
 import patientsRouter from "./routes/patients.js";
 import authRouter from "./routes/auth.js";
 import patientPortalRouter from "./routes/patientPortal.js";
@@ -16,8 +16,6 @@ import subscribeRouter from "./routes/subscribe.js";
 import foodScanRoutes from "./routes/foodScanRoutes.js";
 import chatbotRoute from "./routes/chatbot.js";
 import chatRoutes from "./routes/chat.js";
-
-// NEW ROUTES
 import doctorRoutes from "./routes/doctors.js";
 import appointmentRoutes from "./routes/appointments.js";
 
@@ -29,16 +27,22 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // --------------------------
-// CORS
+// CORS (Updated)
 // --------------------------
 app.use(
   cors({
     origin: "http://localhost:4028",
     credentials: true,
+    methods: ["GET", "POST"],
   })
 );
 
 app.use(express.json());
+
+// --------------------------
+// SERVE UPLOADED FILES
+// --------------------------
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // --------------------------
 // ROUTES
@@ -66,11 +70,11 @@ const PORT = process.env.PORT || 9000;
 const MONGODB_URI =
   process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/ayurveda";
 
-// Create HTTP server for WebSockets
+// HTTP server for WebSockets
 const server = http.createServer(app);
 
 // --------------------------
-// SOCKET.IO SETUP
+// SOCKET.IO
 // --------------------------
 const io = new Server(server, {
   cors: {
@@ -84,22 +88,18 @@ let onlineUsers = new Map();
 io.on("connection", (socket) => {
   console.log("🔥 New socket connected:", socket.id);
 
-  // User becomes online
   socket.on("user-online", ({ userId, role }) => {
     onlineUsers.set(userId, socket.id);
     io.emit("online-users", Array.from(onlineUsers.keys()));
   });
 
-  // Send message realtime
   socket.on("send-message", (msg) => {
     const receiverSocket = onlineUsers.get(msg.receiverId);
-
     if (receiverSocket) {
       io.to(receiverSocket).emit("receive-message", msg);
     }
   });
 
-  // Typing indicator
   socket.on("typing", ({ receiverId }) => {
     const receiverSocket = onlineUsers.get(receiverId);
     if (receiverSocket) {
@@ -109,6 +109,7 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     console.log("❌ Socket disconnected:", socket.id);
+
     for (let [userId, sockId] of onlineUsers.entries()) {
       if (sockId === socket.id) {
         onlineUsers.delete(userId);
@@ -119,13 +120,12 @@ io.on("connection", (socket) => {
   });
 });
 
-// Connect DB and start server
 mongoose
   .connect(MONGODB_URI)
   .then(() => {
     console.log("Connected to MongoDB");
     server.listen(PORT, () =>
-      console.log(`🔥 Realtime Server running at http://localhost:${PORT}`)
+      console.log(`🔥 Realtime + Upload Server running at http://localhost:${PORT}`)
     );
   })
   .catch((err) => {
