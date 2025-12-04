@@ -22,31 +22,52 @@ const CommunicationTools = () => {
      1) FETCH DOCTOR’S CONVERSATIONS
   ------------------------------------------------------- */
   useEffect(() => {
-    const fetchConversations = async () => {
-      try {
-        setLoadingConvos(true);
-        const token = localStorage.getItem("authToken");
+// Load ALL patients + map with existing conversations
+const fetchConversations = async () => {
+  try {
+    setLoadingConvos(true);
+    const token = localStorage.getItem("authToken");
 
-        const res = await fetch(
-          `${API_BASE}/api/chat/doctor/me/conversations`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+    // 1️⃣ Fetch all patients
+    const patientsRes = await fetch(
+      `${API_BASE}/api/chat/doctor/all-patients`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const allPatients = await patientsRes.json();
 
-        if (!res.ok) throw new Error("Failed to load conversations");
+    // 2️⃣ Fetch doctor’s existing conversations
+    const convosRes = await fetch(
+      `${API_BASE}/api/chat/doctor/me/conversations`,
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    const doctorConvos = await convosRes.json();
 
-        const data = await res.json();
-        setConversations(data);
-      } catch (err) {
-        console.error(err);
-        setError("Unable to load conversations.");
-      } finally {
-        setLoadingConvos(false);
-      }
-    };
+    // 3️⃣ Merge: Add conversation data into patient list
+    const merged = allPatients.map((p) => {
+      const existingConvo = doctorConvos.find((c) => c.patientId === p.id);
+
+      return existingConvo
+        ? existingConvo
+        : {
+            id: `new-${p.id}`,
+            patientId: p.id,
+            patient: p,
+            lastMessage: "",
+            timestamp: null,
+            unread: 0,
+            priority: "normal",
+          };
+    });
+
+    setConversations(merged);
+  } catch (err) {
+    console.error(err);
+    setError("Unable to load patient list.");
+  } finally {
+    setLoadingConvos(false);
+  }
+};
+
 
     fetchConversations();
   }, []);

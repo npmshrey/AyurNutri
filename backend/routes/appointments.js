@@ -62,7 +62,6 @@ router.get("/patient/:id", async (req, res) => {
       .populate("doctorId", "fullName email phoneNumber verified")
       .sort({ createdAt: -1 });
 
-    // RETURN AS OBJECT
     return res.json({
       success: true,
       appointments,
@@ -70,6 +69,28 @@ router.get("/patient/:id", async (req, res) => {
 
   } catch (err) {
     console.error("Fetch appointments error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
+/* ------------------ DELETE APPOINTMENT ------------------ */
+router.delete("/:id", async (req, res) => {
+  try {
+    const aptId = req.params.id;
+
+    const deleted = await Appointment.findByIdAndDelete(aptId);
+
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: "Appointment not found" });
+    }
+
+    return res.json({
+      success: true,
+      message: "Appointment deleted successfully",
+    });
+
+  } catch (err) {
+    console.error("Delete Appointment Error:", err);
     return res.status(500).json({ success: false, message: "Server error" });
   }
 });

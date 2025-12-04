@@ -207,36 +207,65 @@ const Sessions = () => {
             )}
 
             {/* TAB 2 — SCHEDULED SESSIONS */}
-            {activeTab === "scheduled" && (
-              <div className="mt-4 space-y-4">
-                {appointments.length === 0 ? (
-                  <p className="text-gray-500">No scheduled sessions.</p>
-                ) : (
-                  appointments.map((apt) => (
-                    <div
-                      key={apt._id}
-                      className="p-5 border rounded-xl shadow-sm bg-emerald-50"
-                    >
-                      <h3 className="font-semibold text-lg">
-                        {apt.sessionType}
-                      </h3>
+          {activeTab === "scheduled" && (
+  <div className="mt-4 space-y-4">
+    {appointments.length === 0 ? (
+      <p className="text-gray-500">No scheduled sessions.</p>
+    ) : (
+      appointments.map((apt) => (
+        <div
+          key={apt._id}
+          className="p-5 border rounded-xl shadow-sm bg-emerald-50 flex justify-between items-start"
+        >
+          <div>
+            <h3 className="font-semibold text-lg">
+              {apt.sessionType}
+            </h3>
 
-                      <p className="text-gray-700 mt-1">
-                        Doctor: {apt.doctorId?.fullName}
-                      </p>
+            <p className="text-gray-700 mt-1">
+              Doctor: {apt.doctorId?.fullName}
+            </p>
 
-                      <p className="text-gray-600 mt-1">
-                        Date: {apt.date} • Time: {apt.time}
-                      </p>
+            <p className="text-gray-600 mt-1">
+              Date: {apt.date} • Time: {apt.time}
+            </p>
 
-                      <span className="text-sm text-emerald-700 font-medium">
-                        Status: {apt.status}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
+            <span className="text-sm text-emerald-700 font-medium">
+              Status: {apt.status}
+            </span>
+          </div>
+
+          {/* DELETE BUTTON */}
+          <button
+            onClick={async () => {
+              const ok = window.confirm("Are you sure you want to delete this appointment?");
+              if (!ok) return;
+
+              try {
+                await axios.delete(`http://localhost:9000/api/appointments/${apt._id}`);
+
+                // Refresh appointments
+                const patientId = localStorage.getItem("patientId");
+                const res = await axios.get(
+                  `http://localhost:9000/api/appointments/patient/${patientId}`
+                );
+                setAppointments(res.data.appointments || []);
+
+              } catch (err) {
+                console.error("DELETE ERROR:", err);
+                alert("Failed to delete appointment");
+              }
+            }}
+            className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition"
+          >
+            Delete
+          </button>
+        </div>
+      ))
+    )}
+  </div>
+)}
+
 
           </div>
         </div>

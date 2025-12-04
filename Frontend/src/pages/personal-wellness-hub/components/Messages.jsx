@@ -20,21 +20,14 @@ const Messages = () => {
     const fetchDoctors = async () => {
       try {
         setLoadingDoctors(true);
-        const token = localStorage.getItem("authToken");
 
-        const res = await fetch("http://localhost:9000/api/chat/patient/my-doctors", {
-          headers: {
-            "Authorization": `Bearer ${token}`,
-          },
-        });
-
-        if (!res.ok) throw new Error("Failed to load doctors");
-
+        const res = await fetch("http://localhost:9000/api/doctors");
         const data = await res.json();
+
         setDoctors(data);
 
         if (data.length > 0) {
-          setActiveDoctorId(data[0].id);
+          setActiveDoctorId(data[0]._id);
         }
       } catch (err) {
         console.error(err);
@@ -62,7 +55,7 @@ const Messages = () => {
           `http://localhost:9000/api/chat/thread?patientId=${user.id}&doctorId=${activeDoctorId}`,
           {
             headers: {
-              "Authorization": `Bearer ${token}`,
+              Authorization: `Bearer ${token}`,
             },
           }
         );
@@ -106,7 +99,7 @@ const Messages = () => {
       const res = await fetch("http://localhost:9000/api/chat/send", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -130,7 +123,8 @@ const Messages = () => {
     }
   };
 
-  const activeDoctor = doctors.find((d) => d.id === activeDoctorId);
+ const activeDoctor = doctors.find((d) => d._id === activeDoctorId);
+
 
   /* ---------------------------------------------------------
      UI
@@ -139,12 +133,13 @@ const Messages = () => {
   return (
     <section className="max-w-7xl mx-auto px-6 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         {/* LEFT: Doctor List */}
         <aside className="lg:col-span-1">
           <div className="bg-beige p-4 rounded-lg mb-4">
             <h4 className="font-semibold">Your Doctors</h4>
-            <p className="text-xs text-text-secondary">Message your providers</p>
+            <p className="text-xs text-text-secondary">
+              Message your providers
+            </p>
           </div>
 
           {loadingDoctors && (
@@ -153,14 +148,19 @@ const Messages = () => {
 
           {doctors.map((d) => (
             <div
-              key={d.id}
-              onClick={() => setActiveDoctorId(d.id)}
+              key={d._id}
+              onClick={() => setActiveDoctorId(d._id)}
               className={`p-4 border rounded-lg cursor-pointer mb-3 ${
-                activeDoctorId === d.id ? "bg-emerald-50 border-emerald-500" : "bg-white"
+                activeDoctorId === d._id
+                  ? "bg-emerald-50 border-emerald-500"
+                  : "bg-white"
               }`}
             >
-              <div className="font-semibold">{d.name}</div>
-              <div className="text-xs text-text-secondary">{d.specialty}</div>
+              <div className="font-semibold">{d.fullName}</div>
+
+              <div className="text-xs text-text-secondary">
+                {d.specialization || "General Physician"}
+              </div>
             </div>
           ))}
         </aside>
@@ -180,11 +180,18 @@ const Messages = () => {
 
               <div className="h-96 bg-white border rounded p-4 overflow-auto mb-4">
                 {loadingMessages && (
-                  <p className="text-sm text-text-secondary">Loading messages...</p>
+                  <p className="text-sm text-text-secondary">
+                    Loading messages...
+                  </p>
                 )}
 
                 {messages.map((m) => (
-                  <div key={m.id} className={`mb-4 ${m.senderRole === "patient" ? "text-right" : ""}`}>
+                  <div
+                    key={m.id}
+                    className={`mb-4 ${
+                      m.senderRole === "patient" ? "text-right" : ""
+                    }`}
+                  >
                     <div
                       className={`inline-block p-3 rounded ${
                         m.senderRole === "patient"
@@ -218,7 +225,6 @@ const Messages = () => {
             </>
           )}
         </div>
-
       </div>
     </section>
   );

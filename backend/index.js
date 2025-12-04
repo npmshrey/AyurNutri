@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
+import http from "http";
+import { Server } from "socket.io";
 
 // EXISTING ROUTES
 import patientsRouter from "./routes/patients.js";
@@ -15,7 +17,7 @@ import foodScanRoutes from "./routes/foodScanRoutes.js";
 import chatbotRoute from "./routes/chatbot.js";
 import chatRoutes from "./routes/chat.js";
 
-// NEW ROUTES (IMPORTANT)
+// NEW ROUTES
 import doctorRoutes from "./routes/doctors.js";
 import appointmentRoutes from "./routes/appointments.js";
 
@@ -49,8 +51,6 @@ app.use("/api", subscribeRouter);
 app.use("/api/food-scan", foodScanRoutes);
 app.use("/api/chatbot", chatbotRoute);
 app.use("/api/chat", chatRoutes);
-
-// NEW ROUTES
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/appointments", appointmentRoutes);
 
@@ -66,12 +66,66 @@ const PORT = process.env.PORT || 9000;
 const MONGODB_URI =
   process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/ayurveda";
 
+// Create HTTP server for WebSockets
+const server = http.createServer(app);
+
+// --------------------------
+// SOCKET.IO SETUP
+// --------------------------
+const io = new Server(server, {
+  cors: {
+    origin: "http://localhost:4028",
+    methods: ["GET", "POST"],
+  },
+});
+
+let onlineUsers = new Map();
+
+io.on("connection", (socket) => {
+  console.log("🔥 New socket connected:", socket.id);
+
+  // User becomes online
+  socket.on("user-online", ({ userId, role }) => {
+    onlineUsers.set(userId, socket.id);
+    io.emit("online-users", Array.from(onlineUsers.keys()));
+  });
+
+  // Send message realtime
+  socket.on("send-message", (msg) => {
+    const receiverSocket = onlineUsers.get(msg.receiverId);
+
+    if (receiverSocket) {
+      io.to(receiverSocket).emit("receive-message", msg);
+    }
+  });
+
+  // Typing indicator
+  socket.on("typing", ({ receiverId }) => {
+    const receiverSocket = onlineUsers.get(receiverId);
+    if (receiverSocket) {
+      io.to(receiverSocket).emit("typing", { from: socket.id });
+    }
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ Socket disconnected:", socket.id);
+    for (let [userId, sockId] of onlineUsers.entries()) {
+      if (sockId === socket.id) {
+        onlineUsers.delete(userId);
+        io.emit("online-users", Array.from(onlineUsers.keys()));
+        break;
+      }
+    }
+  });
+});
+
+// Connect DB and start server
 mongoose
   .connect(MONGODB_URI)
   .then(() => {
     console.log("Connected to MongoDB");
-    app.listen(PORT, () =>
-      console.log(`Server running on http://localhost:${PORT}`)
+    server.listen(PORT, () =>
+      console.log(`🔥 Realtime Server running at http://localhost:${PORT}`)
     );
   })
   .catch((err) => {
