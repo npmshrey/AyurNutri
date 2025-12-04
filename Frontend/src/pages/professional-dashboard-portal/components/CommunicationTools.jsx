@@ -279,76 +279,85 @@ const CommunicationTools = () => {
   /* -------------------------------------------------------
      7) RENDER FILE BUBBLE (Professional UI)
   ------------------------------------------------------- */
-  const renderFileBubble = (msg) => {
-    const isImage = msg.fileType?.startsWith("image/");
-    const isPdf = msg.fileType === "application/pdf";
+  /* -------------------------------------------------------
+   7) RENDER FILE BUBBLE (Professional UI)
+------------------------------------------------------- */
+const renderFileBubble = (msg) => {
+  const isImage = msg.fileType?.startsWith("image/");
+  const isPdf = msg.fileType === "application/pdf";
 
-    const isDoctor = msg.senderRole === "doctor";
+  // FIX: Ensure file URL starts with backend origin
+  const fileUrl = msg.fileUrl.startsWith("blob:")
+    ? msg.fileUrl
+    : `${API_BASE}${msg.fileUrl}`;
 
-    const wrapperAlign = isDoctor ? "justify-end" : "justify-start";
-    const bubbleColor = isDoctor
-      ? "bg-emerald-600 text-white"
-      : "bg-slate-100 text-slate-900";
+  const isDoctor = msg.senderRole === "doctor";
 
-    const fileName =
-      msg.fileUrl?.split("/").pop()?.slice(14) || "Attachment"; // rough name from URL
+  const wrapperAlign = isDoctor ? "justify-end" : "justify-start";
+  const bubbleColor = isDoctor
+    ? "bg-emerald-600 text-white"
+    : "bg-slate-100 text-slate-900";
 
-    return (
-      <div className={`flex ${wrapperAlign}`}>
-        <div
-          className={`px-3 py-2 rounded-2xl shadow-sm max-w-xs ${bubbleColor}`}
-        >
-          {isImage && (
-            <img
-              src={msg.fileUrl}
-              alt="attachment"
-              className="rounded-xl max-h-48 mb-1 object-cover"
-            />
-          )}
+  const fileName =
+    msg.fileUrl?.split("/").pop()?.replace(/^\d+-/, "") || "Attachment";
 
-          {isPdf && (
-            <a
-              href={msg.fileUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2 p-2 rounded-xl bg-white text-slate-900"
-            >
-              <span className="text-red-600 text-xl">📄</span>
-              <div className="flex flex-col">
-                <span className="text-sm font-semibold truncate max-w-[140px]">
-                  {fileName || "PDF Document"}
-                </span>
-                <span className="text-[10px] text-slate-500">
-                  Tap to view / download
-                </span>
-              </div>
-            </a>
-          )}
+  return (
+    <div className={`flex ${wrapperAlign}`}>
+      <div
+        className={`px-3 py-2 rounded-2xl shadow-sm max-w-xs ${bubbleColor}`}
+      >
+        {isImage && (
+          <img
+            src={fileUrl}
+            alt="attachment"
+            className="rounded-xl max-h-48 mb-1 object-cover"
+          />
+        )}
 
-          {!isImage && !isPdf && (
-            <a
-              href={msg.fileUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center gap-2"
-            >
-              <span className="text-lg">📎</span>
-              <span className="text-sm underline truncate max-w-[160px]">
-                {fileName || "File"}
+        {isPdf && (
+          <a
+            href={fileUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2 p-2 rounded-xl bg-white text-slate-900"
+          >
+            <span className="text-red-600 text-xl">📄</span>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold truncate max-w-[140px]">
+                {fileName}
               </span>
-            </a>
-          )}
+              <span className="text-[10px] text-slate-500">
+                Tap to view / download
+              </span>
+            </div>
+          </a>
+        )}
 
-          <div className="text-[10px] opacity-70 mt-1 text-right">
-            {new Date(msg.createdAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </div>
+        {!isImage && !isPdf && (
+          <a
+            href={fileUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-2"
+          >
+            <span className="text-lg">📎</span>
+            <span className="text-sm underline truncate max-w-[160px]">
+              {fileName}
+            </span>
+          </a>
+        )}
+
+        <div className="text-[10px] opacity-70 mt-1 text-right">
+          {new Date(msg.createdAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
         </div>
       </div>
-    );
-  };
+    </div>
+  );
+};
+
 
   /* -------------------------------------------------------
      8) HELPERS / FILTERS

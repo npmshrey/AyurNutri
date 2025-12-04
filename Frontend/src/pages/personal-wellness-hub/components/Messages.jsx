@@ -2,7 +2,8 @@ import React, { useEffect, useState, useRef } from "react";
 import useAuth from "../../../hooks/useAuth";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:9000");
+const API_BASE = "http://localhost:9000";   // ✅ Backend origin for file URLs
+const socket = io(API_BASE);
 
 const Messages = () => {
   const { user } = useAuth(); // patient
@@ -61,7 +62,8 @@ const Messages = () => {
     const fetchDoctors = async () => {
       try {
         setLoadingDoctors(true);
-        const res = await fetch("http://localhost:9000/api/doctors");
+
+        const res = await fetch(`${API_BASE}/api/doctors`);
         const data = await res.json();
 
         setDoctors(data);
@@ -91,12 +93,13 @@ const Messages = () => {
         const token = localStorage.getItem("authToken");
 
         const res = await fetch(
-          `http://localhost:9000/api/chat/thread?patientId=${user.id}&doctorId=${activeDoctorId}`,
+          `${API_BASE}/api/chat/thread?patientId=${user.id}&doctorId=${activeDoctorId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
         const data = await res.json();
         setMessages(data);
+
         setTimeout(scrollToBottom, 100);
       } catch (err) {
         console.error(err);
@@ -136,7 +139,7 @@ const Messages = () => {
     try {
       const token = localStorage.getItem("authToken");
 
-      const res = await fetch("http://localhost:9000/api/chat/send", {
+      const res = await fetch(`${API_BASE}/api/chat/send`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -160,7 +163,7 @@ const Messages = () => {
   };
 
   /* ---------------------------------------------------------
-     4) Send FILE (Image, PDF, Docs...)
+     4) Send File (Image, PDF, etc.)
   --------------------------------------------------------- */
   const handleFileSend = async (file) => {
     if (!file) return;
@@ -188,7 +191,7 @@ const Messages = () => {
     try {
       const token = localStorage.getItem("authToken");
 
-      const res = await fetch("http://localhost:9000/api/chat/send-file", {
+      const res = await fetch(`${API_BASE}/api/chat/send-file`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -216,11 +219,15 @@ const Messages = () => {
   const activeDoctor = doctors.find((d) => d._id === activeDoctorId);
 
   /* ---------------------------------------------------------
-     RENDER A WHATSAPP-STYLE FILE BUBBLE
+     FILE BUBBLE (PDF, Image, Others)
   --------------------------------------------------------- */
   const renderFileBubble = (msg) => {
     const isImage = msg.fileType?.startsWith("image/");
     const isPdf = msg.fileType === "application/pdf";
+
+    const fileUrl = msg.fileUrl.startsWith("blob:")
+      ? msg.fileUrl
+      : `${API_BASE}${msg.fileUrl}`; // ✅ FIX URL PREFIX
 
     const bubbleColor =
       msg.senderRole === "patient"
@@ -231,7 +238,7 @@ const Messages = () => {
       <div className={`inline-block p-2 rounded-lg max-w-xs ${bubbleColor}`}>
         {isImage && (
           <img
-            src={msg.fileUrl}
+            src={fileUrl}
             alt="uploaded"
             className="rounded-lg max-h-64 cursor-pointer"
           />
@@ -239,8 +246,9 @@ const Messages = () => {
 
         {isPdf && (
           <a
-            href={msg.fileUrl}
+            href={fileUrl}
             target="_blank"
+            rel="noopener noreferrer"
             className="flex items-center gap-2 p-2 bg-white text-black rounded"
           >
             <span className="text-red-600 text-xl">📄</span>
@@ -249,11 +257,7 @@ const Messages = () => {
         )}
 
         {!isImage && !isPdf && (
-          <a
-            href={msg.fileUrl}
-            target="_blank"
-            className="underline text-sm"
-          >
+          <a href={fileUrl} target="_blank" rel="noopener noreferrer">
             📎 File
           </a>
         )}
@@ -338,9 +342,8 @@ const Messages = () => {
                 ))}
               </div>
 
-              {/* MESSAGE INPUT */}
+              {/* INPUT BAR */}
               <div className="flex gap-3 items-center">
-                {/* 📎 ATTACHMENT BUTTON */}
                 <button
                   onClick={() => fileInputRef.current.click()}
                   className="px-3 py-2 bg-gray-200 rounded text-xl"
