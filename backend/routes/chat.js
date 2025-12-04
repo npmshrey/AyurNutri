@@ -3,9 +3,22 @@ import Conversation from "../models/Conversation.js";
 import ChatMessage from "../models/ChatMessage.js";
 import Patient from "../models/Patient.js";
 import { verifyToken } from "../middlewares/authMiddleware.js";
+import multer from "multer";
+import path from "path";
 
 const router = express.Router();
 
+/* -----------------------------------------------------------
+   MULTER FILE UPLOAD CONFIG
+----------------------------------------------------------- */
+const storage = multer.diskStorage({
+  destination: "uploads/", // folder to save files
+  filename: (req, file, cb) => {
+    cb(null, Date.now() + "-" + file.originalname); // unique filename
+  },
+});
+
+const upload = multer({ storage });
 
 /* -----------------------------------------------------------
    0) GET ALL DOCTORS ASSIGNED TO A PATIENT
@@ -39,10 +52,8 @@ router.get("/patient/my-doctors", verifyToken, async (req, res) => {
   }
 });
 
-
-
 /* -----------------------------------------------------------
-   ⭐ NEW: LIST ALL PATIENTS FOR DOCTOR (even without chat)
+   ⭐ NEW: LIST ALL PATIENTS (doctor UI)
 ----------------------------------------------------------- */
 router.get("/doctor/all-patients", verifyToken, async (req, res) => {
   try {
@@ -68,10 +79,8 @@ router.get("/doctor/all-patients", verifyToken, async (req, res) => {
   }
 });
 
-
-
 /* -----------------------------------------------------------
-   1) GET DOCTOR’S EXISTING CONVERSATIONS
+   1) GET DOCTOR'S CONVERSATIONS
 ----------------------------------------------------------- */
 router.get("/doctor/me/conversations", verifyToken, async (req, res) => {
   try {
@@ -108,10 +117,8 @@ router.get("/doctor/me/conversations", verifyToken, async (req, res) => {
   }
 });
 
-
-
 /* -----------------------------------------------------------
-   2) LOAD ALL MESSAGES IN A THREAD (doctor <-> patient)
+   2) GET ALL THREAD MESSAGES
 ----------------------------------------------------------- */
 router.get("/thread", verifyToken, async (req, res) => {
   try {
@@ -119,7 +126,7 @@ router.get("/thread", verifyToken, async (req, res) => {
 
     let convo = await Conversation.findOne({ patientId, doctorId });
 
-    if (!convo) return res.json([]); // No messages yet
+    if (!convo) return res.json([]);
 
     const messages = await ChatMessage.find({
       conversationId: convo._id,
@@ -133,23 +140,18 @@ router.get("/thread", verifyToken, async (req, res) => {
   }
 });
 
-
-
 /* -----------------------------------------------------------
-   3) SEND MESSAGE (Patient → Doctor OR Doctor → Patient)
+   3) SEND TEXT MESSAGE
 ----------------------------------------------------------- */
 router.post("/send", verifyToken, async (req, res) => {
   try {
     const { patientId, doctorId, text } = req.body;
 
-    if (!patientId || !doctorId || !text) {
+    if (!patientId || !doctorId || !text)
       return res.status(400).json({ message: "Missing fields" });
-    }
 
-    // Conversation Exists?
     let convo = await Conversation.findOne({ patientId, doctorId });
 
-    // Create if not exists
     if (!convo) {
       convo = await Conversation.create({
         doctorId,
@@ -159,7 +161,6 @@ router.post("/send", verifyToken, async (req, res) => {
       });
     }
 
-    // Save Message
     const msg = await ChatMessage.create({
       conversationId: convo._id,
       patientId,
@@ -168,16 +169,8 @@ router.post("/send", verifyToken, async (req, res) => {
       text,
     });
 
-    // Update conversation meta
     convo.lastMessage = text;
     convo.lastMessageAt = new Date();
-
-    if (req.user.role === "doctor") {
-      convo.unreadCountForPatient += 1;
-    } else {
-      convo.unreadCountForDoctor += 1;
-    }
-
     await convo.save();
 
     res.json(msg);
@@ -188,6 +181,52 @@ router.post("/send", verifyToken, async (req, res) => {
   }
 });
 
+/* -----------------------------------------------------------
+   ⭐ 4) SEND FILE (IMAGE, PDF, AUDIO, DOC…)
+----------------------------------------------------------- */
+router.post(
+  "/send-file",
+  verifyToken,
+  upload.single("file"),
+  async (req, res) => {
+    try {
+      const { patientId, doctorId } = req.body;
 
+      if (!req.file)
+        return res.status(400).json({ message: "No file uploaded" });
+
+      let convo = await Conversation.findOne({ patientId, doctorId });
+
+      if (!convo) {
+        convo = await Conversation.create({
+          doctorId,
+          patientId,
+          lastMessage: "📎 File Sent",
+          lastMessageAt: new Date(),
+        });
+      }
+
+      const msg = await ChatMessage.create({
+        conversationId: convo._id,
+        patientId,
+        doctorId,
+        senderRole: req.user.role,
+        text: "",
+        fileUrl: `/uploads/${req.file.filename}`,
+        fileType: req.file.mimetype,
+      });
+
+      convo.lastMessage = "📎 File Sent";
+      convo.lastMessageAt = new Date();
+      await convo.save();
+
+      res.json(msg);
+
+    } catch (err) {
+      console.error("❌ File upload error:", err);
+      res.status(500).json({ message: "Failed to upload file" });
+    }
+  }
+);
 
 export default router;

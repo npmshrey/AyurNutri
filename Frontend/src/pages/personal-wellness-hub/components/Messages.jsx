@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from "react";
 import useAuth from "../../../hooks/useAuth";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:9000"); // connect to backend
+const socket = io("http://localhost:9000");
 
 const Messages = () => {
   const { user } = useAuth(); // patient
@@ -17,6 +17,8 @@ const Messages = () => {
   const [error, setError] = useState("");
 
   const chatBoxRef = useRef(null);
+  const fileInputRef = useRef(null);
+
   const [isDoctorTyping, setIsDoctorTyping] = useState(false);
 
   /* ---------------------------------------------------------
@@ -25,7 +27,6 @@ const Messages = () => {
   useEffect(() => {
     socket.emit("user-online", { userId: user.id, role: "patient" });
 
-    // RECEIVE MESSAGE FROM DOCTOR (REAL-TIME)
     socket.on("receive-message", (msg) => {
       if (msg.patientId === user.id && msg.doctorId === activeDoctorId) {
         setMessages((prev) => [...prev, msg]);
@@ -33,7 +34,6 @@ const Messages = () => {
       }
     });
 
-    // DOCTOR TYPING INDICATOR
     socket.on("typing", () => {
       setIsDoctorTyping(true);
       setTimeout(() => setIsDoctorTyping(false), 1500);
@@ -55,13 +55,12 @@ const Messages = () => {
   };
 
   /* ---------------------------------------------------------
-     1) Load all doctors
+     1) Load Doctors
   --------------------------------------------------------- */
   useEffect(() => {
     const fetchDoctors = async () => {
       try {
         setLoadingDoctors(true);
-
         const res = await fetch("http://localhost:9000/api/doctors");
         const data = await res.json();
 
@@ -81,7 +80,7 @@ const Messages = () => {
   }, []);
 
   /* ---------------------------------------------------------
-     2) Load chat messages
+     2) Load Messages
   --------------------------------------------------------- */
   useEffect(() => {
     if (!activeDoctorId) return;
@@ -93,20 +92,15 @@ const Messages = () => {
 
         const res = await fetch(
           `http://localhost:9000/api/chat/thread?patientId=${user.id}&doctorId=${activeDoctorId}`,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
-
-        if (!res.ok) throw new Error("Failed to load messages");
 
         const data = await res.json();
         setMessages(data);
         setTimeout(scrollToBottom, 100);
-
       } catch (err) {
         console.error(err);
-        setError("Unable to load messages.");
+        setError("Failed to load messages");
       } finally {
         setLoadingMessages(false);
       }
@@ -116,7 +110,7 @@ const Messages = () => {
   }, [activeDoctorId]);
 
   /* ---------------------------------------------------------
-     3) Send message
+     3) Send Text Message
   --------------------------------------------------------- */
   const handleSend = async () => {
     if (!text.trim()) return;
@@ -134,7 +128,6 @@ const Messages = () => {
     scrollToBottom();
     setText("");
 
-    // SEND REAL-TIME MESSAGE 🔥
     socket.emit("send-message", {
       ...optimisticMsg,
       receiverId: activeDoctorId,
@@ -156,25 +149,66 @@ const Messages = () => {
         }),
       });
 
-      if (!res.ok) throw new Error("Failed to send message");
+      const saved = await res.json();
+
+      setMessages((prev) =>
+        prev.map((m) => (m.id === optimisticMsg.id ? saved : m))
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  /* ---------------------------------------------------------
+     4) Send FILE (Image, PDF, Docs...)
+  --------------------------------------------------------- */
+  const handleFileSend = async (file) => {
+    if (!file) return;
+
+    const tempUrl = URL.createObjectURL(file);
+
+    const optimisticMsg = {
+      id: "tmp-file-" + Date.now(),
+      senderRole: "patient",
+      patientId: user.id,
+      doctorId: activeDoctorId,
+      fileUrl: tempUrl,
+      fileType: file.type,
+      createdAt: new Date().toISOString(),
+    };
+
+    setMessages((prev) => [...prev, optimisticMsg]);
+    scrollToBottom();
+
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("patientId", user.id);
+    formData.append("doctorId", activeDoctorId);
+
+    try {
+      const token = localStorage.getItem("authToken");
+
+      const res = await fetch("http://localhost:9000/api/chat/send-file", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
 
       const saved = await res.json();
 
       setMessages((prev) =>
         prev.map((m) => (m.id === optimisticMsg.id ? saved : m))
       );
-      scrollToBottom();
 
+      socket.emit("send-message", {
+        ...saved,
+        receiverId: activeDoctorId,
+      });
     } catch (err) {
-      console.error(err);
-      setError("Failed to send message.");
-      setMessages((prev) => prev.filter((m) => m.id !== optimisticMsg.id));
+      console.error("File upload failed", err);
     }
   };
 
-  /* ---------------------------------------------------------
-     4) Typing indicator
-  --------------------------------------------------------- */
   const handleTyping = () => {
     socket.emit("typing", { receiverId: activeDoctorId });
   };
@@ -182,12 +216,57 @@ const Messages = () => {
   const activeDoctor = doctors.find((d) => d._id === activeDoctorId);
 
   /* ---------------------------------------------------------
+     RENDER A WHATSAPP-STYLE FILE BUBBLE
+  --------------------------------------------------------- */
+  const renderFileBubble = (msg) => {
+    const isImage = msg.fileType?.startsWith("image/");
+    const isPdf = msg.fileType === "application/pdf";
+
+    const bubbleColor =
+      msg.senderRole === "patient"
+        ? "bg-emerald-700 text-white"
+        : "bg-gray-200 text-black";
+
+    return (
+      <div className={`inline-block p-2 rounded-lg max-w-xs ${bubbleColor}`}>
+        {isImage && (
+          <img
+            src={msg.fileUrl}
+            alt="uploaded"
+            className="rounded-lg max-h-64 cursor-pointer"
+          />
+        )}
+
+        {isPdf && (
+          <a
+            href={msg.fileUrl}
+            target="_blank"
+            className="flex items-center gap-2 p-2 bg-white text-black rounded"
+          >
+            <span className="text-red-600 text-xl">📄</span>
+            <span>PDF Document</span>
+          </a>
+        )}
+
+        {!isImage && !isPdf && (
+          <a
+            href={msg.fileUrl}
+            target="_blank"
+            className="underline text-sm"
+          >
+            📎 File
+          </a>
+        )}
+      </div>
+    );
+  };
+
+  /* ---------------------------------------------------------
      UI
   --------------------------------------------------------- */
   return (
     <section className="max-w-7xl mx-auto px-6 py-8">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
         {/* LEFT DOCTOR LIST */}
         <aside className="lg:col-span-1">
           <div className="bg-beige p-4 rounded-lg mb-4">
@@ -201,13 +280,13 @@ const Messages = () => {
               onClick={() => setActiveDoctorId(d._id)}
               className={`p-4 border rounded-lg cursor-pointer mb-3 ${
                 activeDoctorId === d._id
-                  ? "bg-emerald-50 border-emerald-500"
+                  ? "bg-emerald-50 border-emerald-600"
                   : "bg-white"
               }`}
             >
               <div className="font-semibold">{d.fullName}</div>
               <div className="text-xs text-text-secondary">
-                {d.specialization || "General Physician"}
+                {d.specialization}
               </div>
             </div>
           ))}
@@ -221,16 +300,12 @@ const Messages = () => {
             <>
               <div className="mb-3">
                 <h3 className="font-semibold text-lg">{activeDoctor.fullName}</h3>
-                <p className="text-xs text-text-secondary">
-                  {activeDoctor.specialization}
-                </p>
-
                 {isDoctorTyping && (
                   <p className="text-xs text-emerald-600">Typing...</p>
                 )}
               </div>
 
-              {/* CHAT MESSAGES */}
+              {/* CHAT BOX */}
               <div
                 ref={chatBoxRef}
                 className="h-96 bg-white border rounded p-4 overflow-auto mb-4"
@@ -242,15 +317,20 @@ const Messages = () => {
                       m.senderRole === "patient" ? "text-right" : ""
                     }`}
                   >
-                    <div
-                      className={`inline-block p-3 rounded ${
-                        m.senderRole === "patient"
-                          ? "bg-emerald-700 text-white"
-                          : "bg-gray-100 text-gray-800"
-                      }`}
-                    >
-                      {m.text}
-                    </div>
+                    {m.fileUrl ? (
+                      renderFileBubble(m)
+                    ) : (
+                      <div
+                        className={`inline-block p-3 rounded ${
+                          m.senderRole === "patient"
+                            ? "bg-emerald-700 text-white"
+                            : "bg-gray-200 text-black"
+                        }`}
+                      >
+                        {m.text}
+                      </div>
+                    )}
+
                     <div className="text-xs text-text-secondary mt-1">
                       {new Date(m.createdAt).toLocaleTimeString()}
                     </div>
@@ -259,7 +339,22 @@ const Messages = () => {
               </div>
 
               {/* MESSAGE INPUT */}
-              <div className="flex gap-3">
+              <div className="flex gap-3 items-center">
+                {/* 📎 ATTACHMENT BUTTON */}
+                <button
+                  onClick={() => fileInputRef.current.click()}
+                  className="px-3 py-2 bg-gray-200 rounded text-xl"
+                >
+                  📎
+                </button>
+
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  onChange={(e) => handleFileSend(e.target.files[0])}
+                />
+
                 <input
                   className="flex-1 border rounded px-3 py-2"
                   placeholder="Type a message..."
@@ -267,6 +362,7 @@ const Messages = () => {
                   onChange={(e) => setText(e.target.value)}
                   onKeyDown={handleTyping}
                 />
+
                 <button
                   onClick={handleSend}
                   className="px-4 py-2 bg-emerald-700 text-white rounded"
