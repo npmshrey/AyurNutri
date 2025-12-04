@@ -17,17 +17,27 @@ const chatMessageSchema = new mongoose.Schema(
       required: true,
     },
 
-    // TEXT SUPPORT
     text: { type: String, default: "" },
 
-    // ⭐ FILE SUPPORT
-    fileUrl: { type: String, default: null },   // stored path → "/uploads/..."
-    fileType: { type: String, default: null },  // mimetype (image/png, pdf, mp3)
+    fileUrl: { type: String, default: null },
+    fileType: { type: String, default: null },
 
     messageType: {
       type: String,
       enum: ["text", "file"],
       default: "text",
+    },
+
+    // ⭐ MUST have default: []
+    deletedFor: {
+      type: [mongoose.Schema.Types.ObjectId],
+      default: [],
+    },
+
+    // ⭐ MUST have default false
+    isDeletedForEveryone: {
+      type: Boolean,
+      default: false,
     },
   },
   { timestamps: true }
