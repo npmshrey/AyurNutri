@@ -25,32 +25,81 @@ const Messages = () => {
   // Long press timer
   const longPressTimer = useRef(null);
 
-  /* ----------------------------- SOCKET ----------------------------- */
-  useEffect(() => {
-    socket.emit("user-online", { userId: user.id, role: "patient" });
-
-    socket.on("receive-message", (msg) => {
-      if (msg.patientId === user.id && msg.doctorId === activeDoctorId) {
-        setMessages((prev) => [...prev, msg]);
-        scrollToBottom();
-      }
-    });
-
-    socket.on("message-deleted", (msgId) => {
-      setMessages((prev) => prev.filter((m) => m._id !== msgId));
-    });
-
-    return () => {
-      socket.off("receive-message");
-      socket.off("message-deleted");
-    };
-  }, [activeDoctorId]);
+  /* ------------------------ helpers ------------------------ */
 
   const scrollToBottom = () => {
     if (chatBoxRef.current) {
       chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
     }
   };
+
+  // patient viewing doctor messages → mark them as seen
+  const markDoctorMessagesSeen = (msgs) => {
+    if (!activeDoctorId || !Array.isArray(msgs) || msgs.length === 0) return;
+
+    const unseenFromDoctor = msgs.filter((m) => {
+      const fromDoctor = m.senderRole === "doctor";
+      const notSeen = m.status !== "seen";
+      const hasId = !!(m._id || m.id);
+      return fromDoctor && notSeen && hasId;
+    });
+
+    if (unseenFromDoctor.length === 0) return;
+
+    const messageIds = unseenFromDoctor.map((m) => m._id || m.id);
+
+    socket.emit("message-seen", {
+      messageIds,
+      viewerId: user.id,          // patient seeing them
+      otherUserId: activeDoctorId // doctor who sent them
+    });
+  };
+
+  /* ----------------------------- SOCKET ----------------------------- */
+  useEffect(() => {
+    socket.emit("user-online", { userId: user.id, role: "patient" });
+
+    const handleReceiveMessage = (msg) => {
+      if (msg.patientId === user.id && msg.doctorId === activeDoctorId) {
+        setMessages((prev) => [...prev, msg]);
+        scrollToBottom();
+
+        // if this is a doctor message in the open chat, immediately mark seen
+        if (msg.senderRole === "doctor") {
+          markDoctorMessagesSeen([msg]);
+        }
+      }
+    };
+
+    const handleMessageDeleted = (msgId) => {
+      setMessages((prev) => prev.filter((m) => m._id !== msgId));
+    };
+
+    const handleStatusUpdate = ({ messageId, messageIds, status }) => {
+      setMessages((prev) =>
+        prev.map((m) => {
+          const id = m._id || m.id;
+          if (messageId && id === messageId) {
+            return { ...m, status };
+          }
+          if (Array.isArray(messageIds) && messageIds.includes(id)) {
+            return { ...m, status };
+          }
+          return m;
+        })
+      );
+    };
+
+    socket.on("receive-message", handleReceiveMessage);
+    socket.on("message-deleted", handleMessageDeleted);
+    socket.on("message-status-update", handleStatusUpdate);
+
+    return () => {
+      socket.off("receive-message", handleReceiveMessage);
+      socket.off("message-deleted", handleMessageDeleted);
+      socket.off("message-status-update", handleStatusUpdate);
+    };
+  }, [activeDoctorId, user.id]);
 
   /* ------------------------- LOAD DOCTORS --------------------------- */
   useEffect(() => {
@@ -76,49 +125,66 @@ const Messages = () => {
 
       const data = await res.json();
       setMessages(data);
-      setTimeout(scrollToBottom, 50);
+      setTimeout(() => {
+        scrollToBottom();
+        // patient opened this doctor chat → mark doctor messages seen
+        markDoctorMessagesSeen(data);
+      }, 50);
     })();
-  }, [activeDoctorId]);
+  }, [activeDoctorId, user.id]);
 
   /* -------------------------- SEND TEXT ----------------------------- */
   const handleSend = async () => {
     if (!text.trim()) return;
 
+    const tempId = "tmp-" + Date.now();
+
     const optimistic = {
-      id: "tmp-" + Date.now(),
+      id: tempId,
       senderRole: "patient",
       patientId: user.id,
       doctorId: activeDoctorId,
       text,
       createdAt: new Date().toISOString(),
+      status: "sent", // single tick immediately
     };
 
     setMessages((prev) => [...prev, optimistic]);
     scrollToBottom();
-    setText("");
 
-    socket.emit("send-message", { ...optimistic, receiverId: activeDoctorId });
+    const messageText = text;
+    setText("");
 
     const token = localStorage.getItem("authToken");
 
-    const res = await fetch("http://localhost:9000/api/chat/send", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        patientId: user.id,
-        doctorId: activeDoctorId,
-        text,
-      }),
-    });
+    try {
+      const res = await fetch("http://localhost:9000/api/chat/send", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          patientId: user.id,
+          doctorId: activeDoctorId,
+          text: messageText,
+        }),
+      });
 
-    const saved = await res.json();
+      const saved = await res.json();
 
-    setMessages((prev) =>
-      prev.map((m) => (m.id === optimistic.id ? saved : m))
-    );
+      setMessages((prev) =>
+        prev.map((m) => (m.id === tempId ? saved : m))
+      );
+
+      // now send over socket with real _id
+      socket.emit("send-message", {
+        ...saved,
+        receiverId: activeDoctorId,
+      });
+    } catch (err) {
+      console.error("Failed to send message:", err);
+    }
   };
 
   /* ------------------------ SEND FILE ----------------------------- */
@@ -126,15 +192,17 @@ const Messages = () => {
     if (!file) return;
 
     const tempUrl = URL.createObjectURL(file);
+    const tempId = "tmp-file-" + Date.now();
 
     const optimistic = {
-      id: "tmp-file-" + Date.now(),
+      id: tempId,
       senderRole: "patient",
       patientId: user.id,
       doctorId: activeDoctorId,
       fileUrl: tempUrl,
       fileType: file.type,
       createdAt: new Date().toISOString(),
+      status: "sent",
     };
 
     setMessages((p) => [...p, optimistic]);
@@ -147,19 +215,26 @@ const Messages = () => {
 
     const token = localStorage.getItem("authToken");
 
-    const res = await fetch("http://localhost:9000/api/chat/send-file", {
-      method: "POST",
-      headers: { Authorization: `Bearer ${token}` },
-      body: formData,
-    });
+    try {
+      const res = await fetch("http://localhost:9000/api/chat/send-file", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      });
 
-    const saved = await res.json();
+      const saved = await res.json();
 
-    setMessages((prev) =>
-      prev.map((m) => (m.id === optimistic.id ? saved : m))
-    );
+      setMessages((prev) =>
+        prev.map((m) => (m.id === tempId ? saved : m))
+      );
 
-    socket.emit("send-message", { ...saved, receiverId: activeDoctorId });
+      socket.emit("send-message", {
+        ...saved,
+        receiverId: activeDoctorId,
+      });
+    } catch (err) {
+      console.error("Failed to send file:", err);
+    }
   };
 
   /* ---------------------- DELETE MESSAGE --------------------------- */
@@ -236,6 +311,7 @@ const Messages = () => {
           <a
             href={"http://localhost:9000" + msg.fileUrl}
             target="_blank"
+            rel="noreferrer"
             className="underline"
           >
             📄 PDF Document
@@ -246,6 +322,7 @@ const Messages = () => {
           <a
             href={"http://localhost:9000" + msg.fileUrl}
             target="_blank"
+            rel="noreferrer"
             className="underline"
           >
             📎 File
@@ -255,11 +332,33 @@ const Messages = () => {
     );
   };
 
+  /* ---------------------- TICKS RENDER ----------------------------- */
+  const renderTicks = (status) => {
+    if (!status) return null;
+
+    if (status === "sent") {
+      // single grey tick
+      return <span className="ml-1 text-[10px] text-gray-500">✓</span>;
+    }
+
+    if (status === "delivered") {
+      // double grey tick
+      return <span className="ml-1 text-[10px] text-gray-500">✓✓</span>;
+    }
+
+    if (status === "seen") {
+      // double blue tick
+      return <span className="ml-1 text-[10px] text-blue-500">✓✓</span>;
+    }
+
+    return null;
+  };
+
   const activeDoctor = doctors.find((d) => d._id === activeDoctorId);
 
   return (
     <section className="max-w-7xl mx-auto px-6 py-8">
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid cols-1 lg:grid-cols-3 gap-6">
         {/* ------------------- DOCTOR LIST ------------------- */}
         <aside className="lg:col-span-1">
           <div className="bg-beige p-4 rounded-lg mb-4">
@@ -293,36 +392,47 @@ const Messages = () => {
                 ref={chatBoxRef}
                 className="h-96 bg-white border rounded p-4 overflow-auto mb-4"
               >
-                {messages.map((m) => (
-                  <div
-                    key={m._id || m.id}
-                    className={`mb-4 ${
-                      m.senderRole === "patient" ? "text-right" : ""
-                    }`}
-                    onContextMenu={(e) => handleRightClick(e, m)}
-                    onMouseDown={(e) => startLongPress(m, e)}
-                    onMouseUp={cancelLongPress}
-                    onMouseLeave={cancelLongPress}
-                  >
-                    {m.fileUrl ? (
-                      renderFileBubble(m)
-                    ) : (
+                {messages.map((m) => {
+                  const isMe = m.senderRole === "patient";
+                  const time = new Date(m.createdAt).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  });
+
+                  return (
+                    <div
+                      key={m._id || m.id}
+                      className={`mb-4 ${isMe ? "text-right" : ""}`}
+                      onContextMenu={(e) => handleRightClick(e, m)}
+                      onMouseDown={(e) => startLongPress(m, e)}
+                      onMouseUp={cancelLongPress}
+                      onMouseLeave={cancelLongPress}
+                    >
+                      {m.fileUrl ? (
+                        renderFileBubble(m)
+                      ) : (
+                        <div
+                          className={`inline-block p-3 rounded ${
+                            isMe
+                              ? "bg-emerald-700 text-white"
+                              : "bg-gray-200 text-black"
+                          }`}
+                        >
+                          {m.text}
+                        </div>
+                      )}
+
                       <div
-                        className={`inline-block p-3 rounded ${
-                          m.senderRole === "patient"
-                            ? "bg-emerald-700 text-white"
-                            : "bg-gray-200 text-black"
+                        className={`text-xs text-gray-500 mt-1 flex items-center ${
+                          isMe ? "justify-end" : "justify-start"
                         }`}
                       >
-                        {m.text}
+                        <span>{time}</span>
+                        {isMe && renderTicks(m.status)}
                       </div>
-                    )}
-
-                    <div className="text-xs text-gray-500 mt-1">
-                      {new Date(m.createdAt).toLocaleTimeString()}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
               {/* POPUP MENU */}

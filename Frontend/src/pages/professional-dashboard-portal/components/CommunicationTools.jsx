@@ -25,11 +25,44 @@ const CommunicationTools = () => {
   // ⭐ context menu
   const [contextMenu, setContextMenu] = useState(null);
 
-  // SOCKET INIT
+  // ------------------ helpers ------------------ //
+  const scrollToBottom = () => {
+    if (chatBoxRef.current) {
+      chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
+    }
+  };
+
+  // Mark given messages as "seen" (patient → doctor messages)
+  const markMessagesSeen = (msgs) => {
+    if (!selectedConversation || !Array.isArray(msgs) || msgs.length === 0) return;
+
+    const patientId = selectedConversation.patientId;
+
+    // only messages sent BY PATIENT and not already seen
+    const unseenFromPatient = msgs.filter((m) => {
+      const fromPatient = m.senderRole === "patient";
+      const notSeen = m.status !== "seen";
+      const hasId = !!(m._id || m.id);
+      return fromPatient && notSeen && hasId;
+    });
+
+    if (unseenFromPatient.length === 0) return;
+
+    const messageIds = unseenFromPatient.map((m) => m._id || m.id);
+
+    socket.emit("message-seen", {
+      messageIds,
+      viewerId: user.id, // doctor who saw
+      otherUserId: patientId, // patient who sent
+    });
+  };
+
+  // ------------------ SOCKET INIT ------------------ //
   useEffect(() => {
     socket.emit("user-online", { userId: user.id, role: "doctor" });
 
-    socket.on("receive-message", (msg) => {
+    const handleReceiveMessage = (msg) => {
+      // only append if doctor is currently in that conversation
       if (
         selectedConversation &&
         msg.patientId === selectedConversation.patientId &&
@@ -37,28 +70,45 @@ const CommunicationTools = () => {
       ) {
         setMessages((prev) => [...prev, msg]);
         scrollToBottom();
-      }
-    });
 
-    socket.on("typing", () => {
+        // doctor sees it immediately → mark as seen
+        markMessagesSeen([msg]);
+      }
+    };
+
+    const handleTyping = () => {
       setIsPatientTyping(true);
       setTimeout(() => setIsPatientTyping(false), 1500);
-    });
+    };
+
+    const handleStatusUpdate = ({ messageId, messageIds, status }) => {
+      // this event comes to SENDER (doctor when doctor sends messages)
+      setMessages((prev) =>
+        prev.map((m) => {
+          const id = m._id || m.id;
+          if (messageId && id === messageId) {
+            return { ...m, status };
+          }
+          if (Array.isArray(messageIds) && messageIds.includes(id)) {
+            return { ...m, status };
+          }
+          return m;
+        })
+      );
+    };
+
+    socket.on("receive-message", handleReceiveMessage);
+    socket.on("typing", handleTyping);
+    socket.on("message-status-update", handleStatusUpdate);
 
     return () => {
-      socket.off("receive-message");
-      socket.off("typing");
+      socket.off("receive-message", handleReceiveMessage);
+      socket.off("typing", handleTyping);
+      socket.off("message-status-update", handleStatusUpdate);
     };
-  }, [selectedConversation]);
+  }, [selectedConversation, user.id]);
 
-  // AUTO SCROLL
-  const scrollToBottom = () => {
-    if (chatBoxRef.current) {
-      chatBoxRef.current.scrollTop = chatBoxRef.current.scrollHeight;
-    }
-  };
-
-  // FETCH PATIENTS + CONVERSATIONS
+  // ------------------ FETCH PATIENTS + CONVERSATIONS ------------------ //
   useEffect(() => {
     const fetchConversations = async () => {
       try {
@@ -100,7 +150,7 @@ const CommunicationTools = () => {
     fetchConversations();
   }, []);
 
-  // LOAD THREAD
+  // ------------------ LOAD THREAD ------------------ //
   useEffect(() => {
     if (!selectedConversation) return;
 
@@ -117,20 +167,23 @@ const CommunicationTools = () => {
         const data = await res.json();
         setMessages(data);
         setTimeout(scrollToBottom, 100);
+
+        // doctor opened this chat → mark patient messages as seen
+        markMessagesSeen(data);
       } finally {
         setLoadingMessages(false);
       }
     };
 
     fetchMessages();
-  }, [selectedConversation]);
+  }, [selectedConversation, user.id]);
 
-  // SELECT CONVERSATION
+  // ------------------ SELECT CONVERSATION ------------------ //
   const handleSelectConversation = (conv) => {
     setSelectedConversation(conv);
   };
 
-  // SEND TEXT
+  // ------------------ SEND TEXT ------------------ //
   const handleSend = async () => {
     if (!newMessage.trim() || !selectedConversation) return;
 
@@ -143,20 +196,18 @@ const CommunicationTools = () => {
       senderRole: "doctor",
       text: newMessage,
       createdAt: new Date().toISOString(),
+      status: "sent", // show single tick immediately
     };
 
     setMessages((prev) => [...prev, optimisticMessage]);
     scrollToBottom();
+    const textToSend = newMessage;
     setNewMessage("");
-
-    socket.emit("send-message", {
-      ...optimisticMessage,
-      receiverId: patientId,
-    });
 
     try {
       const token = localStorage.getItem("authToken");
 
+      // save to DB to get real _id
       const res = await fetch(`${API_BASE}/api/chat/send`, {
         method: "POST",
         headers: {
@@ -166,19 +217,28 @@ const CommunicationTools = () => {
         body: JSON.stringify({
           patientId,
           doctorId: user.id,
-          text: optimisticMessage.text,
+          text: textToSend,
         }),
       });
 
       const saved = await res.json();
 
+      // replace optimistic message with saved one
       setMessages((prev) =>
         prev.map((m) => (m.id === optimisticMessage.id ? saved : m))
       );
-    } catch {}
+
+      // now emit via socket (includes _id)
+      socket.emit("send-message", {
+        ...saved,
+        receiverId: patientId,
+      });
+    } catch (err) {
+      console.error("Failed to send message:", err);
+    }
   };
 
-  // SEND FILE
+  // ------------------ SEND FILE ------------------ //
   const handleFileSend = async (file) => {
     if (!file || !selectedConversation) return;
     const patientId = selectedConversation.patientId;
@@ -193,6 +253,7 @@ const CommunicationTools = () => {
       fileUrl: tempUrl,
       fileType: file.type,
       createdAt: new Date().toISOString(),
+      status: "sent",
     };
 
     setMessages((prev) => [...prev, optimisticMessage]);
@@ -222,10 +283,12 @@ const CommunicationTools = () => {
         ...saved,
         receiverId: patientId,
       });
-    } catch {}
+    } catch (err) {
+      console.error("Failed to send file:", err);
+    }
   };
 
-  // DELETE FOR ME
+  // ------------------ DELETE FOR ME ------------------ //
   const deleteForMe = async (msgId) => {
     try {
       const token = localStorage.getItem("authToken");
@@ -235,13 +298,13 @@ const CommunicationTools = () => {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setMessages((prev) =>
-        prev.filter((m) => (m._id || m.id) !== msgId)
-      );
-    } catch (err) {}
+      setMessages((prev) => prev.filter((m) => (m._id || m.id) !== msgId));
+    } catch (err) {
+      console.error("delete-for-me failed", err);
+    }
   };
 
-  // DELETE FOR EVERYONE
+  // ------------------ DELETE FOR EVERYONE ------------------ //
   const deleteForEveryone = async (msgId) => {
     try {
       const token = localStorage.getItem("authToken");
@@ -254,14 +317,21 @@ const CommunicationTools = () => {
       setMessages((prev) =>
         prev.map((m) =>
           (m._id || m.id) === msgId
-            ? { ...m, text: "🚫 Message deleted", fileUrl: null, fileType: null }
+            ? {
+                ...m,
+                text: "🚫 Message deleted",
+                fileUrl: null,
+                fileType: null,
+              }
             : m
         )
       );
-    } catch (err) {}
+    } catch (err) {
+      console.error("delete-for-everyone failed", err);
+    }
   };
 
-  // FILE BUBBLE
+  // ------------------ FILE BUBBLE ------------------ //
   const renderFileBubble = (msg) => {
     const isImage = msg.fileType?.startsWith("image/");
     const isPdf = msg.fileType === "application/pdf";
@@ -272,11 +342,11 @@ const CommunicationTools = () => {
     return (
       <div className="px-3 py-2 rounded-2xl shadow-sm bg-emerald-600 text-white max-w-xs">
         {isImage && (
-          <img src={fileUrl} className="rounded-xl max-h-48 mb-1" />
+          <img src={fileUrl} className="rounded-xl max-h-48 mb-1" alt="" />
         )}
 
         {isPdf && (
-          <a href={fileUrl} target="_blank">
+          <a href={fileUrl} target="_blank" rel="noreferrer">
             📄 PDF Document
           </a>
         )}
@@ -288,16 +358,35 @@ const CommunicationTools = () => {
     );
   };
 
-  // FILTER CONVERSATIONS
+  // ------------------ TICKS RENDER (doctor's messages) ------------------ //
+  const renderTicks = (status) => {
+    if (!status) return null;
+
+    if (status === "sent") {
+      return <span className="ml-1 text-[10px] text-gray-500">✓</span>;
+    }
+    if (status === "delivered") {
+      return <span className="ml-1 text-[10px] text-gray-500">✓✓</span>;
+    }
+    if (status === "seen") {
+      return <span className="ml-1 text-[10px] text-blue-500">✓✓</span>;
+    }
+    return null;
+  };
+
   const filteredConversations = conversations.filter((c) =>
     c.patient.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const formatTimestamp = (t) =>
     t
-      ? new Date(t).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
+      ? new Date(t).toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
       : "";
 
+  // ------------------ RENDER ------------------ //
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -355,6 +444,8 @@ const CommunicationTools = () => {
                   const align = isDoctor ? "justify-end" : "justify-start";
                   const msgId = msg._id || msg.id;
 
+                  const timeStr = formatTimestamp(msg.createdAt);
+
                   return (
                     <div
                       key={msgId}
@@ -368,22 +459,23 @@ const CommunicationTools = () => {
                         });
                       }}
                     >
-                      {msg.fileUrl
-                        ? renderFileBubble(msg)
-                        : (
-                          <div
-                            className={`px-4 py-2 rounded-2xl max-w-md shadow-sm ${
-                              isDoctor
-                                ? "bg-emerald-600 text-white"
-                                : "bg-slate-100 text-slate-900"
-                            }`}
-                          >
-                            <p className="text-sm">{msg.text}</p>
-                            <p className="text-[10px] opacity-70 mt-1 text-right">
-                              {formatTimestamp(msg.createdAt)}
-                            </p>
-                          </div>
-                        )}
+                      {msg.fileUrl ? (
+                        renderFileBubble(msg)
+                      ) : (
+                        <div
+                          className={`px-4 py-2 rounded-2xl max-w-md shadow-sm ${
+                            isDoctor
+                              ? "bg-emerald-600 text-white"
+                              : "bg-slate-100 text-slate-900"
+                          }`}
+                        >
+                          <p className="text-sm">{msg.text}</p>
+                          <p className="text-[10px] opacity-70 mt-1 flex items-center justify-end">
+                            <span>{timeStr}</span>
+                            {isDoctor && renderTicks(msg.status)}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   );
                 })}

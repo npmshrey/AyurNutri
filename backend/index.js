@@ -7,6 +7,9 @@ import { fileURLToPath } from "url";
 import http from "http";
 import { Server } from "socket.io";
 
+// MODELS
+import ChatMessage from "./models/ChatMessage.js";
+
 // ROUTES
 import patientsRouter from "./routes/patients.js";
 import authRouter from "./routes/auth.js";
@@ -27,7 +30,7 @@ const __dirname = path.dirname(__filename);
 const app = express();
 
 // --------------------------
-// FIXED CORS — NOW ALLOWS DELETE
+// CORS
 // --------------------------
 app.use(
   cors({
@@ -88,18 +91,85 @@ let onlineUsers = new Map();
 io.on("connection", (socket) => {
   console.log("🔥 New socket connected:", socket.id);
 
+  // User comes online
   socket.on("user-online", ({ userId, role }) => {
+    socket.userId = userId;
+    socket.role = role;
+
     onlineUsers.set(userId, socket.id);
     io.emit("online-users", Array.from(onlineUsers.keys()));
   });
 
-  socket.on("send-message", (msg) => {
-    const receiverSocket = onlineUsers.get(msg.receiverId);
-    if (receiverSocket) {
-      io.to(receiverSocket).emit("receive-message", msg);
+  // SEND MESSAGE (patient or doctor)
+  socket.on("send-message", async (msg) => {
+    try {
+      // msg should include: { _id, patientId, doctorId, senderRole, receiverId, ... }
+
+      const receiverSocket = onlineUsers.get(msg.receiverId);
+
+      // figure out senderId
+      const senderId =
+        msg.senderRole === "patient" ? msg.patientId : msg.doctorId;
+
+      // 1) Forward to receiver if online
+      if (receiverSocket) {
+        io.to(receiverSocket).emit("receive-message", msg);
+
+        // mark as delivered in DB if we have _id
+        if (msg._id) {
+          await ChatMessage.findByIdAndUpdate(msg._id, {
+            status: "delivered",
+            deliveredAt: new Date(),
+          });
+        }
+
+        // notify sender about status = delivered (double grey tick)
+        const senderSocket = onlineUsers.get(senderId);
+        if (senderSocket && msg._id) {
+          io.to(senderSocket).emit("message-status-update", {
+            messageId: msg._id,
+            status: "delivered",
+          });
+        }
+      } else {
+        // receiver offline → stays 'sent', but we can still confirm 'sent' to sender
+        const senderSocket = onlineUsers.get(senderId);
+        if (senderSocket && msg._id) {
+          io.to(senderSocket).emit("message-status-update", {
+            messageId: msg._id,
+            status: "sent",
+          });
+        }
+      }
+    } catch (err) {
+      console.error("Error in send-message:", err);
     }
   });
 
+  // FUTURE: when other side opens chat and marks messages as seen
+  // payload: { messageIds: [...], viewerId, otherUserId }
+  socket.on("message-seen", async ({ messageIds, viewerId, otherUserId }) => {
+    try {
+      if (!Array.isArray(messageIds) || messageIds.length === 0) return;
+
+      await ChatMessage.updateMany(
+        { _id: { $in: messageIds } },
+        { status: "seen", seenAt: new Date() }
+      );
+
+      const otherSocket = onlineUsers.get(otherUserId);
+      if (otherSocket) {
+        io.to(otherSocket).emit("message-status-update", {
+          messageIds,
+          status: "seen",
+        });
+      }
+    } catch (err) {
+      console.error("Error in message-seen:", err);
+    }
+  });
+
+  // TYPING
   socket.on("typing", ({ receiverId }) => {
     const receiverSocket = onlineUsers.get(receiverId);
     if (receiverSocket) {
@@ -107,6 +177,7 @@ io.on("connection", (socket) => {
     }
   });
 
+  // DISCONNECT
   socket.on("disconnect", () => {
     console.log("❌ Socket disconnected:", socket.id);
 
@@ -125,7 +196,9 @@ mongoose
   .then(() => {
     console.log("Connected to MongoDB");
     server.listen(PORT, () =>
-      console.log(`🔥 Realtime + Upload Server running at http://localhost:${PORT}`)
+      console.log(
+        `🔥 Realtime + Upload Server running at http://localhost:${PORT}`
+      )
     );
   })
   .catch((err) => {

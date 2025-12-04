@@ -28,8 +28,10 @@ router.get("/patient/my-doctors", verifyToken, async (req, res) => {
 
     const patientId = req.user.id;
 
-    const convos = await Conversation.find({ patientId })
-      .populate("doctorId", "fullName specialty avatar phoneNumber location");
+    const convos = await Conversation.find({ patientId }).populate(
+      "doctorId",
+      "fullName specialty avatar phoneNumber location"
+    );
 
     const doctors = convos.map((c) => ({
       id: c.doctorId._id,
@@ -161,6 +163,7 @@ router.post("/send", verifyToken, async (req, res) => {
       senderRole: req.user.role,
       text,
       messageType: "text",
+      // status will default to "sent" from the schema
     });
 
     convo.lastMessage = text;
@@ -176,43 +179,49 @@ router.post("/send", verifyToken, async (req, res) => {
 /* -----------------------------------------------------------
    4) SEND FILE MESSAGE
 ----------------------------------------------------------- */
-router.post("/send-file", verifyToken, upload.single("file"), async (req, res) => {
-  try {
-    const { patientId, doctorId } = req.body;
+router.post(
+  "/send-file",
+  verifyToken,
+  upload.single("file"),
+  async (req, res) => {
+    try {
+      const { patientId, doctorId } = req.body;
 
-    if (!req.file)
-      return res.status(400).json({ message: "No file uploaded" });
+      if (!req.file)
+        return res.status(400).json({ message: "No file uploaded" });
 
-    let convo = await Conversation.findOne({ patientId, doctorId });
+      let convo = await Conversation.findOne({ patientId, doctorId });
 
-    if (!convo) {
-      convo = await Conversation.create({
+      if (!convo) {
+        convo = await Conversation.create({
+          patientId,
+          doctorId,
+          lastMessage: "📎 File sent",
+          lastMessageAt: new Date(),
+        });
+      }
+
+      const msg = await ChatMessage.create({
+        conversationId: convo._id,
         patientId,
         doctorId,
-        lastMessage: "📎 File sent",
-        lastMessageAt: new Date(),
+        senderRole: req.user.role,
+        fileUrl: `/uploads/${req.file.filename}`,
+        fileType: req.file.mimetype,
+        messageType: "file",
+        // status will default to "sent"
       });
+
+      convo.lastMessage = "📎 File sent";
+      convo.lastMessageAt = new Date();
+      await convo.save();
+
+      res.json(msg);
+    } catch (err) {
+      res.status(500).json({ message: "Failed to upload file" });
     }
-
-    const msg = await ChatMessage.create({
-      conversationId: convo._id,
-      patientId,
-      doctorId,
-      senderRole: req.user.role,
-      fileUrl: `/uploads/${req.file.filename}`,
-      fileType: req.file.mimetype,
-      messageType: "file",
-    });
-
-    convo.lastMessage = "📎 File sent";
-    convo.lastMessageAt = new Date();
-    await convo.save();
-
-    res.json(msg);
-  } catch (err) {
-    res.status(500).json({ message: "Failed to upload file" });
   }
-});
+);
 
 /* -----------------------------------------------------------
    ⭐ 5) DELETE FOR ME

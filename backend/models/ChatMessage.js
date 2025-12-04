@@ -28,6 +28,15 @@ const chatMessageSchema = new mongoose.Schema(
       default: "text",
     },
 
+    // ⭐ MESSAGE STATUS (for ticks)
+    status: {
+      type: String,
+      enum: ["sent", "delivered", "seen"],
+      default: "sent", // default single tick
+    },
+    deliveredAt: { type: Date, default: null },
+    seenAt: { type: Date, default: null },
+
     // ⭐ MUST have default: []
     deletedFor: {
       type: [mongoose.Schema.Types.ObjectId],
