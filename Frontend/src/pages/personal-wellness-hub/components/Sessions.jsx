@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import BookingModal from "./BookingModal";
+import useAuth from "../../../hooks/useAuth";
 
 const SessionCard = ({ title, price, desc, selected, onClick }) => (
   <div
@@ -32,7 +33,12 @@ const Sessions = () => {
   const [time, setTime] = useState("");
 
   const [appointments, setAppointments] = useState([]);
+
+  // ✅ FIX: Default tab always "book"
   const [activeTab, setActiveTab] = useState("book");
+
+  const { user } = useAuth();
+  const patientId = user?._id || user?.id || localStorage.getItem("patientId");
 
   const types = [
     {
@@ -66,14 +72,13 @@ const Sessions = () => {
       .catch((err) => console.error("Error loading doctors:", err));
 
     // Fetch Appointments
-    const patientId = localStorage.getItem("patientId");
     if (patientId) {
       axios
         .get(`http://localhost:9000/api/appointments/patient/${patientId}`)
         .then((res) => setAppointments(res.data.appointments || []))
         .catch((err) => console.error("Error fetching appointments:", err));
     }
-  }, []);
+  }, [patientId]);
 
   const handleBookClick = (doc) => {
     setSelectedDoctor(doc);
@@ -82,7 +87,6 @@ const Sessions = () => {
 
   const handleConfirmBooking = async () => {
     try {
-      const patientId = localStorage.getItem("patientId");
       if (!patientId) return alert("Patient ID missing. Please login again.");
 
       await axios.post("http://localhost:9000/api/appointments", {
@@ -99,12 +103,10 @@ const Sessions = () => {
       setTime("");
       setSelectedDoctor(null);
 
-      // Refresh appointments
       const res = await axios.get(
         `http://localhost:9000/api/appointments/patient/${patientId}`
       );
       setAppointments(res.data.appointments || []);
-
     } catch (err) {
       console.error("BOOKING ERROR:", err);
       alert("Error booking appointment");
@@ -121,7 +123,6 @@ const Sessions = () => {
           </p>
 
           <div className="mt-8 bg-white p-6 rounded-xl shadow-sm">
-
             {/* Tabs */}
             <div className="mb-6">
               <ul className="flex gap-8 border-b pb-3 text-sm md:text-base">
@@ -160,6 +161,9 @@ const Sessions = () => {
               </ul>
             </div>
 
+            {/* FORCE DEFAULT TAB FIX */}
+            {!activeTab && setActiveTab("book")}
+
             {/* TAB 1 — BOOK SESSION */}
             {activeTab === "book" && (
               <>
@@ -176,102 +180,104 @@ const Sessions = () => {
                   ))}
                 </div>
 
+                {/* SHOW DOCTORS LIST */}
                 <div className="mt-4 space-y-4">
-                  {doctors.map((doc) => (
-                    <div
-                      key={doc._id}
-                      className="p-5 border rounded-xl shadow-sm bg-white hover:shadow-md transition"
-                    >
-                      <div className="flex justify-between items-start">
-                        <h3 className="text-lg font-semibold">{doc.fullName}</h3>
+                  {doctors.length === 0 ? (
+                    <p className="text-gray-500">No doctors available.</p>
+                  ) : (
+                    doctors.map((doc) => (
+                      <div
+                        key={doc._id}
+                        className="p-5 border rounded-xl shadow-sm bg-white hover:shadow-md transition"
+                      >
+                        <div className="flex justify-between items-start">
+                          <h3 className="text-lg font-semibold">
+                            {doc.fullName}
+                          </h3>
 
-                        {doc.verified && (
-                          <span className="text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full text-xs font-medium">
-                            Verified
-                          </span>
-                        )}
-                      </div>
+                          {doc.verified && (
+                            <span className="text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full text-xs font-medium">
+                              Verified
+                            </span>
+                          )}
+                        </div>
 
-                      <div className="mt-4 flex justify-end">
-                        <button
-                          onClick={() => handleBookClick(doc)}
-                          className="px-6 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
-                        >
-                          Book
-                        </button>
+                        <div className="mt-4 flex justify-end">
+                          <button
+                            onClick={() => handleBookClick(doc)}
+                            className="px-6 py-2 rounded-lg text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700 transition"
+                          >
+                            Book
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    ))
+                  )}
                 </div>
               </>
             )}
 
             {/* TAB 2 — SCHEDULED SESSIONS */}
-          {activeTab === "scheduled" && (
-  <div className="mt-4 space-y-4">
-    {appointments.length === 0 ? (
-      <p className="text-gray-500">No scheduled sessions.</p>
-    ) : (
-      appointments.map((apt) => (
-        <div
-          key={apt._id}
-          className="p-5 border rounded-xl shadow-sm bg-emerald-50 flex justify-between items-start"
-        >
-          <div>
-            <h3 className="font-semibold text-lg">
-              {apt.sessionType}
-            </h3>
+            {activeTab === "scheduled" && (
+              <div className="mt-4 space-y-4">
+                {appointments.length === 0 ? (
+                  <p className="text-gray-500">No scheduled sessions.</p>
+                ) : (
+                  appointments.map((apt) => (
+                    <div
+                      key={apt._id}
+                      className="p-5 border rounded-xl shadow-sm bg-emerald-50 flex justify-between items-start"
+                    >
+                      <div>
+                        <h3 className="font-semibold text-lg">
+                          {apt.sessionType}
+                        </h3>
 
-            <p className="text-gray-700 mt-1">
-              Doctor: {apt.doctorId?.fullName}
-            </p>
+                        <p className="text-gray-700 mt-1">
+                          Doctor: {apt.doctorId?.fullName}
+                        </p>
 
-            <p className="text-gray-600 mt-1">
-              Date: {apt.date} • Time: {apt.time}
-            </p>
+                        <p className="text-gray-600 mt-1">
+                          Date: {apt.date} • Time: {apt.time}
+                        </p>
 
-            <span className="text-sm text-emerald-700 font-medium">
-              Status: {apt.status}
-            </span>
-          </div>
+                        <span className="text-sm text-emerald-700 font-medium">
+                          Status: {apt.status}
+                        </span>
+                      </div>
 
-          {/* DELETE BUTTON */}
-          <button
-            onClick={async () => {
-              const ok = window.confirm("Are you sure you want to delete this appointment?");
-              if (!ok) return;
+                      <button
+                        onClick={async () => {
+                          const ok = window.confirm("Delete appointment?");
+                          if (!ok) return;
 
-              try {
-                await axios.delete(`http://localhost:9000/api/appointments/${apt._id}`);
+                          try {
+                            await axios.delete(
+                              `http://localhost:9000/api/appointments/${apt._id}`
+                            );
 
-                // Refresh appointments
-                const patientId = localStorage.getItem("patientId");
-                const res = await axios.get(
-                  `http://localhost:9000/api/appointments/patient/${patientId}`
-                );
-                setAppointments(res.data.appointments || []);
-
-              } catch (err) {
-                console.error("DELETE ERROR:", err);
-                alert("Failed to delete appointment");
-              }
-            }}
-            className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition"
-          >
-            Delete
-          </button>
-        </div>
-      ))
-    )}
-  </div>
-)}
-
-
+                            const res = await axios.get(
+                              `http://localhost:9000/api/appointments/patient/${patientId}`
+                            );
+                            setAppointments(res.data.appointments || []);
+                          } catch (err) {
+                            console.error("DELETE ERROR:", err);
+                            alert("Failed to delete appointment");
+                          }
+                        }}
+                        className="px-4 py-2 bg-red-500 text-white rounded-lg text-sm hover:bg-red-600 transition"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>
 
-      {/* Booking Modal */}
       {showModal && (
         <BookingModal
           doctor={selectedDoctor}

@@ -73,6 +73,26 @@ router.get("/patient/:id", async (req, res) => {
   }
 });
 
+/* --------------- GET APPOINTMENTS BY DOCTOR ID (NEW) --------------- */
+router.get("/doctor/:id", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const appointments = await Appointment.find({ doctorId: id })
+      .populate("patientId", "fullName email phoneNumber age gender")
+      .sort({ date: 1, time: 1 });
+
+    return res.json({
+      success: true,
+      appointments,
+    });
+
+  } catch (err) {
+    console.error("Fetch doctor appointments error:", err);
+    return res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 /* ------------------ DELETE APPOINTMENT ------------------ */
 router.delete("/:id", async (req, res) => {
   try {
