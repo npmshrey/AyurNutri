@@ -4,8 +4,6 @@ import { Helmet } from "react-helmet";
 import { AnimatePresence, motion } from "framer-motion";
 import { Navigate } from "react-router-dom";
 import useAuth from "../../hooks/useAuth";
-import IntelligenceCenterDashboard from "../ayurvedic-intelligence-center/IntelligenceCenterDashboard";
-
 
 // Local components
 import NavbarPatient from "./components/NavbarPatient";
@@ -14,6 +12,7 @@ import FoodScan from "./components/FoodScan";
 import Analytics from "./components/Analytics";
 import Sessions from "./components/Sessions";
 import Messages from "./components/Messages";
+import IntelligenceCenterDashboard from "../ayurvedic-intelligence-center/IntelligenceCenterDashboard";
 
 const pageMotion = {
   initial: { opacity: 0, y: 10, scale: 0.995 },
@@ -25,35 +24,23 @@ const pageMotion = {
 const PersonalWellnessHub = () => {
   const { user, isPatient } = useAuth();
 
-  // If somehow a doctor or unauthenticated user gets here:
+  // Agar doctor ya unauthenticated aaya toh redirect
   if (!isPatient) {
     if (user?.role === "doctor") {
       return <Navigate to="/professional-dashboard-portal" replace />;
     }
     return <Navigate to="/signin" replace />;
   }
+
+  // Kaunsa screen open hai (dashboard / food-scan / analytics ...)
   const [active, setActive] = useState("dashboard");
 
-  const userData = {
-    name: "Priya Sharma",
-    constitution: "Vata-Pitta",
-    journeyDay: 45,
-    wellnessScore: 78,
-  };
-
-  const todaysRecommendations = {
-    primaryMeal: "Kitchari with seasonal vegetables",
-  };
-
+  // Active ke hisaab se component dikhana
   const renderActive = () => {
     switch (active) {
       case "dashboard":
-        return (
-          <DashboardHome
-            userData={userData}
-            todaysRecommendations={todaysRecommendations}
-          />
-        );
+        // ✅ yahan se DashboardHome ko onNavigate milta hai (cards ko control karega)
+        return <DashboardHome onNavigate={setActive} />;
       case "food-scan":
         return <FoodScan />;
       case "analytics":
@@ -64,17 +51,12 @@ const PersonalWellnessHub = () => {
         return <Messages />;
       case "intelligence-center":
         return <IntelligenceCenterDashboard />;
-
       default:
-        return (
-          <DashboardHome
-            userData={userData}
-            todaysRecommendations={todaysRecommendations}
-          />
-        );
+        return <DashboardHome onNavigate={setActive} />;
     }
   };
 
+  // Theme colors
   const themeVars = {
     "--ayur-primary": "#0F6C3F",
     "--ayur-mint": "#E8F7EE",
@@ -85,22 +67,19 @@ const PersonalWellnessHub = () => {
     "--ayur-bg": "#FAF9F6",
   };
 
-  const logoLocalPath = "/mnt/data/Screenshot 2025-11-19 190435.png";
-
   return (
     <div style={themeVars} className="min-h-screen" aria-live="polite">
       <Helmet>
         <title>Personal Wellness Hub</title>
       </Helmet>
 
-      <NavbarPatient
-        active={active}
-        onNavigate={setActive}
-        logoUrl={logoLocalPath}
-      />
+      {/* Top patient navbar (jo pehle se tha) */}
+      <NavbarPatient active={active} onNavigate={setActive} />
 
       <main className="pt-6 pb-12 bg-[var(--ayur-bg)]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* 👇 Middle wala extra navbar hata diya, sirf content bacha */}
+
           <AnimatePresence mode="wait">
             <motion.div
               key={active}
