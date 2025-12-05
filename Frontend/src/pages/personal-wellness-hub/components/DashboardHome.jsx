@@ -5,7 +5,8 @@ import Button from "../../../components/ui/Button";
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
 
-const DashboardHome = () => {
+// ✅ onNavigate prop add kiya (parent se aayega)
+const DashboardHome = ({ onNavigate }) => {
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState("");
   const [profile, setProfile] = useState(null);
@@ -40,17 +41,12 @@ const DashboardHome = () => {
 
         const data = await res.json();
 
+        const primary =
+          data.primaryRecord || data.latestRecord || data.record || null;
 
-const primary =
-  data.primaryRecord ||
-  data.latestRecord ||
-  data.record ||
-  null;
-
-setProfile(data.profile || null);
-setPrimaryRecord(primary);
-setNextAppointment(data.nextAppointment || null);
-
+        setProfile(data.profile || null);
+        setPrimaryRecord(primary);
+        setNextAppointment(data.nextAppointment || null);
       } catch (err) {
         console.error("Patient dashboard error:", err);
         setErrorMsg(err.message || "Failed to load your dashboard.");
@@ -126,6 +122,13 @@ setNextAppointment(data.nextAppointment || null);
       (dietPlan.dinner?.length || 0) >
     0;
 
+  // ✅ helper: safe navigate
+  const handleNavigate = (target) => {
+    if (typeof onNavigate === "function") {
+      onNavigate(target);
+    }
+  };
+
   // ---- UI ----
   if (loading && !profile && !primaryRecord) {
     return (
@@ -184,9 +187,14 @@ setNextAppointment(data.nextAppointment || null);
         </div>
       </div>
 
-      {/* Action Cards */}
+      {/* ✅ Action Cards – NOW HOVER + CLICKABLE */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-5 mb-8">
-        <div className="bg-white rounded-xl p-6 border border-gray-300 shadow-sm">
+        {/* Scan Food */}
+        <button
+          type="button"
+          onClick={() => handleNavigate("food-scan")}
+          className="bg-white rounded-xl p-6 border border-gray-300 shadow-sm text-left transition-all duration-200 hover:shadow-md hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-green-600"
+        >
           <div className="flex items-center mb-3">
             <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
               <span className="text-xl">📷</span>
@@ -196,9 +204,14 @@ setNextAppointment(data.nextAppointment || null);
           <p className="text-sm text-gray-600">
             Analyze meals with Ayurvedic principles
           </p>
-        </div>
+        </button>
 
-        <div className="bg-white rounded-xl p-6 border border-gray-300 shadow-sm">
+        {/* Analytics */}
+        <button
+          type="button"
+          onClick={() => handleNavigate("analytics")}
+          className="bg-white rounded-xl p-6 border border-gray-300 shadow-sm text-left transition-all duration-200 hover:shadow-md hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-green-600"
+        >
           <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
             <span className="text-xl">📊</span>
           </div>
@@ -206,9 +219,19 @@ setNextAppointment(data.nextAppointment || null);
           <p className="text-sm text-gray-600">
             View your nutrition & progress
           </p>
-        </div>
+        </button>
 
-        <div className="bg-white rounded-xl p-6 border border-gray-300 shadow-sm">
+        {/* Diet Plans – scroll to diet section */}
+        <button
+          type="button"
+          onClick={() => {
+            const el = document.getElementById("diet-plan-section");
+            if (el) {
+              el.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }}
+          className="bg-white rounded-xl p-6 border border-gray-300 shadow-sm text-left transition-all duration-200 hover:shadow-md hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-green-600"
+        >
           <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
             <span className="text-xl">🍎</span>
           </div>
@@ -216,15 +239,20 @@ setNextAppointment(data.nextAppointment || null);
           <p className="text-sm text-gray-600">
             Personalized recommendations from your doctor
           </p>
-        </div>
+        </button>
 
-        <div className="bg-white rounded-xl p-6 border border-gray-300 shadow-sm">
+        {/* Sessions */}
+        <button
+          type="button"
+          onClick={() => handleNavigate("sessions")}
+          className="bg-white rounded-xl p-6 border border-gray-300 shadow-sm text-left transition-all duration-200 hover:shadow-md hover:-translate-y-1 focus:outline-none focus:ring-2 focus:ring-green-600"
+        >
           <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
             <span className="text-xl">📅</span>
           </div>
           <h3 className="font-semibold text-gray-800 mt-3">Sessions</h3>
           <p className="text-sm text-gray-600">Book consultations</p>
-        </div>
+        </button>
       </div>
 
       {/* Doctor + Nutrition Overview */}
@@ -281,7 +309,6 @@ setNextAppointment(data.nextAppointment || null);
             </div>
           ) : (
             <div className="bg-white p-4 rounded-xl shadow-sm border">
-              {/* Calories summary (rough, based on food data) */}
               <p className="font-medium text-gray-800 mb-1">Calories</p>
               <div className="w-full bg-gray-200 rounded-full h-3">
                 <div
@@ -298,7 +325,6 @@ setNextAppointment(data.nextAppointment || null);
                 {nutritionSummary.totalCalories || 0} / 2000 (approx.)
               </p>
 
-              {/* Per meal summary */}
               <div className="grid grid-cols-3 gap-4 mt-4 text-sm">
                 {["breakfast", "lunch", "dinner"].map((meal) => {
                   const label =
@@ -331,7 +357,10 @@ setNextAppointment(data.nextAppointment || null);
       {/* Diet details + Recommendations */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
         {/* Diet Plan Details */}
-        <div className="bg-[#E8E2D9] rounded-xl p-6 shadow-sm">
+        <div
+          id="diet-plan-section" // ✅ Diet Plans card scrolls here
+          className="bg-[#E8E2D9] rounded-xl p-6 shadow-sm"
+        >
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-semibold text-gray-800">
               Your Current Diet Plan
@@ -399,7 +428,7 @@ setNextAppointment(data.nextAppointment || null);
           )}
         </div>
 
-        {/* Ayurvedic Recommendations (still mostly static, can later be AI/personalized) */}
+        {/* Ayurvedic Recommendations */}
         <div className="bg-[#E8E2D9] rounded-xl p-6 shadow-sm">
           <h2 className="font-semibold text-gray-800 mb-3">
             Ayurvedic Recommendations
@@ -428,10 +457,9 @@ setNextAppointment(data.nextAppointment || null);
             {
               icon: "🥗",
               title: "Diet Tip",
-              text:
-                primaryRecord?.dietPreferences
-                  ? `Keep your meals aligned with your preference: ${primaryRecord.dietPreferences}. Avoid overeating and keep regular meal timings.`
-                  : "Favour freshly cooked, warm, lightly spiced meals. Avoid heavy, overly oily or very cold foods.",
+              text: primaryRecord?.dietPreferences
+                ? `Keep your meals aligned with your preference: ${primaryRecord.dietPreferences}. Avoid overeating and keep regular meal timings.`
+                : "Favour freshly cooked, warm, lightly spiced meals. Avoid heavy, overly oily or very cold foods.",
             },
             {
               icon: "🧘‍♂️",
