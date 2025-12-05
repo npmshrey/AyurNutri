@@ -1,4 +1,3 @@
-// backend/routes/patients.js
 import express from "express";
 import ClinicalPatient from "../models/ClinicalPatient.js";
 import AuthPatient from "../models/authPatient.js";
@@ -15,6 +14,36 @@ function requireDoctor(req, res, next) {
   }
   next();
 }
+
+/**
+ * ⭐ NEW ROUTE ADDED
+ * GET /api/patients/single/:id
+ * Fetch one clinical patient (for doctor case profile)
+ */
+router.get("/single/:id", verifyToken, requireDoctor, async (req, res) => {
+  try {
+    const doctorId = req.user.id;
+    const clinicalPatientId = req.params.id;
+
+    const patient = await ClinicalPatient.findOne({
+      _id: clinicalPatientId,
+      doctorId, // must belong to logged-in doctor
+    })
+      .populate("patientAccountId", "fullName email phoneNumber")
+      .populate("clinicalReports");
+
+    if (!patient) {
+      return res
+        .status(404)
+        .json({ message: "Patient not found or not your patient" });
+    }
+
+    res.json(patient);
+  } catch (err) {
+    console.error("GET clinical patient error:", err);
+    res.status(500).json({ message: err.message || "Server error" });
+  }
+});
 
 /**
  * GET /api/patients
@@ -44,8 +73,7 @@ router.get("/", verifyToken, requireDoctor, async (req, res) => {
 
 /**
  * POST /api/patients
- * Doctor creates a clinical-patient record linked to themselves
- * BUT ONLY if the patient has an auth account already
+ * Create clinical record linked to existing patient account
  */
 router.post("/", verifyToken, requireDoctor, async (req, res) => {
   try {
@@ -61,7 +89,6 @@ router.post("/", verifyToken, requireDoctor, async (req, res) => {
       progress,
       patientIdentifier,
 
-      // health profile fields
       heightCm,
       weightKg,
       bmi,
@@ -102,7 +129,6 @@ router.post("/", verifyToken, requireDoctor, async (req, res) => {
     }
 
     const patient = new ClinicalPatient({
-      // from account
       name: authPatient.fullName,
       age,
       dosha,
@@ -137,7 +163,7 @@ router.post("/", verifyToken, requireDoctor, async (req, res) => {
 
 /**
  * PUT /api/patients/:id
- * Doctor can only update their own clinical-patient
+ * Update clinical record (doctor-owned)
  */
 router.put("/:id", verifyToken, requireDoctor, async (req, res) => {
   try {
@@ -192,7 +218,6 @@ router.delete("/:id", verifyToken, requireDoctor, async (req, res) => {
 
 /**
  * POST /api/patients/:id/diet-plan
- * Save diet plan on the CLINICAL patient (per doctor)
  */
 router.post("/:id/diet-plan", verifyToken, requireDoctor, async (req, res) => {
   try {
@@ -201,7 +226,7 @@ router.post("/:id/diet-plan", verifyToken, requireDoctor, async (req, res) => {
     const { breakfast = [], lunch = [], dinner = [] } = req.body || {};
 
     const patient = await ClinicalPatient.findOneAndUpdate(
-      { _id: clinicalPatientId, doctorId }, // make sure doctor owns this patient
+      { _id: clinicalPatientId, doctorId },
       {
         $set: {
           dietPlan: {
@@ -235,7 +260,6 @@ router.post("/:id/diet-plan", verifyToken, requireDoctor, async (req, res) => {
 
 /**
  * POST /api/patients/:id/report
- * Add clinical report / doctor notes on CLINICAL patient
  */
 router.post("/:id/report", verifyToken, requireDoctor, async (req, res) => {
   try {
@@ -253,7 +277,7 @@ router.post("/:id/report", verifyToken, requireDoctor, async (req, res) => {
 
     const patient = await ClinicalPatient.findOne({
       _id: clinicalPatientId,
-      doctorId, // ensure this doctor owns the patient
+      doctorId,
     });
 
     if (!patient) {
@@ -274,7 +298,6 @@ router.post("/:id/report", verifyToken, requireDoctor, async (req, res) => {
       createdAt: new Date(),
     };
 
-    // `clinicalReports` is defined in ClinicalPatientSchema
     patient.clinicalReports.push(report);
     await patient.save();
 
