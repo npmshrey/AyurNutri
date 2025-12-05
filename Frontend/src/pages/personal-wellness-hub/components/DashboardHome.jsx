@@ -12,6 +12,8 @@ const DashboardHome = () => {
   const [profile, setProfile] = useState(null);
   const [primaryRecord, setPrimaryRecord] = useState(null);
   const [nextAppointment, setNextAppointment] = useState(null);
+  const [appointments, setAppointments] = useState([]);
+
 
   // ⭐ REQUIRED FOR MODAL (your missing variable)
   const [selectedReport, setSelectedReport] = useState(null);
@@ -56,6 +58,8 @@ const DashboardHome = () => {
         setProfile(data.profile || null);
         setPrimaryRecord(primary);
         setNextAppointment(data.nextAppointment || null);
+        setAppointments(data.appointments || []);
+
       } catch (err) {
         console.error("Patient dashboard error:", err);
         setErrorMsg(err.message || "Failed to load your dashboard.");
@@ -387,6 +391,87 @@ const DashboardHome = () => {
           )}
         </div>
       </div>
+      {/* -----------------------------------------------------------
+   📌 FULL-WIDTH HEALTH TIMELINE (Appointments + Reports)
+------------------------------------------------------------ */}
+<div className="mt-12 bg-[#E8E2D9] rounded-xl p-6 shadow-sm">
+  <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+    Your Health Timeline
+  </h2>
+
+  {/* Build unified timeline */}
+  {(() => {
+    const reports = primaryRecord?.clinicalReports || [];
+    const appts = appointments || [];
+
+    const combined = [
+      ...reports.map((r) => ({
+        type: "report",
+        date: r.createdAt,
+        title: r.title || "Clinical Report",
+        description: r.summary || r.diagnosis || "Doctor’s note added",
+        data: r,
+      })),
+      ...appts.map((a) => ({
+        type: "appointment",
+        date: a.createdAt,
+        title: a.condition || "Appointment",
+        description: `Consultation with doctor`,
+        data: a,
+      })),
+    ].sort((a, b) => new Date(b.date) - new Date(a.date)); // latest first
+
+    if (combined.length === 0) {
+      return (
+        <p className="text-gray-600 bg-white p-4 rounded-xl border shadow-sm">
+          No medical activity recorded yet.
+        </p>
+      );
+    }
+
+    return (
+      <div className="relative border-l-2 border-green-600 pl-6 space-y-8">
+        {combined.map((event, i) => (
+          <div key={i} className="relative">
+            {/* Dot */}
+            <div className="absolute -left-[11px] w-5 h-5 bg-green-600 rounded-full border-2 border-white"></div>
+
+            {/* Content */}
+            <div className="bg-white p-4 rounded-xl shadow-sm border">
+              <p className="text-xs text-gray-500">
+                {new Date(event.date).toLocaleString()}
+              </p>
+
+              <h3 className="text-lg font-semibold text-gray-800 mt-1 flex items-center gap-2">
+                {event.type === "report" ? "📝" : "📅"} {event.title}
+              </h3>
+
+              <p className="text-sm text-gray-600 mt-1">{event.description}</p>
+
+              {/* View button for reports */}
+              {event.type === "report" && (
+                <button
+                  onClick={() => setSelectedReport(event.data)}
+                  className="text-green-700 underline text-sm mt-2"
+                >
+                  View Report
+                </button>
+              )}
+
+              {/* For appointments (future extensions) */}
+              {event.type === "appointment" && (
+                <p className="text-sm text-blue-700 mt-2">
+                  Appointment booked
+                </p>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    );
+  })()}
+</div>
+
 
       {/* REPORT POPUP MODAL */}
       {selectedReport && (
