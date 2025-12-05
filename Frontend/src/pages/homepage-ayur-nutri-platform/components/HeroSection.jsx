@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
-import bookVideo from "../../../assets/bookshowcase.mp4"; // ⬅️ NEW IMPORT
+import vataImg from "../../../assets/vata.jpg"; // ⭐ Only image we keep
 
 const HeroSection = () => {
   const [currentAnimation, setCurrentAnimation] = useState(0);
@@ -18,50 +18,32 @@ const HeroSection = () => {
     const interval = setInterval(() => {
       setCurrentAnimation((prev) => (prev + 1) % animationSteps.length);
     }, 2000);
+
     return () => clearInterval(interval);
   }, []);
 
   return (
     <section className="relative min-h-screen bg-gradient-to-br from-background via-muted/30 to-brand-cream overflow-hidden">
+      
       {/* Background Pattern */}
-      <div className="absolute inset-0 opacity-5">
-        <svg
-          className="w-full h-full"
-          viewBox="0 0 100 100"
-          preserveAspectRatio="none"
-        >
+      <div className="absolute inset-0 opacity-5 pointer-events-none">
+        <svg className="w-full h-full" viewBox="0 0 100 100">
           <defs>
-            <pattern
-              id="organic-pattern"
-              x="0"
-              y="0"
-              width="20"
-              height="20"
-              patternUnits="userSpaceOnUse"
-            >
-              <circle
-                cx="10"
-                cy="10"
-                r="2"
-                fill="currentColor"
-                className="text-primary"
-              />
+            <pattern id="organic-pattern" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse">
+              <circle cx="10" cy="10" r="2" fill="currentColor" className="text-primary" />
             </pattern>
           </defs>
           <rect width="100" height="100" fill="url(#organic-pattern)" />
         </svg>
       </div>
 
-      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-20 pb-16">
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-16">
         <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[80vh]">
-          {/* ============================================================ */}
-          {/* LEFT SIDE (unchanged original content) */}
-          {/* ============================================================ */}
+
+          {/* LEFT SIDE CONTENT */}
           <div
-            className={`space-y-8 organic-transition duration-1000 ${
-              isVisible
-                ? "opacity-100 translate-y-0"
-                : "opacity-0 translate-y-8"
+            className={`space-y-8 transition-all duration-1000 ${
+              isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
             }`}
           >
             <div className="space-y-6">
@@ -84,17 +66,15 @@ const HeroSection = () => {
               </p>
             </div>
 
-            {/* Live Transformation Mini-Card */}
-            <div className="bg-card/50 backdrop-blur-sm rounded-2xl p-6 border border-border organic-shadow">
+            {/* Live Transformation Card */}
+            <div className="bg-card/50 backdrop-blur-sm rounded-2xl p-6 border border-border shadow-sm">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-text-primary">
-                  Live Transformation
-                </h3>
+                <h3 className="text-lg font-semibold text-text-primary">Live Transformation</h3>
                 <div className="flex space-x-2">
                   {animationSteps.map((_, index) => (
                     <div
                       key={index}
-                      className={`w-2 h-2 rounded-full organic-transition ${
+                      className={`w-2 h-2 rounded-full transition-all ${
                         index === currentAnimation ? "bg-primary" : "bg-border"
                       }`}
                     />
@@ -104,51 +84,30 @@ const HeroSection = () => {
 
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-3">
-                  <div
-                    className={`p-3 rounded-full bg-primary/10 organic-transition ${animationSteps[currentAnimation].color}`}
-                  >
-                    <Icon
-                      name={animationSteps[currentAnimation].icon}
-                      size={24}
-                    />
+                  <div className={`p-3 rounded-full bg-primary/10 ${animationSteps[currentAnimation].color}`}>
+                    <Icon name={animationSteps[currentAnimation].icon} size={24} />
                   </div>
                   <div>
-                    <p className="font-medium text-text-primary">
-                      {animationSteps[currentAnimation].label} Constitution
-                    </p>
-                    <p className="text-sm text-text-secondary">
-                      Ayurvedic Assessment
-                    </p>
+                    <p className="font-medium text-text-primary">{animationSteps[currentAnimation].label} Constitution</p>
+                    <p className="text-sm text-text-secondary">Ayurvedic Assessment</p>
                   </div>
                 </div>
 
-                <Icon
-                  name="ArrowRight"
-                  size={20}
-                  className="text-text-secondary animate-pulse"
-                />
+                <Icon name="ArrowRight" size={20} className="text-text-secondary animate-pulse" />
 
                 <div className="flex items-center space-x-3">
                   <div className="p-3 rounded-full bg-secondary/10">
-                    <Icon
-                      name="BarChart3"
-                      size={24}
-                      className="text-secondary"
-                    />
+                    <Icon name="BarChart3" size={24} className="text-secondary" />
                   </div>
                   <div>
-                    <p className="font-medium text-text-primary">
-                      Personalized Plan
-                    </p>
-                    <p className="text-sm text-text-secondary">
-                      Nutritional Precision
-                    </p>
+                    <p className="font-medium text-text-primary">Personalized Plan</p>
+                    <p className="text-sm text-text-secondary">Nutritional Precision</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* CTA */}
+            {/* CTA BTN */}
             <div className="flex flex-col sm:flex-row gap-4">
               <Button
                 variant="default"
@@ -162,47 +121,19 @@ const HeroSection = () => {
             </div>
           </div>
 
-          {/* ============================================================ */}
-          {/* RIGHT SIDE — VIDEO INSIDE THE CARD */}
-          {/* ============================================================ */}
+          {/* RIGHT SIDE — ONLY IMAGE */}
           <div
-            className={`relative organic-transition duration-1000 delay-300 ${
-              isVisible
-                ? "opacity-100 translate-x-0"
-                : "opacity-0 translate-x-8"
+            className={`relative transition-all duration-1000 delay-300 ${
+              isVisible ? "opacity-100 translate-x-0" : "opacity-0 translate-x-8"
             }`}
           >
-            <div className="bg-card rounded-3xl organic-shadow border border-border overflow-hidden">
-              {/* Top bar with 3 dots (kept same for mockup look) */}
-              <div className="bg-primary/5 px-6 py-4 border-b border-border rounded-t-3xl">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-3 h-3 bg-red-400 rounded-full" />
-                    <div className="w-3 h-3 bg-yellow-400 rounded-full" />
-                    <div className="w-3 h-3 bg-green-400 rounded-full" />
-                  </div>
-                  <span className="text-xs text-text-secondary">
-                    Ayurvedic Intelligence
-                  </span>
-                </div>
-              </div>
-
-              {/* VIDEO CONTENT */}
-              <div className="bg-card px-4 pb-6 pt-4">
-                <div className="rounded-2xl overflow-hidden bg-black/5">
-                  <video
-                    src={bookVideo}
-                    autoPlay
-                    loop
-                    muted
-                    playsInline
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              </div>
-            </div>
+            <img
+              src={vataImg}
+              alt="Vata Pitta Kapha"
+              className="w-full h-auto object-contain"
+            />
           </div>
-          {/* ============================================================ */}
+
         </div>
       </div>
     </section>
