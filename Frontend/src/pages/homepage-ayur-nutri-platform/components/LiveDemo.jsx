@@ -504,45 +504,12 @@ const LiveDemo = () => {
                 </Button>
               )}
               
-              {currentStep === 3 && (
-                <Button
-                  variant="default"
-                  className="bg-secondary hover:bg-secondary/90"
-                  iconName="Calendar"
-                  iconPosition="left"
-                >
-                  Schedule Full Assessment
-                </Button>
-              )}
+           
             </div>
           </div>
         </div>
 
-        {/* Demo CTA
-        <div className="text-center mt-12">
-          <p className="text-text-secondary mb-6">
-            Ready to see the full platform in action?
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button
-              variant="default"
-              size="lg"
-              className="bg-primary hover:bg-primary/90"
-              iconName="Calendar"
-              iconPosition="left"
-            >
-              Request Professional Demo
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              iconName="Play"
-              iconPosition="left"
-            >
-              Watch Video Overview
-            </Button>
-          </div>
-        </div> */}
+  
       </div>
     </section>
   );
