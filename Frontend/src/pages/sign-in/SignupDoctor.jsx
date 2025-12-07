@@ -125,7 +125,7 @@ const SignupDoctor = () => {
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="Dr. Aarav Sharma"
+              
               className={inputClassName}
             />
 
@@ -135,22 +135,24 @@ const SignupDoctor = () => {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="doctor@example.com"
+              
               className={inputClassName}
             />
 
             <Input
-              label="Phone Number (optional)"
+              label="Phone Number"
+              type="phoneNumber"
+              required
               value={phoneNumber}
               onChange={(e) => setPhoneNumber(e.target.value)}
-              placeholder="9876543210"
+              
               className={inputClassName}
             />
 
             {/* Gender */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Gender (optional)
+                Gender 
               </label>
               <select
                 value={gender}
@@ -171,7 +173,7 @@ const SignupDoctor = () => {
               required
               value={regNo}
               onChange={(e) => setRegNo(e.target.value)}
-              placeholder="e.g., UPMC12345"
+              
               className={inputClassName}
             />
 
@@ -204,7 +206,7 @@ const SignupDoctor = () => {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter a strong password"
+                
                 className={inputClassName}
               />
               <button
@@ -224,7 +226,7 @@ const SignupDoctor = () => {
                 required
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder="Re-enter your password"
+                
                 className={inputClassName}
               />
               <button

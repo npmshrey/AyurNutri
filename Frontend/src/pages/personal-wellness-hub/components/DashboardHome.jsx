@@ -1,31 +1,38 @@
 // src/pages/personal-wellness-hub/components/DashboardHome.jsx
+
 import React, { useEffect, useMemo, useState } from "react";
+import useAuth from "../../../hooks/useAuth";
 import Button from "../../../components/ui/Button";
+import PatientWeekPlan from "./PatientWeekPlan";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
 
-// ✅ onNavigate prop add kiya (parent se aayega)
+// ✅ onNavigate prop (parent se aayega)
 const DashboardHome = ({ onNavigate }) => {
-  const [loading, setLoading] = useState(true);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [profile, setProfile] = useState(null);
-  const [primaryRecord, setPrimaryRecord] = useState(null);
-  const [nextAppointment, setNextAppointment] = useState(null);
+  const { token, user } = useAuth();
 
-  // ---- Fetch /api/patient/overview on mount ----
+  const [overview, setOverview] = useState(null);
+  const [overviewLoading, setOverviewLoading] = useState(false);
+  const [overviewError, setOverviewError] = useState("");
+
+  const [clinicalPatientId, setClinicalPatientId] = useState(null);
+  const [latestPlanId, setLatestPlanId] = useState(null);
+  const [weeklyLoading, setWeeklyLoading] = useState(false);
+  const [weeklyError, setWeeklyError] = useState("");
+
+  const [selectedReport, setSelectedReport] = useState(null);
+
+  // =========================================================
+  // 1) FETCH PATIENT OVERVIEW
+  // =========================================================
   useEffect(() => {
+    if (!token) return;
+
     const fetchOverview = async () => {
       try {
-        setLoading(true);
-        setErrorMsg("");
-
-        const token = localStorage.getItem("authToken");
-        if (!token) {
-          setErrorMsg("You are not logged in. Please sign in again.");
-          setLoading(false);
-          return;
-        }
+        setOverviewLoading(true);
+        setOverviewError("");
 
         const res = await fetch(`${API_BASE}/api/patient/overview`, {
           headers: {
@@ -34,87 +41,138 @@ const DashboardHome = ({ onNavigate }) => {
           },
         });
 
+        const body = await res.json().catch(() => ({}));
+        console.log("🔍 /api/patient/overview:", body);
+
         if (!res.ok) {
-          const body = await res.json().catch(() => ({}));
-          throw new Error(body.message || "Failed to load your dashboard.");
+          throw new Error(body.message || "Failed to load your dashboard");
         }
 
-        const data = await res.json();
-
-        const primary =
-          data.primaryRecord || data.latestRecord || data.record || null;
-
-        setProfile(data.profile || null);
-        setPrimaryRecord(primary);
-        setNextAppointment(data.nextAppointment || null);
-      } catch (err) {
-        console.error("Patient dashboard error:", err);
-        setErrorMsg(err.message || "Failed to load your dashboard.");
+        setOverview(body);
+      } catch (e) {
+        console.error("Overview error:", e);
+        setOverviewError(e.message || "Failed to load your dashboard");
       } finally {
-        setLoading(false);
+        setOverviewLoading(false);
       }
     };
 
     fetchOverview();
-  }, []);
+  }, [token]);
 
-  // ---- Helpers ----
+  const profile = overview?.profile || null;
+  const latestRecord =
+    overview?.primaryRecord ||
+    overview?.latestRecord ||
+    overview?.record ||
+    null;
+  const appointments = overview?.appointments || [];
+  const nextAppointment = overview?.nextAppointment || null;
+
+  // =========================================================
+  // 2) FETCH WEEKLY PLANS (once we know clinical patient id)
+  // =========================================================
+  useEffect(() => {
+    if (!token) return;
+    if (!latestRecord?._id) {
+      setClinicalPatientId(null);
+      setLatestPlanId(null);
+      return;
+    }
+
+    const cpId = latestRecord._id;
+    setClinicalPatientId(cpId);
+
+    const fetchWeeklyPlans = async () => {
+      try {
+        setWeeklyLoading(true);
+        setWeeklyError("");
+
+        const res = await fetch(
+          `${API_BASE}/api/patients/${cpId}/week-plans`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+          }
+        );
+
+        const body = await res.json().catch(() => ({}));
+        console.log(`🔍 /api/patients/${cpId}/week-plans:`, body);
+
+        if (!res.ok) {
+          throw new Error(body.message || "Failed to load weekly plans");
+        }
+
+        const plans = body.weeklyPlans || [];
+        if (!plans.length) {
+          setLatestPlanId(null);
+          return;
+        }
+
+        plans.sort(
+          (a, b) =>
+            new Date(b.updatedAt || b.createdAt).getTime() -
+            new Date(a.updatedAt || a.createdAt).getTime()
+        );
+
+        setLatestPlanId(plans[0]._id);
+      } catch (e) {
+        console.error("Weekly plans error:", e);
+        setWeeklyError(e.message || "Failed to load weekly plan");
+      } finally {
+        setWeeklyLoading(false);
+      }
+    };
+
+    fetchWeeklyPlans();
+  }, [token, latestRecord?._id]);
+
+  // =========================================================
+  // 3) HELPERS / DERIVED VALUES
+  // =========================================================
+
   const patientName = useMemo(() => {
     if (profile?.fullName) return profile.fullName;
+    if (user?.fullName) return user.fullName;
     return "AyurNutri User";
-  }, [profile]);
+  }, [profile, user]);
 
-  const prakritiLabel = primaryRecord?.dosha || "Not assessed yet";
+  const prakritiLabel = latestRecord?.dosha || "Not assessed yet";
   const currentStateLabel =
-    primaryRecord?.status || "No active clinical record";
+    latestRecord?.status || "No active clinical record";
 
   const doctorInfo = useMemo(() => {
-    const doc = primaryRecord?.doctorId;
+    const doc = latestRecord?.doctorId;
     if (!doc) return null;
     return {
       name: doc.fullName || "Your Ayurvedic Doctor",
       email: doc.email || "",
       phone: doc.phoneNumber || "",
     };
-  }, [primaryRecord]);
+  }, [latestRecord]);
 
-  const dietPlan = primaryRecord?.dietPlan || {
+  const dietPlan = latestRecord?.dietPlan || {
     breakfast: [],
     lunch: [],
     dinner: [],
   };
 
-  // Try to compute calories from food objects (if present)
   const nutritionSummary = useMemo(() => {
-    const sections = ["breakfast", "lunch", "dinner"];
-    let totalCalories = 0;
+    const meals = ["breakfast", "lunch", "dinner"];
+    let total = 0;
     const perMeal = {};
 
-    sections.forEach((meal) => {
-      const items = Array.isArray(dietPlan[meal]) ? dietPlan[meal] : [];
-      const mealCalories = items.reduce((sum, item) => {
-        const raw = item["Calories (per 100g)"] ?? item.calories ?? 0;
-        const n = Number(raw);
-        return Number.isFinite(n) ? sum + n : sum;
+    meals.forEach((m) => {
+      const items = dietPlan[m] || [];
+      const cal = items.reduce((sum, item) => {
+        const raw = item.nutritionPerServing?.caloriesKcal || 0;
+        return sum + (Number(raw) || 0);
       }, 0);
-      perMeal[meal] = {
-        count: items.length,
-        calories: mealCalories,
-      };
-      totalCalories += mealCalories;
+      total += cal;
+      perMeal[m] = { count: items.length, calories: cal };
     });
 
-    return { totalCalories, perMeal };
+    return { totalCalories: total, perMeal };
   }, [dietPlan]);
-
-  const formatDateTime = (val) => {
-    if (!val) return "-";
-    const d = new Date(val);
-    return d.toLocaleString([], {
-      dateStyle: "medium",
-      timeStyle: "short",
-    });
-  };
 
   const hasDiet =
     (dietPlan.breakfast?.length || 0) +
@@ -129,8 +187,19 @@ const DashboardHome = ({ onNavigate }) => {
     }
   };
 
-  // ---- UI ----
-  if (loading && !profile && !primaryRecord) {
+  const formatDateTime = (val) => {
+    if (!val) return "-";
+    return new Date(val).toLocaleString([], {
+      dateStyle: "medium",
+      timeStyle: "short",
+    });
+  };
+
+  // =========================================================
+  // 4) LOADING / ERROR STATES
+  // =========================================================
+
+  if (overviewLoading && !overview) {
     return (
       <div className="w-full py-10 text-center text-gray-600">
         Loading your wellness hub…
@@ -138,39 +207,41 @@ const DashboardHome = ({ onNavigate }) => {
     );
   }
 
-  if (errorMsg && !profile) {
+  if (overviewError && !overview) {
     return (
       <div className="w-full py-10 text-center text-red-600 text-sm">
-        {errorMsg}
+        {overviewError}
       </div>
     );
   }
 
+  // =========================================================
+  // 5) MAIN UI
+  // =========================================================
   return (
     <div className="w-full">
-      {/* Header Greeting Card */}
+      {/* HEADER SECTION */}
       <div className="bg-[#E8E2D9] p-6 rounded-xl shadow-sm mb-8">
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-semibold text-gray-800">
               Namaste, {patientName}! 🙏
             </h1>
+
             <p className="text-gray-600 mt-2">
-              Welcome to your Ayurvedic wellness journey
+              Welcome to your Ayurvedic wellness journey.
             </p>
 
             {nextAppointment ? (
               <p className="text-sm text-gray-700 mt-2">
                 <span className="font-medium">Next appointment:</span>{" "}
-                {formatDateTime(nextAppointment.date)}{" "}
-                {nextAppointment.doctor?.fullName
-                  ? `· with ${nextAppointment.doctor.fullName}`
-                  : ""}
+                {formatDateTime(nextAppointment.date || nextAppointment)}{" "}
+                {nextAppointment.doctor?.fullName &&
+                  `· with ${nextAppointment.doctor.fullName}`}
               </p>
             ) : (
               <p className="text-sm text-gray-500 mt-2">
-                No upcoming appointment yet. Stay consistent with your
-                routine, and book a follow-up when needed.
+                No upcoming appointment yet.
               </p>
             )}
           </div>
@@ -187,7 +258,7 @@ const DashboardHome = ({ onNavigate }) => {
         </div>
       </div>
 
-      {/* ✅ Action Cards – NOW HOVER + CLICKABLE */}
+      {/* ✅ Action Cards – hover + clickable */}
       <div className="grid grid-cols-1 sm:grid-cols-4 gap-5 mb-8">
         {/* Scan Food */}
         <button
@@ -255,31 +326,27 @@ const DashboardHome = ({ onNavigate }) => {
         </button>
       </div>
 
-      {/* Doctor + Nutrition Overview */}
+      {/* DOCTOR + NUTRITION */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Doctor */}
+        {/* DOCTOR INFO CARD */}
         <div className="bg-[#E8E2D9] rounded-xl p-6 shadow-sm">
           <h2 className="font-semibold text-gray-800 mb-3">
             Your Ayurvedic Doctor
           </h2>
 
           {doctorInfo ? (
-            <div className="bg-white rounded-xl p-4 border shadow-sm flex items-center justify-between">
+            <div className="bg-white p-4 rounded-xl border shadow-sm flex justify-between items-center">
               <div className="flex items-center space-x-4">
-                <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
                   🧑‍⚕️
                 </div>
                 <div>
                   <h3 className="font-semibold text-gray-800">
                     {doctorInfo.name}
                   </h3>
-                  <p className="text-sm text-gray-600">
-                    {doctorInfo.email || "Ayurvedic practitioner"}
-                  </p>
+                  <p className="text-sm text-gray-600">{doctorInfo.email}</p>
                   {doctorInfo.phone && (
-                    <p className="text-xs text-blue-600">
-                      {doctorInfo.phone}
-                    </p>
+                    <p className="text-xs text-blue-600">{doctorInfo.phone}</p>
                   )}
                 </div>
               </div>
@@ -289,76 +356,65 @@ const DashboardHome = ({ onNavigate }) => {
               </Button>
             </div>
           ) : (
-            <div className="bg-white rounded-xl p-4 border shadow-sm text-sm text-gray-600">
-              No doctor has been assigned to you yet. Once a practitioner
-              adds you to their panel, you&apos;ll see their details here.
+            <div className="bg-white p-4 rounded-xl border shadow-sm text-gray-600 text-sm">
+              No doctor assigned yet.
             </div>
           )}
         </div>
 
-        {/* Nutrition Overview (from diet plan) */}
+        {/* NUTRITION OVERVIEW */}
         <div className="bg-[#E8E2D9] rounded-xl p-6 shadow-sm">
           <h2 className="font-semibold text-gray-800 mb-3">
             Today&apos;s Nutrition Overview
           </h2>
 
           {!hasDiet ? (
-            <div className="bg-white p-4 rounded-xl shadow-sm border text-sm text-gray-600">
-              Your doctor hasn&apos;t assigned a diet plan yet. Once a diet
-              is created, you&apos;ll see your meals and summary here.
+            <div className="bg-white p-4 rounded-xl border shadow-sm text-sm text-gray-600">
+              No diet plan assigned yet.
             </div>
           ) : (
             <div className="bg-white p-4 rounded-xl shadow-sm border">
               <p className="font-medium text-gray-800 mb-1">Calories</p>
-              <div className="w-full bg-gray-200 rounded-full h-3">
+
+              <div className="w-full bg-gray-200 h-3 rounded-full">
                 <div
-                  className="bg-orange-500 h-3 rounded-full"
+                  className="h-3 rounded-full bg-orange-500"
                   style={{
                     width: `${Math.min(
                       100,
-                      (nutritionSummary.totalCalories / 2000) * 100 || 5
+                      (nutritionSummary.totalCalories / 2000) * 100
                     )}%`,
                   }}
                 ></div>
               </div>
+
               <p className="text-right text-sm mt-1">
-                {nutritionSummary.totalCalories || 0} / 2000 (approx.)
+                {nutritionSummary.totalCalories} / 2000 kcal
               </p>
 
               <div className="grid grid-cols-3 gap-4 mt-4 text-sm">
-                {["breakfast", "lunch", "dinner"].map((meal) => {
-                  const label =
-                    meal === "breakfast"
-                      ? "Breakfast"
-                      : meal === "lunch"
-                      ? "Lunch"
-                      : "Dinner";
-                  const info = nutritionSummary.perMeal[meal] || {
-                    count: 0,
-                    calories: 0,
-                  };
-                  return (
-                    <div key={meal}>
-                      <p className="font-medium text-gray-800 mb-1">
-                        {label}
-                      </p>
-                      <p className="text-xs text-gray-600">
-                        {info.count} items · {info.calories} cal
-                      </p>
-                    </div>
-                  );
-                })}
+                {["breakfast", "lunch", "dinner"].map((meal) => (
+                  <div key={meal}>
+                    <p className="font-medium text-gray-800">
+                      {meal.charAt(0).toUpperCase() + meal.slice(1)}
+                    </p>
+                    <p className="text-xs text-gray-600">
+                      {nutritionSummary.perMeal[meal]?.count ?? 0} items ·{" "}
+                      {nutritionSummary.perMeal[meal]?.calories ?? 0} cal
+                    </p>
+                  </div>
+                ))}
               </div>
             </div>
           )}
         </div>
       </div>
 
-      {/* Diet details + Recommendations */}
+      {/* DIET + CLINICAL REPORTS */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mt-8">
         {/* Diet Plan Details */}
         <div
-          id="diet-plan-section" // ✅ Diet Plans card scrolls here
+          id="diet-plan-section" // Diet Plans card scrolls here
           className="bg-[#E8E2D9] rounded-xl p-6 shadow-sm"
         >
           <div className="flex justify-between items-center mb-4">
@@ -368,84 +424,143 @@ const DashboardHome = ({ onNavigate }) => {
           </div>
 
           {!hasDiet ? (
-            <div className="bg-white border rounded-xl shadow-sm p-4 text-sm text-gray-600">
+            <div className="bg-white p-4 rounded-xl border shadow-sm text-sm text-gray-600">
               No diet items added yet.
             </div>
           ) : (
-            <div className="space-y-4">
-              {["breakfast", "lunch", "dinner"].map((meal) => {
-                const label =
-                  meal === "breakfast"
-                    ? "Breakfast"
-                    : meal === "lunch"
-                    ? "Lunch"
-                    : "Dinner";
-                const items = Array.isArray(dietPlan[meal])
-                  ? dietPlan[meal]
-                  : [];
-                return (
-                  <div
-                    key={meal}
-                    className="bg-white border rounded-xl shadow-sm p-4"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <p className="font-medium text-gray-800">{label}</p>
-                      <span className="text-xs text-gray-500">
-                        {items.length} item(s)
-                      </span>
-                    </div>
+            ["breakfast", "lunch", "dinner"].map((meal) => {
+              const items = dietPlan[meal] || [];
 
-                    {items.length === 0 ? (
-                      <p className="text-xs text-gray-500">
-                        No items assigned for {label.toLowerCase()}.
-                      </p>
-                    ) : (
-                      <ul className="space-y-1 text-sm text-gray-700">
-                        {items.map((it, idx) => (
-                          <li
-                            key={idx}
-                            className="flex justify-between items-center"
-                          >
-                            <span>
-                              {it["Food Item"] ||
-                                it.name ||
-                                it.title ||
-                                "Food item"}
-                            </span>
-                            {it["Calories (per 100g)"] && (
-                              <span className="text-xs text-gray-500">
-                                {it["Calories (per 100g)"]} cal
-                              </span>
-                            )}
-                          </li>
-                        ))}
-                      </ul>
-                    )}
+              return (
+                <div
+                  key={meal}
+                  className="bg-white p-4 rounded-xl border shadow-sm mb-4"
+                >
+                  <div className="flex justify-between mb-2">
+                    <p className="font-medium text-gray-800">
+                      {meal.charAt(0).toUpperCase() + meal.slice(1)}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {items.length} item(s)
+                    </p>
                   </div>
-                );
-              })}
-            </div>
+
+                  {items.length === 0 ? (
+                    <p className="text-xs text-gray-500">
+                      No items for this meal.
+                    </p>
+                  ) : (
+                    <ul className="text-sm space-y-1">
+                      {items.map((food, i) => (
+                        <li
+                          key={i}
+                          className="flex justify-between text-gray-700"
+                        >
+                          {food.name ||
+                            food.title ||
+                            food["Food Item"] ||
+                            "Food item"}
+                          {food.nutritionPerServing?.caloriesKcal && (
+                            <span className="text-xs text-gray-500">
+                              {food.nutritionPerServing.caloriesKcal} kcal
+                            </span>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              );
+            })
           )}
         </div>
 
-        {/* Ayurvedic Recommendations */}
+        {/* Medical Reports & Prescriptions */}
         <div className="bg-[#E8E2D9] rounded-xl p-6 shadow-sm">
           <h2 className="font-semibold text-gray-800 mb-3">
-            Ayurvedic Recommendations
+            Medical Reports & Prescriptions
           </h2>
 
-          {primaryRecord?.lifestyleNotes && (
-            <div className="bg-white border rounded-xl shadow-sm p-4 mb-3">
-              <p className="font-medium text-gray-800 flex items-center space-x-2 text-lg">
-                <span>🧾</span>
-                <span>Your Doctor&apos;s Notes</span>
-              </p>
-              <p className="text-sm text-gray-600 mt-1 whitespace-pre-line">
-                {primaryRecord.lifestyleNotes}
-              </p>
+          {!latestRecord?.clinicalReports?.length ? (
+            <div className="bg-white border rounded-xl shadow-sm p-4 text-sm text-gray-600">
+              No consultation notes available yet.
+            </div>
+          ) : (
+            latestRecord.clinicalReports.map((rep, idx) => (
+              <div
+                key={rep._id || idx}
+                className="bg-white border rounded-xl shadow-sm p-4 cursor-pointer hover:shadow-md transition mb-4"
+              >
+                <div className="flex justify-between">
+                  <p className="font-semibold text-gray-800">
+                    {rep.title || `Visit ${idx + 1}`}
+                  </p>
+
+                  <span className="text-xs text-gray-500">
+                    {new Date(rep.createdAt).toLocaleDateString()}
+                  </span>
+                </div>
+
+                <p className="text-sm text-gray-600 mt-1">
+                  {rep.summary || "Tap to view details"}
+                </p>
+
+                <button
+                  onClick={() => setSelectedReport(rep)}
+                  className="text-green-700 underline text-sm mt-2"
+                >
+                  View Details
+                </button>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      {/* WEEKLY PLAN BLOCK */}
+      <div className="mt-10">
+        <h2 className="text-lg font-semibold text-gray-800 mb-3">
+          Weekly Diet & Exercise Plan
+        </h2>
+
+        {weeklyLoading && (
+          <div className="text-sm text-gray-600">Loading weekly plan…</div>
+        )}
+
+        {!weeklyLoading && weeklyError && (
+          <div className="text-sm text-red-600">{weeklyError}</div>
+        )}
+
+        {!weeklyLoading &&
+          !weeklyError &&
+          clinicalPatientId &&
+          latestPlanId && (
+            <PatientWeekPlan
+              patientId={clinicalPatientId}
+              planId={latestPlanId}
+            />
+          )}
+
+        {!weeklyLoading &&
+          !weeklyError &&
+          clinicalPatientId &&
+          !latestPlanId && (
+            <div className="text-sm text-gray-500">
+              Your doctor has not assigned a weekly plan yet.
             </div>
           )}
 
+        {!weeklyLoading &&
+          !weeklyError &&
+          !clinicalPatientId && (
+            <div className="text-sm text-gray-500">
+              Your account is not yet linked to a clinical record. Weekly plans
+              will appear here once your doctor adds you.
+            </div>
+          )}
+
+        {/* Simple Ayurvedic recommendations */}
+        <div className="mt-4">
           {[
             {
               icon: "🌅",
@@ -457,8 +572,8 @@ const DashboardHome = ({ onNavigate }) => {
             {
               icon: "🥗",
               title: "Diet Tip",
-              text: primaryRecord?.dietPreferences
-                ? `Keep your meals aligned with your preference: ${primaryRecord.dietPreferences}. Avoid overeating and keep regular meal timings.`
+              text: latestRecord?.dietPreferences
+                ? `Keep your meals aligned with your preference: ${latestRecord.dietPreferences}. Avoid overeating and keep regular meal timings.`
                 : "Favour freshly cooked, warm, lightly spiced meals. Avoid heavy, overly oily or very cold foods.",
             },
             {
@@ -481,8 +596,199 @@ const DashboardHome = ({ onNavigate }) => {
           ))}
         </div>
       </div>
+
+      {/* HEALTH TIMELINE */}
+      <div className="mt-12 bg-[#E8E2D9] rounded-xl p-6 shadow-sm">
+        <h2 className="text-2xl font-semibold text-gray-800 mb-6">
+          Your Health Timeline
+        </h2>
+
+        {(() => {
+          const reports = latestRecord?.clinicalReports || [];
+          const appts = appointments || [];
+
+          const combined = [
+            ...reports.map((r) => ({
+              type: "report",
+              date: r.createdAt,
+              title: r.title || "Clinical Report",
+              description:
+                r.summary || r.diagnosis || "Doctor’s note added",
+              data: r,
+            })),
+            ...appts.map((a) => ({
+              type: "appointment",
+              date: a.createdAt || a.date,
+              title: a.sessionType || "Appointment",
+              description: `Consultation with doctor`,
+              data: a,
+            })),
+          ].sort(
+            (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+          );
+
+          if (combined.length === 0) {
+            return (
+              <p className="text-gray-600 bg-white p-4 rounded-xl border shadow-sm">
+                No medical activity recorded yet.
+              </p>
+            );
+          }
+
+          return (
+            <div className="relative border-l-2 border-green-600 pl-6 space-y-8">
+              {combined.map((event, i) => (
+                <div key={i} className="relative">
+                  {/* Dot */}
+                  <div className="absolute -left-[11px] w-5 h-5 bg-green-600 rounded-full border-2 border-white"></div>
+
+                  {/* Content */}
+                  <div className="bg-white p-4 rounded-xl shadow-sm border">
+                    <p className="text-xs text-gray-500">
+                      {new Date(event.date).toLocaleString()}
+                    </p>
+
+                    <h3 className="text-lg font-semibold text-gray-800 mt-1 flex items-center gap-2">
+                      {event.type === "report" ? "📝" : "📅"} {event.title}
+                    </h3>
+
+                    <p className="text-sm text-gray-600 mt-1">
+                      {event.description}
+                    </p>
+
+                    {event.type === "report" && (
+                      <button
+                        onClick={() => setSelectedReport(event.data)}
+                        className="text-green-700 underline text-sm mt-2"
+                      >
+                        View Report
+                      </button>
+                    )}
+
+                    {event.type === "appointment" && (
+                      <p className="text-sm text-blue-700 mt-2">
+                        Appointment booked
+                      </p>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* REPORT POPUP MODAL */}
+      {selectedReport && (
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl p-6 max-w-xl w-full relative">
+            {/* Close Button */}
+            <button
+              className="absolute top-3 right-3 text-gray-500 hover:text-black"
+              onClick={() => setSelectedReport(null)}
+            >
+              ✖
+            </button>
+
+            {/* Title */}
+            <h2 className="text-xl font-semibold text-gray-800">
+              {selectedReport.title}
+            </h2>
+
+            <p className="text-sm text-gray-500 mt-1">
+              {new Date(selectedReport.createdAt).toLocaleString()}
+            </p>
+
+            <div className="mt-4 space-y-3 text-gray-700 text-sm">
+              {selectedReport.diagnosis && (
+                <div>
+                  <p className="font-medium text-gray-800">Diagnosis</p>
+                  <p>{selectedReport.diagnosis}</p>
+                </div>
+              )}
+
+              {selectedReport.notes && (
+                <div>
+                  <p className="font-medium text-gray-800">Notes</p>
+                  <p className="whitespace-pre-line">
+                    {selectedReport.notes}
+                  </p>
+                </div>
+              )}
+
+              {selectedReport.testsRecommended && (
+                <div>
+                  <p className="font-medium text-gray-800">
+                    Tests Recommended
+                  </p>
+                  <p>{selectedReport.testsRecommended}</p>
+                </div>
+              )}
+
+              {selectedReport.plan && (
+                <div>
+                  <p className="font-medium text-gray-800">Treatment Plan</p>
+                  <p className="whitespace-pre-line">{selectedReport.plan}</p>
+                </div>
+              )}
+            </div>
+
+            {/* DOWNLOAD BUTTON */}
+            <button
+              className="mt-6 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700"
+              onClick={() => downloadReport(selectedReport)}
+            >
+              Download Prescription
+            </button>
+          </div>
+        </div>
+      )}
+
+      {overviewError && overview && (
+        <div className="mt-4 text-sm text-red-600">{overviewError}</div>
+      )}
     </div>
   );
 };
+
+// =========================================================
+// DOWNLOAD TXT REPORT
+// =========================================================
+
+function downloadReport(rep) {
+  const content = `
+📄 Ayurvedic Consultation Report
+--------------------------------------
+Title: ${rep.title}
+Date: ${new Date(rep.createdAt).toLocaleString()}
+
+Diagnosis:
+${rep.diagnosis || "-"}
+
+Notes:
+${rep.notes || "-"}
+
+Tests Recommended:
+${rep.testsRecommended || "-"}
+
+Treatment / Plan:
+${rep.plan || "-"}
+
+Follow-up Date:
+${
+  rep.followUpDate ? new Date(rep.followUpDate).toLocaleDateString() : "-"
+}
+`;
+
+  const blob = new Blob([content], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${rep.title || "prescription"}.txt`;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
 
 export default DashboardHome;

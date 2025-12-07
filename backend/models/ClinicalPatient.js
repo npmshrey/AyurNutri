@@ -3,87 +3,146 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
-// Sub-schema for clinical reports / doctor notes
-const clinicalReportSchema = new Schema(
+const MealItemSchema = new Schema(
   {
-    doctorId: {
-      type: Schema.Types.ObjectId,
-      ref: "Doctor",
-    },
-    title: { type: String },           // "Initial Assessment", "Week 2 Follow-up", etc.
-    summary: { type: String },         // short summary shown in list
-    diagnosis: { type: String },       // doctor's impression / diagnosis
-    notes: { type: String },           // detailed notes
-    testsRecommended: { type: String },// lab / imaging / investigations
-    plan: { type: String },            // treatment / diet / lifestyle plan
-    followUpDate: { type: Date },      // optional next follow-up date
-    createdAt: { type: Date, default: Date.now },
+    food: { type: Schema.Types.Mixed, required: false }, // full food object from data.json
+    notes: { type: String },
+    checked: { type: Boolean, default: false },
   },
-  { _id: true } // allow auto _id
+  { _id: false }
 );
 
-// Main ClinicalPatient schema
-const ClinicalPatientSchema = new Schema(
+const ExerciseSchema = new Schema(
   {
-    // Basic clinical info
     name: { type: String, required: true },
-    age: { type: Number },
-    dosha: { type: String },
-    condition: { type: String },
-    status: { type: String, default: "new" }, // new, active, followup, completed
-    lastVisit: { type: Date, default: null },
-    nextAppointment: { type: Date, default: null },
-    progress: { type: Number, default: 0 },
+    reps: { type: String },
+    durationMinutes: { type: Number },
+    checked: { type: Boolean, default: false },
+  },
+  { _id: false }
+);
 
-    // 🔗 link to doctor
-    doctorId: {
-      type: Schema.Types.ObjectId,
-      ref: "Doctor",
-      required: true,
+const WeeklyDaySchema = new Schema(
+  {
+    date: { type: Date, required: true },
+    meals: {
+      breakfast: { type: [MealItemSchema], default: [] },
+      lunch: { type: [MealItemSchema], default: [] },
+      dinner: { type: [MealItemSchema], default: [] },
     },
-
-    // 🔗 link to auth patient account
-    patientAccountId: {
-      type: Schema.Types.ObjectId,
-      ref: "AuthPatient",
-      required: false,
+    exercises: { type: [ExerciseSchema], default: [] },
+  },
+  { _id: false }
+);
+const WeeklyPlanDaySchema = new mongoose.Schema(
+  {
+    date: Date,
+    meals: {
+      breakfast: [
+        {
+          food: mongoose.Schema.Types.Mixed, // full food object
+          checked: { type: Boolean, default: false },
+        },
+      ],
+      lunch: [
+        {
+          food: mongoose.Schema.Types.Mixed,
+          checked: { type: Boolean, default: false },
+        },
+      ],
+      dinner: [
+        {
+          food: mongoose.Schema.Types.Mixed,
+          checked: { type: Boolean, default: false },
+        },
+      ],
     },
+    exercises: [
+      {
+        name: String,
+        reps: String,
+        durationMinutes: Number,
+        checked: { type: Boolean, default: false },
+      },
+    ],
+  },
+  { _id: false }
+);
 
-    // 🧾 Health profile fields
-    heightCm: { type: Number, default: null },
-    weightKg: { type: Number, default: null },
-    bmi: { type: Number, default: null },
-
-    bloodPressure: { type: String, default: "" }, // e.g. "120/80"
-    heartRate: { type: Number, default: null },
-
-    allergies: { type: String, default: "" },
-    medications: { type: String, default: "" },
-    chronicConditions: { type: String, default: "" },
-
-    lifestyleNotes: { type: String, default: "" },   // sleep, stress, habits
-    dietPreferences: { type: String, default: "" },  // veg/non-veg, spicy, etc.
-
-    // 🥗 Per-doctor diet plan for this patient
-    dietPlan: {
-      breakfast: { type: Array, default: [] }, // store raw food objects for now
-      lunch: { type: Array, default: [] },
-      dinner: { type: Array, default: [] },
-      updatedAt: { type: Date },
-    },
-
-    // 📄 Clinical reports / notes history
-    clinicalReports: {
-      type: [clinicalReportSchema],
-      default: [],
-    },
+const WeeklyPlanSchema = new Schema(
+  {
+    title: { type: String, required: true },
+    weekStartDate: { type: Date, required: true },
+    doctorId: { type: Schema.Types.ObjectId, ref: "Doctor", required: true },
+    durationDays: { type: Number, default: 7 },
+    days: { type: [WeeklyDaySchema], default: [] },
+    progressPercent: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
 
-// Avoid OverwriteModelError if hot-reloaded
-const ClinicalPatient =
-  mongoose.models.ClinicalPatient ||
-  mongoose.model("ClinicalPatient", ClinicalPatientSchema);
+const ClinicalPatientSchema = new Schema(
+  {
+    doctorId: { type: Schema.Types.ObjectId, ref: "Doctor", required: true },
+    patientAccountId: {
+      type: Schema.Types.ObjectId,
+      ref: "Patient", // your auth patient model name
+      required: true,
+    },
+
+    name: { type: String, required: true },
+    age: { type: Number },
+    dosha: { type: String },
+    condition: { type: String },
+    status: { type: String, default: "new" },
+    lastVisit: { type: Date },
+    nextAppointment: { type: Date },
+    progress: { type: Number, default: 0 },
+
+    // health profile
+    heightCm: Number,
+    weightKg: Number,
+    bmi: Number,
+    bloodPressure: String,
+    heartRate: Number,
+    allergies: String,
+    medications: String,
+    chronicConditions: String,
+    lifestyleNotes: String,
+    dietPreferences: String,
+
+    // main diet plan
+    dietPlan: {
+      breakfast: { type: [Schema.Types.Mixed], default: [] },
+      lunch: { type: [Schema.Types.Mixed], default: [] },
+      dinner: { type: [Schema.Types.Mixed], default: [] },
+      updatedAt: { type: Date },
+    },
+
+    // clinical reports
+    clinicalReports: [
+      {
+        doctorId: { type: Schema.Types.ObjectId, ref: "Doctor" },
+        title: String,
+        summary: String,
+        diagnosis: String,
+        notes: String,
+        testsRecommended: String,
+        plan: String,
+        followUpDate: Date,
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
+
+    // WEEKLY PLANS (important field)
+    weeklyPlans: { type: [WeeklyPlanSchema], default: [] },
+  },
+  { timestamps: true }
+);
+
+const ClinicalPatient = mongoose.model(
+  "ClinicalPatient",
+  ClinicalPatientSchema
+);
 
 export default ClinicalPatient;

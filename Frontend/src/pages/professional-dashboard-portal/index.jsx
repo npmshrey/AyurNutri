@@ -126,18 +126,6 @@ const ProfessionalDashboardPortal = () => {
               </button>
             ))}
           </nav>
-
-          {/* Quick Actions */}
-          {!sidebarCollapsed && (
-            <div className="p-4 border-t border-border space-y-2">
-              <Button variant="outline" size="sm" fullWidth iconName="Plus">
-                New Patient
-              </Button>
-              <Button variant="default" size="sm" fullWidth iconName="Calendar">
-                Schedule Appointment
-              </Button>
-            </div>
-          )}
         </aside>
 
         {/* Main Content */}
@@ -168,25 +156,6 @@ const ProfessionalDashboardPortal = () => {
         </main>
       </div>
 
-      {/* Floating actions */}
-      <div className="fixed bottom-6 right-6 flex flex-col space-y-3 z-50">
-        <Button
-          variant="default"
-          size="icon"
-          className="w-12 h-12 rounded-full organic-shadow bg-primary hover:bg-primary/90"
-          title="Quick Patient Search"
-        >
-          <Icon name="Search" size={20} />
-        </Button>
-        <Button
-          variant="outline"
-          size="icon"
-          className="w-12 h-12 rounded-full organic-shadow bg-background"
-          title="Emergency Contact"
-        >
-          <Icon name="Phone" size={20} />
-        </Button>
-      </div>
     </div>
   );
 };

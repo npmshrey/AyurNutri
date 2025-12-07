@@ -35,11 +35,13 @@ const app = express();
 app.use(
   cors({
     origin: "http://localhost:4028",
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
+// (optional but recommended)
+app.options("*", cors());
 app.use(express.json());
 
 // --------------------------
@@ -71,7 +73,7 @@ app.get("/api/health", (req, res) => {
 // --------------------------
 const PORT = process.env.PORT || 9000;
 const MONGODB_URI =
-  process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/ayurveda";
+  process.env.MONGO_URI || "mongodb://127.0.0.1:27017/ayurveda";
 
 // HTTP server for WebSockets
 const server = http.createServer(app);
@@ -87,6 +89,7 @@ const io = new Server(server, {
 });
 
 let onlineUsers = new Map();
+
 
 io.on("connection", (socket) => {
   console.log("🔥 New socket connected:", socket.id);
@@ -195,10 +198,14 @@ mongoose
   .connect(MONGODB_URI)
   .then(() => {
     console.log("Connected to MongoDB");
+        console.log('Connected Host:', mongoose.connection.host);
+        console.log('Connected DB:', mongoose.connection.name);
     server.listen(PORT, () =>
+   
       console.log(
         `🔥 Realtime + Upload Server running at http://localhost:${PORT}`
       )
+      
     );
   })
   .catch((err) => {
