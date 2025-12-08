@@ -93,7 +93,8 @@ const IntelligenceCenterDashboard = () => {
       </div>
 
       {/* Content */}
-      <div className="min-h-[600px]">{renderActiveSection()}</div>
+      <div>{renderActiveSection()}</div>
+
 
       {/* Search Results */}
       {searchResults && (
