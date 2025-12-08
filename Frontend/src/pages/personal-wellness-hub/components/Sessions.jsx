@@ -3,28 +3,8 @@ import axios from "axios";
 import BookingModal from "./BookingModal";
 import useAuth from "../../../hooks/useAuth";
 
-const SessionCard = ({ title, price, desc, selected, onClick }) => (
-  <div
-    onClick={onClick}
-    className={`p-5 rounded-xl shadow-sm border transition-all cursor-pointer 
-      ${
-        selected
-          ? "border-emerald-600 bg-emerald-50 shadow-md"
-          : "border-gray-300 bg-white hover:shadow-md"
-      }`}
-  >
-    <div className="flex items-center justify-between">
-      <div>
-        <h3 className="font-semibold text-[1.05rem]">{title}</h3>
-        <p className="text-sm text-gray-500">{desc}</p>
-      </div>
-      <div className="text-emerald-700 text-lg font-bold">{price}</div>
-    </div>
-  </div>
-);
-
 const Sessions = () => {
-  const [selected, setSelected] = useState("Initial Consultation");
+  const [selected] = useState("Initial Consultation"); // default type
   const [doctors, setDoctors] = useState([]);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
 
@@ -34,29 +14,11 @@ const Sessions = () => {
 
   const [appointments, setAppointments] = useState([]);
 
-  // ✅ FIX: Default tab always "book"
+  // Default tab
   const [activeTab, setActiveTab] = useState("book");
 
   const { user } = useAuth();
   const patientId = user?._id || user?.id || localStorage.getItem("patientId");
-
-  const types = [
-    {
-      title: "Initial Consultation",
-      price: "₹500",
-      desc: "Detailed assessment for first-time patients",
-    },
-    {
-      title: "Follow-up Session",
-      price: "₹300",
-      desc: "Review progress and update plan",
-    },
-    {
-      title: "Emergency Consultation",
-      price: "₹800",
-      desc: "Urgent health concern (same day)",
-    },
-  ];
 
   const formatDate = (d) => {
     if (!d.includes("-")) return d;
@@ -161,26 +123,13 @@ const Sessions = () => {
               </ul>
             </div>
 
-            {/* FORCE DEFAULT TAB FIX */}
+            {/* Default tab fix */}
             {!activeTab && setActiveTab("book")}
 
             {/* TAB 1 — BOOK SESSION */}
             {activeTab === "book" && (
               <>
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mb-8">
-                  {types.map((t) => (
-                    <SessionCard
-                      key={t.title}
-                      title={t.title}
-                      price={t.price}
-                      desc={t.desc}
-                      selected={selected === t.title}
-                      onClick={() => setSelected(t.title)}
-                    />
-                  ))}
-                </div>
-
-                {/* SHOW DOCTORS LIST */}
+                {/* Doctor List */}
                 <div className="mt-4 space-y-4">
                   {doctors.length === 0 ? (
                     <p className="text-gray-500">No doctors available.</p>
@@ -191,9 +140,16 @@ const Sessions = () => {
                         className="p-5 border rounded-xl shadow-sm bg-white hover:shadow-md transition"
                       >
                         <div className="flex justify-between items-start">
-                          <h3 className="text-lg font-semibold">
-                            {doc.fullName}
-                          </h3>
+                          <div>
+                            <h3 className="text-lg font-semibold">
+                              {doc.fullName}
+                            </h3>
+
+                            {/* ➡️ SPECIALIZATION ADDED */}
+                            <p className="text-gray-600 text-sm mt-1">
+                              {doc.specialization || "Ayurveda Specialist"}
+                            </p>
+                          </div>
 
                           {doc.verified && (
                             <span className="text-emerald-700 bg-emerald-100 px-3 py-1 rounded-full text-xs font-medium">
