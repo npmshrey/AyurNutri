@@ -3,6 +3,18 @@ import Routes from "./Routes";
 import Chatbot from "./components/ui/Chatbot";
 
 const App = () => {
+  // 🟢 1) GLOBAL THEME INIT – har page pe chalega
+  useEffect(() => {
+    try {
+      const savedTheme = localStorage.getItem("theme");
+      const theme = savedTheme === "dark" ? "dark" : "light";
+      document.documentElement.setAttribute("data-theme", theme);
+    } catch (e) {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+  }, []);
+
+  // 🟢 2) tumhara existing sidebar remove wala effect – bilkul same
   useEffect(() => {
     const labelsToRemove = [
       "Research Library",

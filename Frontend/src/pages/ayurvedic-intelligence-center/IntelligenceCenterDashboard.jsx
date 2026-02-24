@@ -21,7 +21,7 @@ const IntelligenceCenterDashboard = () => {
     { id: "tools", name: "Interactive Tools", icon: "Calculator" },
     { id: "videos", name: "Video Library", icon: "Play" },
     { id: "concepts", name: "Concept Guides", icon: "Layers" },
-    { id: "search", name: "Knowledge Search", icon: "Search" },
+    
   ];
 
   const handleSearch = (filters) => {

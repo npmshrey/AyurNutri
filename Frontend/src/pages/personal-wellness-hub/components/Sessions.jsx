@@ -244,6 +244,7 @@ const Sessions = () => {
           onClose={() => setShowModal(false)}
           onConfirm={handleConfirmBooking}
         />
+        
       )}
     </>
   );

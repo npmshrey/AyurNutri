@@ -30,7 +30,7 @@ const LiveDemo = () => {
             </p>
 
             <ul className="text-text-secondary text-base max-w-2xl mx-auto space-y-3 text-center list-none">
-              <li>• Identifies Prakriti (baseline constitution) and Vikriti (imbalance).</li>
+              <li>• Identifies Prakriti and Vikriti.</li>
               <li>• Converts Ayurvedic food qualities into structured logic.</li>
               <li>• Uses traditional insights to guide long-term diet and lifestyle choices.</li>
             </ul>

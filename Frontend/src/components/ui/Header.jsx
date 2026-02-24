@@ -4,11 +4,13 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import Icon from "../AppIcon";
 import Button from "./Button";
 import useAuth from "../../hooks/useAuth";
-import Logo from "../../assets/logo.jpg"; 
+import Logo from "../../assets/logo.jpg";
 
 const Header = ({ className = "", isHomePage = false }) => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [theme, setTheme] = useState("light"); // 🟢 new
+
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -29,12 +31,38 @@ const Header = ({ className = "", isHomePage = false }) => {
 
   const role = isDoctor ? "doctor" : isPatient ? "patient" : null;
 
-  // Scroll effect
+  // scroll effect
   useEffect(() => {
     const onScroll = () => setIsScrolled(window.scrollY > 10);
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
+
+  // 🟢 theme initial load
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("theme");
+      const initial = saved === "dark" ? "dark" : "light";
+      setTheme(initial);
+      document.documentElement.setAttribute("data-theme", initial);
+    } catch (e) {
+      document.documentElement.setAttribute("data-theme", "light");
+    }
+  }, []);
+
+  // 🟢 theme change → html[data-theme] + localStorage
+  useEffect(() => {
+    try {
+      document.documentElement.setAttribute("data-theme", theme);
+      localStorage.setItem("theme", theme);
+    } catch (e) {
+      // ignore
+    }
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
+  };
 
   // Navigation Fixes
   const handleProfessionalPortal = () => {
@@ -127,6 +155,16 @@ const Header = ({ className = "", isHomePage = false }) => {
 
           {/* Right Section */}
           <div className="col-span-1 flex items-center justify-end space-x-3">
+            {/* 🟢 Theme toggle (desktop) */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="hidden sm:flex w-9 h-9 items-center justify-center rounded-md border border-border text-lg hover:bg-muted/50 organic-transition"
+              aria-label="Toggle theme"
+            >
+              {theme === "light" ? "🌙" : "☀️"}
+            </button>
+
             {/* HOMEPAGE AUTH LOGIC */}
             {isHome &&
               (() => {
@@ -182,6 +220,16 @@ const Header = ({ className = "", isHomePage = false }) => {
         {/* MOBILE MENU */}
         {isMobileMenuOpen && (
           <div className="lg:hidden border-t border-border bg-background/95 backdrop-blur-md px-4 py-4 space-y-4">
+            {/* 🟢 Theme toggle (mobile) */}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              className="w-10 h-10 mb-2 flex items-center justify-center rounded-md border border-border text-lg hover:bg-muted/50 organic-transition"
+              aria-label="Toggle theme"
+            >
+              {theme === "light" ? "🌙" : "☀️"}
+            </button>
+
             <button
               className="w-full flex items-center space-x-3 px-3 py-3 rounded-md hover:bg-muted/50"
               onClick={() => {
