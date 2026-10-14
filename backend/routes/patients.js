@@ -1,7 +1,7 @@
 // backend/routes/patients.js
 import express from "express";
 import ClinicalPatient from "../models/ClinicalPatient.js";
-import AuthPatient from "../models/authPatient.js";
+import Patient from "../models/Patient.js";
 import { verifyToken } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
@@ -72,6 +72,33 @@ router.get("/single/:id", verifyToken, requireDoctor, async (req, res) => {
 });
 
 /* =========================================================
+   FIND MY CLINICAL RECORD FOR A PATIENT ACCOUNT
+   GET /api/patients/by-account/:accountId
+   -> used when a doctor opens a patient from an appointment, where
+      only the patient's account id is known. The frontend already
+      called this, but the endpoint never existed.
+   ========================================================= */
+router.get("/by-account/:accountId", verifyToken, requireDoctor, async (req, res) => {
+  try {
+    const patient = await ClinicalPatient.findOne({
+      patientAccountId: req.params.accountId,
+      doctorId: req.user.id,
+    }).populate("patientAccountId", "fullName email phoneNumber");
+
+    if (!patient) {
+      return res.status(404).json({
+        message: "This patient isn't linked to your practice yet.",
+      });
+    }
+
+    res.json({ patient });
+  } catch (err) {
+    console.error("GET /api/patients/by-account/:accountId error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+/* =========================================================
    CREATE CLINICAL RECORD (doctor links to existing auth patient)
    POST /api/patients
    ========================================================= */
@@ -114,7 +141,7 @@ router.post("/", verifyToken, requireDoctor, async (req, res) => {
 
     const identifier = String(patientIdentifier).trim();
 
-    const authPatient = await AuthPatient.findOne({
+    const authPatient = await Patient.findOne({
       $or: [
         { email: identifier.toLowerCase() },
         { phoneNumber: identifier },
@@ -535,9 +562,13 @@ router.get("/:id/week-plans/:planId", verifyToken, async (req, res) => {
 });
 
 /* =========================================================
-   WEEKLY PLAN - PATIENT CHECK/UNCHECK + PROGRESS
+   WEEKLY PLAN - PATIENT CHECK/UNCHECK + PROGRESS + CONSUMED GRAMS
    PATCH /api/patients/:id/week-plans/:planId/check
-   Body: { dayIndex, kind, mealKey, itemIndex, checked }
+   Body: {
+     dayIndex, kind, mealKey, itemIndex,
+     checked?,          // optional boolean
+     consumedGrams?,    // optional number or string (grams eaten)
+   }
    ========================================================= */
 router.patch(
   "/:id/week-plans/:planId/check",
@@ -546,7 +577,14 @@ router.patch(
     try {
       const clinicalPatientId = req.params.id;
       const planId = req.params.planId;
-      const { dayIndex, kind, mealKey, itemIndex, checked } = req.body || {};
+      const {
+        dayIndex,
+        kind,
+        mealKey,
+        itemIndex,
+        checked,
+        consumedGrams, // may be number OR string OR null/undefined
+      } = req.body || {};
       const user = req.user;
 
       if (user.role !== "patient") {
@@ -568,8 +606,7 @@ router.patch(
           .json({ message: "Not your clinical record" });
       }
 
-      // 🔧 SAFETY: ensure all existing weeklyPlans have doctorId set,
-      // because the schema requires weeklyPlans[*].doctorId.
+      // Safety: ensure weeklyPlans have doctorId set
       if (Array.isArray(patient.weeklyPlans)) {
         patient.weeklyPlans.forEach((p) => {
           if (!p.doctorId) {
@@ -616,7 +653,21 @@ router.patch(
             .status(400)
             .json({ message: "Invalid itemIndex for meal" });
         }
-        arr[itemIndex].checked = !!checked;
+
+        const item = arr[itemIndex];
+
+        // Only update checked if explicitly provided
+        if (typeof checked === "boolean") {
+          item.checked = checked;
+        }
+
+        // Parse consumedGrams safely (can be number or string or null)
+        if (consumedGrams !== undefined && consumedGrams !== null) {
+          const cg = Number(consumedGrams);
+          if (!Number.isNaN(cg) && cg >= 0) {
+            item.consumedGrams = cg;
+          }
+        }
       } else if (kind === "exercise") {
         const arr = day.exercises || [];
         if (
@@ -628,14 +679,18 @@ router.patch(
             .status(400)
             .json({ message: "Invalid itemIndex for exercise" });
         }
-        arr[itemIndex].checked = !!checked;
+
+        const exItem = arr[itemIndex];
+        if (typeof checked === "boolean") {
+          exItem.checked = checked;
+        }
       } else {
         return res.status(400).json({
           message: "Invalid kind; must be 'meal' or 'exercise'",
         });
       }
 
-      // Recalculate progressPercent
+      // Recalculate progressPercent based on checked items
       let totalItems = 0;
       let doneItems = 0;
 

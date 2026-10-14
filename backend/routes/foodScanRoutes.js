@@ -3,6 +3,7 @@ import express from "express";
 import multer from "multer";
 import dotenv from "dotenv";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+import { verifyToken } from "../middlewares/authMiddleware.js";
 dotenv.config();
 
 const router = express.Router();
@@ -11,7 +12,7 @@ const router = express.Router();
 // ---- Gemini Setup ----
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.0-flash", // or the latest you’re using
+  model: "gemini-2.5-flash", // or the latest you’re using
 });
 
 // ---- Multer for in-memory image upload ----
@@ -150,7 +151,9 @@ const mapToAnalysis = (geminiJson) => {
 
 // ---- ROUTE: POST /api/food-scan/analyze ----
 // expects: multipart/form-data with field "image"
-router.post("/analyze", upload.single("image"), async (req, res) => {
+// Requires a signed-in user — this calls a paid Gemini API per request and
+// was previously open to the public, which is a cost/abuse vector.
+router.post("/analyze", verifyToken, upload.single("image"), async (req, res) => {
   try {
     if (!req.file) {
       return res.status(400).json({ error: "Image file is required." });
@@ -212,7 +215,25 @@ Do not include any text before or after the JSON. The response must be valid JSO
       },
     ];
 
-    const result = await model.generateContent({ contents });
+    const generateWithRetry = async (contentsToGenerate, maxRetries = 3) => {
+      let lastError;
+      for (let i = 0; i < maxRetries; i++) {
+        try {
+          return await model.generateContent({ contents: contentsToGenerate });
+        } catch (error) {
+          lastError = error;
+          if (error.message && error.message.includes("503") && i < maxRetries - 1) {
+            console.warn(`Gemini API 503 error. Retrying in ${i + 1} seconds... (${i + 1}/${maxRetries - 1})`);
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+            continue;
+          }
+          throw error;
+        }
+      }
+      throw lastError;
+    };
+
+    const result = await generateWithRetry(contents);
     const rawText = result.response.text();
     const jsonText = cleanJsonString(rawText);
 
@@ -234,6 +255,9 @@ Do not include any text before or after the JSON. The response must be valid JSO
     });
   } catch (err) {
     console.error("Food scan error:", err);
+    if (err.message && err.message.includes("503")) {
+      return res.status(503).json({ error: "The AI service is currently experiencing high demand. Please try again in a few moments." });
+    }
     return res.status(500).json({ error: "Internal server error." });
   }
 });

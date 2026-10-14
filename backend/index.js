@@ -1,11 +1,17 @@
+// Must be the very first import. ES modules evaluate every import before
+// any code in this file runs, so a dotenv.config() call further down is too
+// late for modules that read process.env when they load (JWT secret, Groq
+// and Gemini clients). Loading it here guarantees .env is in place first.
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import mongoose from "mongoose";
 import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import http from "http";
 import { Server } from "socket.io";
+
+import connectDB from "./config/db.js";
 
 // MODELS
 import ChatMessage from "./models/ChatMessage.js";
@@ -14,13 +20,20 @@ import ChatMessage from "./models/ChatMessage.js";
 import patientsRouter from "./routes/patients.js";
 import authRouter from "./routes/auth.js";
 import patientPortalRouter from "./routes/patientPortal.js";
-import patientMeRouter from "./routes/patientMe.js";
 import subscribeRouter from "./routes/subscribe.js";
 import foodScanRoutes from "./routes/foodScanRoutes.js";
 import chatbotRoute from "./routes/chatbot.js";
 import chatRoutes from "./routes/chat.js";
 import doctorRoutes from "./routes/doctors.js";
 import appointmentRoutes from "./routes/appointments.js";
+import weekPlanLogsRoutes from "./routes/weekPlanLogs.js";
+import aiPlansGeminiRoutes from "./routes/aiPlansGemini.js";
+import patientReportsRoutes from "./routes/patientReports.js";
+import quizRoutes from "./routes/quizRoutes.js";
+import orgAuthRoutes from "./routes/orgAuth.js";
+import orgAdminRoutes from "./routes/orgAdmin.js";
+import foodsRoutes from "./routes/foods.js";
+import statsRoutes from "./routes/stats.js";
 
 dotenv.config();
 
@@ -29,96 +42,104 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 
-// --------------------------
-// CORS
-// --------------------------
+/* =========================
+   CORS
+   Configurable via FRONTEND_ORIGIN so this isn't hardcoded to a single
+   local dev port — it used to break the moment this was deployed anywhere.
+========================= */
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "http://localhost:4028";
+
 app.use(
   cors({
-    origin: "http://localhost:4028",
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    origin: FRONTEND_ORIGIN,
+    methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
 
-// (optional but recommended)
 app.options("*", cors());
+
+/* =========================
+   BODY PARSER (VERY IMPORTANT)
+========================= */
 app.use(express.json());
 
-// --------------------------
-// SERVE UPLOADED FILES
-// --------------------------
+/* =========================
+   STATIC FILES
+========================= */
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
-// --------------------------
-// ROUTES
-// --------------------------
-app.use("/api/patients", patientsRouter);
+/* =========================
+   ROUTES
+========================= */
 app.use("/api/auth", authRouter);
+app.use("/api/patients", patientsRouter);
 app.use("/api/patient", patientPortalRouter);
-app.use("/api/patient", patientMeRouter);
+app.use("/api/patient/reports", patientReportsRoutes);
+
 app.use("/api", subscribeRouter);
 app.use("/api/food-scan", foodScanRoutes);
-app.use("/api/chatbot", chatbotRoute);
+app.use("/api/chatbot", chatbotRoute); // ✅ CHATBOT
 app.use("/api/chat", chatRoutes);
 app.use("/api/doctors", doctorRoutes);
 app.use("/api/appointments", appointmentRoutes);
+app.use("/api", weekPlanLogsRoutes);
+app.use("/api/ai", aiPlansGeminiRoutes);
+app.use("/api/quiz", quizRoutes);
+app.use("/api/foods", foodsRoutes);
+app.use("/api/stats", statsRoutes);
 
-// Health Check
+// Organisation-admin portal: login, then doctor approve/reject. These
+// existed in the codebase already but were never mounted, so they always
+// 404'd — the whole org-admin role was unreachable from the outside.
+app.use("/api/org-admin/auth", orgAuthRoutes);
+app.use("/api/org-admin", orgAdminRoutes);
+
+/* =========================
+   HEALTH CHECK
+========================= */
 app.get("/api/health", (req, res) => {
   res.json({ status: "ok", ts: new Date().toISOString() });
 });
 
-// --------------------------
-// DATABASE + SERVER START
-// --------------------------
+/* =========================
+   DATABASE + SERVER
+========================= */
 const PORT = process.env.PORT || 9000;
-const MONGODB_URI =
-  process.env.MONGO_URI || "mongodb://127.0.0.1:27017/ayurveda";
 
-// HTTP server for WebSockets
 const server = http.createServer(app);
 
-// --------------------------
-// SOCKET.IO
-// --------------------------
+/* =========================
+   SOCKET.IO
+========================= */
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:4028",
+    origin: FRONTEND_ORIGIN,
     methods: ["GET", "POST", "PUT", "DELETE"],
   },
 });
 
 let onlineUsers = new Map();
 
-
 io.on("connection", (socket) => {
-  console.log("🔥 New socket connected:", socket.id);
+  console.log("🔥 Socket connected:", socket.id);
 
-  // User comes online
   socket.on("user-online", ({ userId, role }) => {
     socket.userId = userId;
     socket.role = role;
-
     onlineUsers.set(userId, socket.id);
     io.emit("online-users", Array.from(onlineUsers.keys()));
   });
 
-  // SEND MESSAGE (patient or doctor)
   socket.on("send-message", async (msg) => {
     try {
-      // msg should include: { _id, patientId, doctorId, senderRole, receiverId, ... }
-
       const receiverSocket = onlineUsers.get(msg.receiverId);
-
-      // figure out senderId
       const senderId =
         msg.senderRole === "patient" ? msg.patientId : msg.doctorId;
 
-      // 1) Forward to receiver if online
       if (receiverSocket) {
         io.to(receiverSocket).emit("receive-message", msg);
 
-        // mark as delivered in DB if we have _id
         if (msg._id) {
           await ChatMessage.findByIdAndUpdate(msg._id, {
             status: "delivered",
@@ -126,7 +147,6 @@ io.on("connection", (socket) => {
           });
         }
 
-        // notify sender about status = delivered (double grey tick)
         const senderSocket = onlineUsers.get(senderId);
         if (senderSocket && msg._id) {
           io.to(senderSocket).emit("message-status-update", {
@@ -134,26 +154,15 @@ io.on("connection", (socket) => {
             status: "delivered",
           });
         }
-      } else {
-        // receiver offline → stays 'sent', but we can still confirm 'sent' to sender
-        const senderSocket = onlineUsers.get(senderId);
-        if (senderSocket && msg._id) {
-          io.to(senderSocket).emit("message-status-update", {
-            messageId: msg._id,
-            status: "sent",
-          });
-        }
       }
     } catch (err) {
-      console.error("Error in send-message:", err);
+      console.error("send-message error:", err);
     }
   });
 
-  // FUTURE: when other side opens chat and marks messages as seen
-  // payload: { messageIds: [...], viewerId, otherUserId }
-  socket.on("message-seen", async ({ messageIds, viewerId, otherUserId }) => {
+  socket.on("message-seen", async ({ messageIds, otherUserId }) => {
     try {
-      if (!Array.isArray(messageIds) || messageIds.length === 0) return;
+      if (!messageIds?.length) return;
 
       await ChatMessage.updateMany(
         { _id: { $in: messageIds } },
@@ -168,23 +177,12 @@ io.on("connection", (socket) => {
         });
       }
     } catch (err) {
-      console.error("Error in message-seen:", err);
+      console.error("message-seen error:", err);
     }
   });
 
-  // TYPING
-  socket.on("typing", ({ receiverId }) => {
-    const receiverSocket = onlineUsers.get(receiverId);
-    if (receiverSocket) {
-      io.to(receiverSocket).emit("typing", { from: socket.id });
-    }
-  });
-
-  // DISCONNECT
   socket.on("disconnect", () => {
-    console.log("❌ Socket disconnected:", socket.id);
-
-    for (let [userId, sockId] of onlineUsers.entries()) {
+    for (const [userId, sockId] of onlineUsers.entries()) {
       if (sockId === socket.id) {
         onlineUsers.delete(userId);
         io.emit("online-users", Array.from(onlineUsers.keys()));
@@ -194,20 +192,13 @@ io.on("connection", (socket) => {
   });
 });
 
-mongoose
-  .connect(MONGODB_URI)
+connectDB()
   .then(() => {
-    console.log("Connected to MongoDB");
-        console.log('Connected Host:', mongoose.connection.host);
-        console.log('Connected DB:', mongoose.connection.name);
     server.listen(PORT, () =>
-   
-      console.log(
-        `🔥 Realtime + Upload Server running at http://localhost:${PORT}`
-      )
-      
+      console.log(`🚀 Server running at http://localhost:${PORT}`)
     );
   })
   .catch((err) => {
     console.error("MongoDB connection error:", err);
+    process.exit(1);
   });

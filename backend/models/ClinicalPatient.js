@@ -3,15 +3,28 @@ import mongoose from "mongoose";
 
 const { Schema } = mongoose;
 
+/**
+ * Single meal item stored inside a WeeklyDay.
+ * - food: free-form full food object (can be library item or lightweight object)
+ * - label: optional display label
+ * - grams: doctor's assigned grams for this item (optional)
+ * - consumedGrams: patient's entered eaten grams (optional)
+ * - checked: whether patient marked it completed
+ */
 const MealItemSchema = new Schema(
   {
-    food: { type: Schema.Types.Mixed, required: false }, // full food object from data.json
-    notes: { type: String },
+    food: { type: Schema.Types.Mixed },
+    label: { type: String },
+    grams: { type: Number }, // doctor's assigned grams
+    consumedGrams: { type: Number }, // patient's entered grams
     checked: { type: Boolean, default: false },
   },
   { _id: false }
 );
 
+/**
+ * Exercise item schema used in a day
+ */
 const ExerciseSchema = new Schema(
   {
     name: { type: String, required: true },
@@ -22,9 +35,14 @@ const ExerciseSchema = new Schema(
   { _id: false }
 );
 
+/**
+ * One day inside a WeeklyPlan (used by doctor-created plans)
+ * meals: each meal is an array of MealItemSchema
+ * date: optional (may be null if plan uses relative days)
+ */
 const WeeklyDaySchema = new Schema(
   {
-    date: { type: Date, required: true },
+    date: { type: Date }, // not strictly required — doctor may create relative days
     meals: {
       breakfast: { type: [MealItemSchema], default: [] },
       lunch: { type: [MealItemSchema], default: [] },
@@ -34,41 +52,10 @@ const WeeklyDaySchema = new Schema(
   },
   { _id: false }
 );
-const WeeklyPlanDaySchema = new mongoose.Schema(
-  {
-    date: Date,
-    meals: {
-      breakfast: [
-        {
-          food: mongoose.Schema.Types.Mixed, // full food object
-          checked: { type: Boolean, default: false },
-        },
-      ],
-      lunch: [
-        {
-          food: mongoose.Schema.Types.Mixed,
-          checked: { type: Boolean, default: false },
-        },
-      ],
-      dinner: [
-        {
-          food: mongoose.Schema.Types.Mixed,
-          checked: { type: Boolean, default: false },
-        },
-      ],
-    },
-    exercises: [
-      {
-        name: String,
-        reps: String,
-        durationMinutes: Number,
-        checked: { type: Boolean, default: false },
-      },
-    ],
-  },
-  { _id: false }
-);
 
+/**
+ * Whole weekly plan schema
+ */
 const WeeklyPlanSchema = new Schema(
   {
     title: { type: String, required: true },
@@ -81,12 +68,19 @@ const WeeklyPlanSchema = new Schema(
   { timestamps: true }
 );
 
+/**
+ * Main ClinicalPatient schema
+ * - doctorId: reference to Doctor
+ * - patientAccountId: reference to auth patient model (use actual model name you have; adjust if different)
+ * - dietPlan: doctor-facing saved diet (separate from weeklyPlans)
+ * - weeklyPlans: array of WeeklyPlanSchema
+ */
 const ClinicalPatientSchema = new Schema(
   {
     doctorId: { type: Schema.Types.ObjectId, ref: "Doctor", required: true },
     patientAccountId: {
       type: Schema.Types.ObjectId,
-      ref: "Patient", // your auth patient model name
+      ref: "Patient", // the account a patient actually signs up and logs in with
       required: true,
     },
 
@@ -100,18 +94,18 @@ const ClinicalPatientSchema = new Schema(
     progress: { type: Number, default: 0 },
 
     // health profile
-    heightCm: Number,
-    weightKg: Number,
-    bmi: Number,
-    bloodPressure: String,
-    heartRate: Number,
-    allergies: String,
-    medications: String,
-    chronicConditions: String,
-    lifestyleNotes: String,
-    dietPreferences: String,
+    heightCm: { type: Number },
+    weightKg: { type: Number },
+    bmi: { type: Number },
+    bloodPressure: { type: String },
+    heartRate: { type: Number },
+    allergies: { type: String },
+    medications: { type: String },
+    chronicConditions: { type: String },
+    lifestyleNotes: { type: String },
+    dietPreferences: { type: String },
 
-    // main diet plan
+    // main diet plan (doctor's quick dietPlan snapshot)
     dietPlan: {
       breakfast: { type: [Schema.Types.Mixed], default: [] },
       lunch: { type: [Schema.Types.Mixed], default: [] },
@@ -123,19 +117,33 @@ const ClinicalPatientSchema = new Schema(
     clinicalReports: [
       {
         doctorId: { type: Schema.Types.ObjectId, ref: "Doctor" },
-        title: String,
-        summary: String,
-        diagnosis: String,
-        notes: String,
-        testsRecommended: String,
-        plan: String,
-        followUpDate: Date,
+        title: { type: String },
+        summary: { type: String },
+        diagnosis: { type: String },
+        notes: { type: String },
+        testsRecommended: { type: String },
+        plan: { type: String },
+        followUpDate: { type: Date },
         createdAt: { type: Date, default: Date.now },
       },
     ],
 
-    // WEEKLY PLANS (important field)
+    // weekly plans created by doctor
     weeklyPlans: { type: [WeeklyPlanSchema], default: [] },
+
+    // medical documents the patient uploads (routes/patientReports.js)
+    reportFiles: {
+      type: [
+        {
+          originalName: { type: String },
+          fileName: { type: String },
+          mimeType: { type: String },
+          url: { type: String },
+          uploadedAt: { type: Date, default: Date.now },
+        },
+      ],
+      default: [],
+    },
   },
   { timestamps: true }
 );

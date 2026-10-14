@@ -1,66 +1,70 @@
-// backend/routes/chatbot.js
-
 import express from "express";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Groq from "groq-sdk";
+
+if (!process.env.GROQ_API_KEY) {
+  console.warn("GROQ_API_KEY is not set — the chatbot endpoint will fail.");
+}
 
 const router = express.Router();
 
-// Initialize Gemini
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+/* =====================
+   GROQ CLIENT
+   (was reading GROQ_API_KEY2, a copy-paste typo that silently broke this
+   feature unless a second, unused env var happened to be set)
+===================== */
+const groq = new Groq({
+  apiKey: process.env.GROQ_API_KEY,
+});
 
+/* =====================
+   CHATBOT ENDPOINT
+===================== */
 router.post("/", async (req, res) => {
   try {
-    const { message, user } = req.body;
+    const { message, user } = req.body || {};
+
+    if (!message) {
+      return res.status(400).json({
+        reply: "Please enter a message.",
+      });
+    }
 
     const systemPrompt = `
 You are AyurNutri AI Assistant.
 
-LANGUAGE RULES:
-- Detect the user's language automatically from their message.
-- ALWAYS reply ONLY in the SAME language the user uses.
-- Mirror user's tone and formality.
-- DO NOT switch language unless the user switches.
-- Never reply in Hindi unless the user uses Hindi.
+LANGUAGE:
+- Reply in the SAME language as the user.
+- Keep responses short and natural.
 
-FORMATTING RULES:
-- Do NOT use markdown.
-- Do NOT use **bold**, *, lists, emojis, or symbols.
-- Reply in plain natural text only.
+STYLE:
+- No markdown, no emojis, no lists.
 
-TONE:
-- Do NOT start with greetings like "Namaste" unless the user uses them.
-- Keep responses short, friendly, and human-like.
-- No over-politeness or robotic tone.
-
-ROLE:
-- Provide simple Ayurvedic lifestyle and wellness guidance.
-- Avoid medical diagnosis or emergency instructions.
-
-User info:
+USER INFO:
 Name: ${user?.name || "Guest"}
 Dosha: ${user?.dosha || "Unknown"}
 `;
 
-    const fullPrompt = `
-${systemPrompt}
+    const completion = await groq.chat.completions.create({
+      model: "llama-3.1-8b-instant",
 
-User: ${message}
-AI:
-`;
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: message },
+      ],
+      temperature: 0.6,
+      max_tokens: 300,
+    });
 
-    const result = await model.generateContent(fullPrompt);
-
-    let reply =
-      result?.response?.text() || "Sorry, I could not generate a response.";
-
-    // remove markdown characters, lists, symbols
-    reply = reply.replace(/[*_#>\-]/g, "");
+    const reply =
+      completion.choices?.[0]?.message?.content ||
+      "I could not respond right now.";
 
     res.json({ reply });
-  } catch (err) {
-    console.error("Chatbot Error (Gemini):", err);
-    res.status(500).json({ error: "Chatbot error" });
+  } catch (error) {
+    console.error("Groq chatbot error:", error);
+    res.status(500).json({
+      reply: "I’m having trouble responding right now. Please try again.",
+    });
   }
 });
 

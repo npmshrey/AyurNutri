@@ -23,6 +23,7 @@ const PatientSchema = new mongoose.Schema(
     fullName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     phoneNumber: { type: String, required: true, unique: true },
+    age: { type: Number, required: true },
     gender: { type: String, required: true },
     passwordHash: { type: String, required: true },
 
@@ -36,6 +37,10 @@ const PatientSchema = new mongoose.Schema(
 
     // Doctor reports
     clinicalReports: [clinicalReportSchema],
+
+    // Forgot-password flow (routes/auth.js)
+    resetTokenHash: { type: String, select: false },
+    resetTokenExpires: { type: Date, select: false },
   },
   { timestamps: true }
 );
