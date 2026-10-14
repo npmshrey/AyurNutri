@@ -1,4 +1,0 @@
-.env
-node_modules/
-# Files patients upload (medical reports). Never commit these.
-uploads/
