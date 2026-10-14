@@ -1,6 +1,15 @@
-import React from "react";
+import React, { useId } from "react";
 import { cn } from "../../utils/cn";
 
+/**
+ * Text input with optional label, hint, error and a right-hand slot (used
+ * for the show/hide password toggle).
+ *
+ * Previously the id was Math.random() on every render, so the label kept
+ * losing its link to the field (and browser autofill got confused) as the
+ * user typed. It also used border-input, which is white — borders were
+ * invisible on white cards unless each page overrode them.
+ */
 const Input = React.forwardRef(
   (
     {
@@ -11,28 +20,29 @@ const Input = React.forwardRef(
       error,
       required = false,
       id,
-      placeholder,
+      rightSlot = null,
+      containerClassName,
       ...props
     },
     ref
   ) => {
-    // Generate unique ID if not provided
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
+    const autoId = useId();
+    const inputId = id || autoId;
+    const hintId = `${inputId}-hint`;
 
-    // Base input classes (placeholder FIXED)
-    const baseInputClasses =
-      "flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm " +
-      "ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium " +
-      "placeholder:text-gray-400 focus-visible:outline-none focus-visible:ring-2 " +
-      "focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50";
+    const base =
+      "flex h-11 w-full rounded-lg border border-border bg-input px-3.5 text-sm text-text-primary " +
+      "placeholder:text-text-secondary/60 transition-[border-color,box-shadow] duration-200 " +
+      "hover:border-primary/40 focus-visible:outline-none focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10 " +
+      "disabled:cursor-not-allowed disabled:opacity-50 file:border-0 file:bg-transparent file:text-sm file:font-medium";
 
-    // Checkbox input
-    if (type === "checkbox") {
+    if (type === "checkbox" || type === "radio") {
       return (
         <input
-          type="checkbox"
+          type={type}
           className={cn(
-            "h-4 w-4 rounded border border-input bg-background text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2",
+            "h-4 w-4 border border-border bg-input text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2",
+            type === "radio" ? "rounded-full" : "rounded",
             className
           )}
           ref={ref}
@@ -42,56 +52,44 @@ const Input = React.forwardRef(
       );
     }
 
-    // Radio input
-    if (type === "radio") {
-      return (
-        <input
-          type="radio"
-          className={cn(
-            "h-4 w-4 rounded-full border border-input bg-background text-primary focus:ring-2 focus:ring-ring focus:ring-offset-2",
-            className
-          )}
-          ref={ref}
-          id={inputId}
-          {...props}
-        />
-      );
-    }
-
-    // Normal input
     return (
-      <div className="space-y-2">
+      <div className={cn("space-y-1.5", containerClassName)}>
         {label && (
           <label
             htmlFor={inputId}
-            className={cn(
-              "text-sm font-medium leading-none",
-              error ? "text-destructive" : "text-foreground"
-            )}
+            className={cn("block text-sm font-medium", error ? "text-destructive" : "text-text-primary")}
           >
             {label}
-            {required && <span className="text-destructive ml-1">*</span>}
+            {required && <span className="ml-0.5 text-destructive" aria-hidden="true">*</span>}
           </label>
         )}
 
-        <input
-          type={type}
-          {...props}              // <-- ensures placeholder is passed
-          placeholder={placeholder} // <-- FINAL override so it's ALWAYS visible
-          className={cn(
-            baseInputClasses,
-            error && "border-destructive focus-visible:ring-destructive",
-            className
+        <div className="relative">
+          <input
+            type={type}
+            required={required}
+            aria-invalid={!!error || undefined}
+            aria-describedby={description || error ? hintId : undefined}
+            className={cn(
+              base,
+              rightSlot && "pr-11",
+              error && "border-destructive focus-visible:border-destructive focus-visible:ring-destructive/10",
+              className
+            )}
+            ref={ref}
+            id={inputId}
+            {...props}
+          />
+          {rightSlot && (
+            <div className="absolute inset-y-0 right-0 flex items-center pr-2">{rightSlot}</div>
           )}
-          ref={ref}
-          id={inputId}
-        />
+        </div>
 
-        {description && !error && (
-          <p className="text-sm text-muted-foreground">{description}</p>
+        {(error || description) && (
+          <p id={hintId} className={cn("text-xs", error ? "text-destructive" : "text-text-secondary")}>
+            {error || description}
+          </p>
         )}
-
-        {error && <p className="text-sm text-destructive">{error}</p>}
       </div>
     );
   }

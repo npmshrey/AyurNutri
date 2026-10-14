@@ -1,241 +1,147 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import Icon from '../../../components/AppIcon';
-import Button from '../../../components/ui/Button';
+// Footer shared by the public pages.
+//
+// Previously: the newsletter posted to localhost:5000 (the backend runs on
+// 9000, so every signup failed), and six of the nine links pointed to pages
+// that don't exist. Every link here now goes somewhere real.
+import React, { useRef, useState } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import Icon from "../../../components/AppIcon";
+import Button from "../../../components/ui/Button";
+import Logo from "../../../assets/logo.jpg";
+
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
+
+const COLUMNS = [
+  {
+    title: "Explore",
+    links: [
+      { name: "How it works", to: "/#how-it-works" },
+      { name: "Learn Ayurveda", to: "/ayurvedic-intelligence-center" },
+      { name: "Food library", to: "/#food-library" },
+    ],
+  },
+  {
+    title: "For patients",
+    links: [
+      { name: "Sign in", to: "/signin" },
+      { name: "Create an account", to: "/signup" },
+      { name: "Forgot password", to: "/reset" },
+    ],
+  },
+  {
+    title: "For practitioners",
+    links: [
+      { name: "Practitioner sign in", to: "/signin/doctor" },
+      { name: "Register your practice", to: "/signup/doctor" },
+    ],
+  },
+];
 
 const Footer = () => {
-  const currentYear = new Date()?.getFullYear();
-
-  // ------------------------
-  // NEWSLETTER STATE + LOGIC
-  // ------------------------
+  const ref = useRef(null);
   const [email, setEmail] = useState("");
-  const [message, setMessage] = useState("");
+  const [status, setStatus] = useState({ state: "idle", text: "" });
 
-  const handleSubscribe = async () => {
-    if (!email) {
-      setMessage("Please enter a valid email.");
+  // No scroll reveal here on purpose: the footer sits so close to the bottom
+  // of the page that its trigger could fail to fire, leaving it blank.
+
+  const handleSubscribe = async (e) => {
+    e.preventDefault();
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setStatus({ state: "error", text: "That doesn't look like an email address." });
       return;
     }
-
+    setStatus({ state: "loading", text: "" });
     try {
-      const res = await fetch("http://localhost:5000/api/subscribe", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email }),
-      });
-
-      const data = await res.json();
-      setMessage(data.message);
-
-      if (data.success) {
-        setEmail(""); // clear input on success
-      }
+      const { data } = await axios.post(`${API_BASE}/api/subscribe`, { email });
+      setStatus({ state: "done", text: data?.message || "You're subscribed." });
+      setEmail("");
     } catch (err) {
-      console.error(err);
-      setMessage("Something went wrong. Please try again.");
+      setStatus({
+        state: "error",
+        text: err?.response?.data?.message || "Couldn't subscribe right now. Please try again later.",
+      });
     }
   };
 
- 
-  // FOOTER LINKS + DATA
-  const footerSections = [
-    {
-      title: 'Platform',
-      links: [
-        { name: 'Intelligence Center', path: '/ayurvedic-intelligence-center' },
-        { name: 'Professional Portal', path: '/professional-dashboard-portal' },
-        { name: 'Wellness Hub', path: '/personal-wellness-hub' },
-      ]
-    },
-    {
-      title: 'Company',
-      links: [
-        { name: 'About Us', path: '/about' },
-        { name: 'Partners', path: '/partners' },
-        { name: 'Contact', path: '/contact' }
-      ]
-    },
-    {
-      title: 'Legal',
-      links: [
-        { name: 'Terms of Service', path: '/terms' },
-        { name: 'HIPAA Compliance', path: '/hipaa' },
-        { name: 'Security', path: '/security' },
-      ]
-    }
-  ];
-
-  const socialLinks = [
-    // { name: 'LinkedIn', icon: 'Linkedin', url: 'https://linkedin.com/company/ayurnutri' },
-    // { name: 'Twitter', icon: 'Twitter', url: 'https://twitter.com/ayurnutri' },
-    // { name: 'YouTube', icon: 'Youtube', url: 'https://youtube.com/ayurnutri' },
-    // { name: 'Instagram', icon: 'Instagram', url: 'https://instagram.com/ayurnutri' }
-  ];
-
   return (
-    <footer className="bg-gradient-to-br from-primary/5 to-background border-t border-border">
-      
-      {/* -------------------------------- */}
-      {/* Newsletter Section */}
-      {/* -------------------------------- */}
-      <div className="border-b border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid lg:grid-cols-2 gap-8 items-center">
-            
-            <div>
-              <h3 className="text-2xl font-display font-bold text-text-primary mb-4">
-                Stay Updated with AyurNutri Insights
-              </h3>
-              <p className="text-text-secondary">
-                Get the updates, case studies, and platform updates delivered to your inbox. 
-              </p>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row gap-3">
-                <div className="flex-1">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email address"
-                    className="w-full px-4 py-3 rounded-lg border border-border bg-background text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  />
-                </div>
+    <footer ref={ref} className="border-t border-border bg-card/60">
+      <div className="page-container py-14">
+        <div className="grid gap-12 lg:grid-cols-12">
+          <div className="lg:col-span-4">
+            <Link to="/" className="inline-flex items-center gap-3">
+              <img src={Logo} alt="" className="h-10 w-10 rounded-full object-contain" />
+              <span className="font-display text-xl font-semibold text-primary">AyurNutri</span>
+            </Link>
+            <p className="mt-4 max-w-sm text-sm leading-relaxed text-text-secondary">
+              A practice tool for Ayurvedic dietitians. Dosha assessment, diet plans built from a
+              food library that carries both nutrient and Ayurvedic data, and day-by-day patient
+              follow-up in one place.
+            </p>
 
-                <Button
-                  variant="default"
-                  className="bg-primary hover:bg-primary/90 px-6"
-                  iconName="Mail"
-                  iconPosition="left"
-                  onClick={handleSubscribe}
-                >
+            <form onSubmit={handleSubscribe} className="mt-6 max-w-sm">
+              <label htmlFor="footer-email" className="text-sm font-medium text-text-primary">
+                Occasional project updates
+              </label>
+              <div className="mt-2 flex gap-2">
+                <input
+                  id="footer-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="you@example.com"
+                  className="min-w-0 flex-1 rounded-md border border-border bg-input px-3 py-2 text-sm text-text-primary placeholder:text-text-secondary/70 focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+                <Button type="submit" loading={status.state === "loading"}>
                   Subscribe
                 </Button>
               </div>
-
-              {message && (
-                <p className="text-sm text-primary">{message}</p>
-              )}
-
-              <p className="text-xs text-text-secondary">
-                By subscribing, you agree to our Privacy Policy and consent to receive updates from AyurNutri.
-              </p>
-            </div>
-
-          </div>
-        </div>
-      </div>
-
-      {/* -------------------------------- */}
-      {/* Main Footer */}
-      {/* -------------------------------- */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid lg:grid-cols-6 gap-8">
-
-        
-          {/* <div className="lg:col-span-2">
-            <Link to="/homepage-ayur-nutri-platform" className="flex items-center space-x-3 mb-6">
-              <div className="relative">
-                <svg width="40" height="40" viewBox="0 0 40 40" className="text-primary">
-                  <circle cx="20" cy="20" r="18" fill="currentColor" className="opacity-10" />
-                  <path
-                    d="M20 8c-1.5 0-3 .5-4 1.5L12 14l4 4 4-4-4-4c1-.5 2.5-1 4-1s3 .5 4 1l-4 4 4 4 4-4.5c1-1 1.5-2.5 1.5-4s-.5-3-1.5-4S21.5 8 20 8z"
-                    fill="currentColor"
-                  />
-                  <circle cx="20" cy="26" r="6" fill="var(--color-secondary)" className="opacity-80" />
-                  <circle cx="20" cy="26" r="3" fill="currentColor" />
-                </svg>
-              </div>
-
-              <div className="flex flex-col">
-                <span className="text-xl font-display font-semibold text-primary leading-tight">
-                  AyurNutri
-                </span>
-                <span className="text-xs font-accent text-text-secondary leading-none">
-                  Ancient Wisdom • Modern Precision
-                </span>
-              </div>
-            </Link>
-
-            <p className="text-text-secondary mb-6 leading-relaxed">
-              Pioneering the future of healthcare by seamlessly integrating 5,000-year-old Ayurvedic wisdom 
-              with cutting-edge nutritional science.
-            </p>
-
-            <div className="flex space-x-4">
-              {socialLinks?.map((social) => (
-                <a
-                  key={social?.name}
-                  href={social?.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="p-2 rounded-lg bg-muted/50 text-text-secondary hover:bg-primary/10 hover:text-primary organic-transition"
-                  aria-label={social?.name}
+              {status.text && (
+                <p
+                  role="status"
+                  className={`mt-2 text-sm ${status.state === "error" ? "text-error" : "text-primary"}`}
                 >
-                  <Icon name={social?.icon} size={20} />
-                </a>
-              ))}
-            </div>
-          </div> */}
+                  {status.text}
+                </p>
+              )}
+            </form>
+          </div>
 
-          {/* Footer Sections */}
-          {footerSections?.map((section) => (
-            <div key={section?.title}>
-              <h4 className="text-sm font-semibold text-text-primary uppercase tracking-wide mb-4">
-                {section?.title}
-              </h4>
-              <ul className="space-y-3">
-                {section?.links?.map((link) => (
-                  <li key={link?.name}>
-                    <Link
-                      to={link?.path}
-                      className="text-text-secondary hover:text-primary organic-transition text-sm"
-                    >
-                      {link?.name}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-
-      </div>
-
-      {/* Bottom Bar */}
-      <div className="border-t border-border">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-
-            <div className="flex flex-col sm:flex-row sm:items-center gap-4 text-sm text-text-secondary">
-              <p>© {currentYear} AyurNutri. All rights reserved.</p>
-              {/* <div className="flex items-center space-x-4">
-                <Link to="/privacy" className="hover:text-primary organic-transition">
-                  Privacy
-                </Link>
-                <Link to="/terms" className="hover:text-primary organic-transition">
-                  Terms
-                </Link>
-                <Link to="/cookies" className="hover:text-primary organic-transition">
-                  Cookies
-                </Link>
-              </div> */}
-            </div>
-
-            <div className="flex items-center space-x-4 text-sm text-text-secondary">
-              <span>Made with</span>
-              <Icon name="Heart" size={16} className="text-red-500" />
-              <span>for ayurvedic innovation</span>
-            </div>
-
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-7 lg:col-start-6">
+            {COLUMNS.map((col) => (
+              <div key={col.title}>
+                <h4 className="font-body text-xs font-semibold uppercase tracking-[0.16em] text-text-primary">
+                  {col.title}
+                </h4>
+                <ul className="mt-4 space-y-3">
+                  {col.links.map((link) => (
+                    <li key={link.name}>
+                      <Link
+                        to={link.to}
+                        className="text-sm text-text-secondary transition-colors hover:text-primary"
+                      >
+                        {link.name}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
           </div>
         </div>
       </div>
 
+      <div className="border-t border-border">
+        <div className="page-container flex flex-col gap-2 py-5 text-xs text-text-secondary sm:flex-row sm:items-center sm:justify-between">
+          <p>© {new Date().getFullYear()} AyurNutri · ABES Institute of Technology, Ghaziabad</p>
+          <p className="flex items-center gap-1.5">
+            <Icon name="Leaf" size={13} className="text-primary" />
+            Built as a final-year project, 2027PJ-IT07
+          </p>
+        </div>
+      </div>
     </footer>
   );
 };

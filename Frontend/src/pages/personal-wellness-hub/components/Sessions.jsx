@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { API_BASE } from "../../../lib/api";
 import axios from "axios";
 import BookingModal from "./BookingModal";
 import useAuth from "../../../hooks/useAuth";
@@ -29,14 +30,14 @@ const Sessions = () => {
   useEffect(() => {
     // Fetch Doctors
     axios
-      .get("http://localhost:9000/api/doctors")
+      .get(`${API_BASE}/api/doctors`)
       .then((res) => setDoctors(res.data))
       .catch((err) => console.error("Error loading doctors:", err));
 
     // Fetch Appointments
     if (patientId) {
       axios
-        .get(`http://localhost:9000/api/appointments/patient/${patientId}`)
+        .get(`${API_BASE}/api/appointments/patient/${patientId}`)
         .then((res) => setAppointments(res.data.appointments || []))
         .catch((err) => console.error("Error fetching appointments:", err));
     }
@@ -51,7 +52,7 @@ const Sessions = () => {
     try {
       if (!patientId) return alert("Patient ID missing. Please login again.");
 
-      await axios.post("http://localhost:9000/api/appointments", {
+      await axios.post(`${API_BASE}/api/appointments`, {
         patientId,
         doctorId: selectedDoctor._id,
         sessionType: selected,
@@ -66,7 +67,7 @@ const Sessions = () => {
       setSelectedDoctor(null);
 
       const res = await axios.get(
-        `http://localhost:9000/api/appointments/patient/${patientId}`
+        `${API_BASE}/api/appointments/patient/${patientId}`
       );
       setAppointments(res.data.appointments || []);
     } catch (err) {
@@ -209,11 +210,11 @@ const Sessions = () => {
 
                           try {
                             await axios.delete(
-                              `http://localhost:9000/api/appointments/${apt._id}`
+                              `${API_BASE}/api/appointments/${apt._id}`
                             );
 
                             const res = await axios.get(
-                              `http://localhost:9000/api/appointments/patient/${patientId}`
+                              `${API_BASE}/api/appointments/patient/${patientId}`
                             );
                             setAppointments(res.data.appointments || []);
                           } catch (err) {

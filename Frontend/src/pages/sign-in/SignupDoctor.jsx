@@ -1,268 +1,150 @@
 // src/pages/sign-in/SignupDoctor.jsx
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-import { Eye, EyeOff } from "lucide-react";
+import {
+  AuthLayout,
+  PasswordField,
+  SelectField,
+  FormMessage,
+  AuthLink,
+} from "../../components/auth/AuthLayout";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
 
+const EMPTY = {
+  fullName: "",
+  email: "",
+  phoneNumber: "",
+  gender: "",
+  regNo: "",
+  council: "",
+  organisationName: "",
+  password: "",
+  confirmPassword: "",
+};
+
+const validate = (f) => {
+  const errors = {};
+  if (!f.fullName.trim()) errors.fullName = "Enter your full name.";
+  if (!/^\S+@\S+\.\S+$/.test(f.email.trim())) errors.email = "Enter a valid email address.";
+  if (f.phoneNumber && !/^[0-9+\-\s]{7,15}$/.test(f.phoneNumber.trim())) errors.phoneNumber = "Enter a valid phone number.";
+  if (!f.regNo.trim()) errors.regNo = "Your registration number is required.";
+  if (!f.council.trim()) errors.council = "Name the council you're registered with.";
+  if (f.password.length < 6) errors.password = "Use at least 6 characters.";
+  if (f.confirmPassword !== f.password) errors.confirmPassword = "Passwords don't match.";
+  return errors;
+};
+
 const SignupDoctor = () => {
   const navigate = useNavigate();
-
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [gender, setGender] = useState("");
-
-  const [regNo, setRegNo] = useState(""); 
-  const [council, setCouncil] = useState("");
-
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const [errorMsg, setErrorMsg] = useState("");
+  const [form, setForm] = useState(EMPTY);
+  const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const inputClassName =
-    "border border-gray-300 rounded-xl bg-white px-3 py-2 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600";
+  const set = (key) => (e) => {
+    setForm((f) => ({ ...f, [key]: e.target.value }));
+    if (errors[key]) setErrors((er) => ({ ...er, [key]: undefined }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg("");
-
-    if (!fullName || !email || !password || !regNo || !council) {
-      setErrorMsg("Full name, email, password, registration number, and council are required.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setErrorMsg("Passwords do not match.");
-      return;
-    }
+    setServerError("");
+    const found = validate(form);
+    setErrors(found);
+    if (Object.keys(found).length) return;
 
     try {
       setLoading(true);
-
       const res = await axios.post(`${API_BASE}/api/auth/signup/doctor`, {
-        fullName,
-        email,
-        password,
-        phoneNumber: phoneNumber || undefined,
-        gender: gender || undefined,
-        reg_no: regNo,
-        council: council
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        phoneNumber: form.phoneNumber.trim() || undefined,
+        gender: form.gender || undefined,
+        reg_no: form.regNo.trim(),
+        council: form.council.trim(),
+        organisationName: form.organisationName.trim() || undefined,
       });
-
       const { token, user } = res.data || {};
-
       if (token) localStorage.setItem("authToken", token);
       if (user) localStorage.setItem("currentUser", JSON.stringify(user));
-
-      navigate("/professional-dashboard-portal");
+      navigate("/professional-dashboard-portal", { replace: true });
     } catch (err) {
-      console.error("DOCTOR SIGNUP ERROR:", err);
-      const msg =
-        err?.response?.data?.message || "Sign up failed. Please check your details.";
-      setErrorMsg(msg);
+      setServerError(
+        err?.response?.data?.message ||
+          (err?.request ? "Can't reach the server. Check your connection and try again." : "Registration failed.")
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#fdf7ee] bg-gradient-to-b from-[#fdf7ee] via-[#f6f0e5] to-[#f3ecdf] flex items-center justify-center px-4 py-10">
-      <main className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-10 items-start md:items-center animate-fadeInUp">
-
-        {/* Left Section */}
-        <div className="md:pr-6">
-          <p className="text-sm uppercase tracking-[0.2em] text-emerald-700/80 font-semibold mb-3">
-            For Doctors
-          </p>
-
-          <h1 className="text-4xl font-serif font-semibold text-[#1f2933] leading-tight mb-4">
-            Join the <span className="text-emerald-700">AyurNutri clinical network</span>.
-          </h1>
-
-          <p className="text-[#4b5563] text-base leading-relaxed mb-4">
-            Build evidence-backed nutrition plans, monitor outcomes,
-            and collaborate with a growing ecosystem of Ayurvedic professionals.
-          </p>
-
-          <ul className="text-sm text-[#374151] space-y-1">
-            <li>• Structured patient management workflows</li>
-            <li>• Precision nutrition recommendations</li>
-            <li>• Integrated clinical research tools</li>
-          </ul>
+    <AuthLayout
+      wide
+      aside={{
+        kicker: "Practitioners",
+        heading: "Register your practice.",
+        body: "Your registration number and council are recorded with your account. If you work with a clinic, add its name so its admin can see you.",
+        points: [
+          "Build and approve weekly plans for each patient",
+          "Clinical notes and uploaded reports in one place",
+          "Chat and appointments without extra tools",
+        ],
+      }}
+      eyebrow="Create account"
+      title="Practitioner details"
+      subtitle="Fields marked * are required."
+      footer={
+        <>
+          Already registered? <AuthLink to="/signin/doctor">Sign in</AuthLink>
+          <span className="mx-2 text-border">·</span>
+          Patient? <AuthLink to="/signup">Create a patient account</AuthLink>
+        </>
+      }
+    >
+      <FormMessage>{serverError}</FormMessage>
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <div data-auth-item className="grid gap-4 sm:grid-cols-2">
+          <Input label="Full name" autoComplete="name" required value={form.fullName} onChange={set("fullName")} error={errors.fullName} />
+          <SelectField label="Gender" value={form.gender} onChange={set("gender")}>
+            <option value="">Prefer not to say</option>
+            <option value="Female">Female</option>
+            <option value="Male">Male</option>
+            <option value="Non-binary">Non-binary</option>
+          </SelectField>
         </div>
-
-        {/* Right Form */}
-        <div className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl border border-emerald-900/10 p-6 sm:p-8">
-          <div className="mb-6">
-            <p className="text-xs uppercase tracking-[0.18em] text-emerald-700/80 font-semibold mb-2">
-              Create Account
-            </p>
-            <h2 className="text-2xl font-semibold text-[#111827]">Doctor Profile</h2>
-            <p className="text-sm text-[#6b7280] mt-1">
-              Share a few details to set up your professional workspace.
-            </p>
-          </div>
-
-          {errorMsg && (
-            <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-              {errorMsg}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-
-            <Input
-              label="Full Name"
-              required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              
-              className={inputClassName}
-            />
-
-            <Input
-              label="Email"
-              type="email"
-              required
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              
-              className={inputClassName}
-            />
-
-            <Input
-              label="Phone Number"
-              type="phoneNumber"
-              required
-              value={phoneNumber}
-              onChange={(e) => setPhoneNumber(e.target.value)}
-              
-              className={inputClassName}
-            />
-
-            {/* Gender */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Gender 
-              </label>
-              <select
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
-              >
-                <option value="">Select gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Non-binary">Non-binary</option>
-                <option value="Prefer not to say">Prefer not to say</option>
-              </select>
-            </div>
-
-            {/* Registration Number */}
-            <Input
-              label="Registration Number"
-              required
-              value={regNo}
-              onChange={(e) => setRegNo(e.target.value)}
-              
-              className={inputClassName}
-            />
-
-            {/* Medical Council */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Medical Council
-              </label>
-              <select
-                required
-                value={council}
-                onChange={(e) => setCouncil(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
-              >
-                <option value="">Select Council</option>
-                <option value="Uttar Pradesh Medical Council">Uttar Pradesh Medical Council</option>
-                <option value="Punjab Medical Council">Punjab Medical Council</option>
-                <option value="Gujarat Medical Council">Gujarat Medical Council</option>
-                <option value="Kerala Medical Council">Kerala Medical Council</option>
-                <option value="Maharashtra Medical Council">Maharashtra Medical Council</option>
-                <option value="West Bengal Medical Council">West Bengal Medical Council</option>
-              </select>
-            </div>
-
-            {/* Password */}
-            <div className="relative">
-              <Input
-                label="Password"
-                type={showPassword ? "text" : "password"}
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                
-                className={inputClassName}
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 mt-3 cursor-pointer"
-              >
-                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-
-            {/* Confirm Password */}
-            <div className="relative">
-              <Input
-                label="Confirm Password"
-                type={showConfirmPassword ? "text" : "password"}
-                required
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                
-                className={inputClassName}
-              />
-              <button
-                type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 mt-3 cursor-pointer"
-              >
-                {showConfirmPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-
-            <div className="text-xs sm:text-sm">
-              <span className="text-[#6b7280]">
-                Already part of AyurNutri?{" "}
-                <Link
-                  to="/signin/doctor"
-                  className="text-emerald-700 font-semibold hover:underline"
-                >
-                  Sign in
-                </Link>
-              </span>
-            </div>
-
-            <Button
-              type="submit"
-              loading={loading}
-              fullWidth
-              size="lg"
-              className="mt-2 bg-[#0f766e] hover:bg-[#115e59] shadow-md shadow-emerald-700/30"
-            >
-              Create Doctor Account
-            </Button>
-          </form>
+        <div data-auth-item className="grid gap-4 sm:grid-cols-2">
+          <Input label="Email" type="email" autoComplete="email" required value={form.email} onChange={set("email")} error={errors.email} />
+          <Input label="Phone" type="tel" autoComplete="tel" value={form.phoneNumber} onChange={set("phoneNumber")} error={errors.phoneNumber} description="Optional" />
         </div>
-      </main>
-    </div>
+        <div data-auth-item className="grid gap-4 sm:grid-cols-2">
+          <Input label="Registration number" required value={form.regNo} onChange={set("regNo")} error={errors.regNo} />
+          <Input label="Council" placeholder="e.g. Central Council of Indian Medicine" required value={form.council} onChange={set("council")} error={errors.council} />
+        </div>
+        <div data-auth-item>
+          <Input
+            label="Clinic or organisation"
+            value={form.organisationName}
+            onChange={set("organisationName")}
+            description="Optional. Lets your clinic's admin find and approve you."
+          />
+        </div>
+        <div data-auth-item className="grid gap-4 sm:grid-cols-2">
+          <PasswordField autoComplete="new-password" required value={form.password} onChange={set("password")} error={errors.password} />
+          <PasswordField label="Confirm password" autoComplete="new-password" required value={form.confirmPassword} onChange={set("confirmPassword")} error={errors.confirmPassword} />
+        </div>
+        <div data-auth-item>
+          <Button type="submit" loading={loading} fullWidth size="lg" className="rounded-full">
+            Create practitioner account
+          </Button>
+        </div>
+      </form>
+    </AuthLayout>
   );
 };
 

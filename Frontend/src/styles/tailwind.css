@@ -1,105 +1,152 @@
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@500;600;700&family=Crimson+Text:wght@400;600&display=swap');
 @import 'react-toastify/dist/ReactToastify.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
+/*
+  One colour system for the whole app. Every token-based class
+  (bg-primary, text-text-secondary, border-border ...) reads from these
+  variables, and dark mode simply swaps the values below — no need to
+  override individual classes for anything built on the tokens.
+*/
 @layer base {
   :root {
-    /* Primary Colors */
-    --color-primary: #2D5016; /* deep-forest-green */
-    --color-primary-foreground: #FFFFFF; /* white */
-    
-    /* Secondary Colors */
-    --color-secondary: #D4AF37; /* warm-gold */
-    --color-secondary-foreground: #1A1A1A; /* gray-900 */
-    
-    /* Accent Colors */
-    --color-accent: #87A96B; /* calming-sage */
-    --color-accent-foreground: #1A1A1A; /* gray-900 */
-    
-    /* Background Colors */
-    --color-background: #FEFEFE; /* pure-canvas */
-    --color-foreground: #1A1A1A; /* gray-900 */
-    
-    /* Surface Colors */
-    --color-card: #F8F9F6; /* subtle-green-surface */
-    --color-card-foreground: #1A1A1A; /* gray-900 */
-    --color-popover: #FFFFFF; /* white */
-    --color-popover-foreground: #1A1A1A; /* gray-900 */
-    
-    /* Muted Colors */
-    --color-muted: #F7F3E9; /* warm-cream */
-    --color-muted-foreground: #4A5568; /* gray-600 */
-    
-    /* Border and Input */
-    --color-border: #E8E3D8; /* warm-gray-200 */
-    --color-input: #FFFFFF; /* white */
-    --color-ring: #87A96B; /* calming-sage */
-    
-    /* Status Colors */
-    --color-success: #22543D; /* earthy-green */
-    --color-success-foreground: #FFFFFF; /* white */
-    --color-warning: #C05621; /* warm-amber */
-    --color-warning-foreground: #FFFFFF; /* white */
-    --color-error: #9B2C2C; /* muted-red */
-    --color-error-foreground: #FFFFFF; /* white */
-    --color-destructive: #9B2C2C; /* muted-red */
-    --color-destructive-foreground: #FFFFFF; /* white */
-    
-    /* Text Hierarchy */
-    --color-text-primary: #1A1A1A; /* gray-900 */
-    --color-text-secondary: #4A5568; /* gray-600 */
-    
-    /* Brand Specific */
-    --color-brand-gold: #B8860B; /* rich-gold */
-    --color-brand-forest: #1A2F0A; /* deep-forest */
-    --color-brand-sage: #87A96B; /* calming-sage */
-    --color-brand-cream: #F7F3E9; /* warm-cream */
-    --color-brand-ivory: #FEFCF8; /* soft-ivory */
-    
-    /* Shadows */
-    --shadow-organic: 0 4px 12px rgba(45, 80, 22, 0.08);
-    --shadow-elevated: 0 4px 20px rgba(45, 80, 22, 0.08);
-    
-    /* Border Radius */
-    --radius: 6px;
+    --color-primary: #1F5A3A;            /* forest green */
+    --color-primary-foreground: #FFFFFF;
+    --color-secondary: #C9A227;          /* turmeric gold */
+    --color-secondary-foreground: #1C2420;
+    --color-accent: #7FA06A;             /* sage */
+    --color-accent-foreground: #1C2420;
+
+    --color-background: #FAF8F3;         /* warm ivory page */
+    --color-foreground: #1C2420;
+    --color-card: #FFFFFF;
+    --color-card-foreground: #1C2420;
+    --color-popover: #FFFFFF;
+    --color-popover-foreground: #1C2420;
+    --color-muted: #F3EFE4;              /* cream */
+    --color-muted-foreground: #55605A;
+
+    --color-border: #E6E0D2;
+    --color-input: #FFFFFF;
+    --color-ring: #7FA06A;
+
+    --color-success: #22643E;
+    --color-success-foreground: #FFFFFF;
+    --color-warning: #B45309;
+    --color-warning-foreground: #FFFFFF;
+    --color-error: #A03030;
+    --color-error-foreground: #FFFFFF;
+    --color-destructive: #A03030;
+    --color-destructive-foreground: #FFFFFF;
+
+    --color-text-primary: #1C2420;
+    --color-text-secondary: #55605A;
+
+    --color-brand-gold: #B07D12;
+    --color-brand-forest: #14301F;
+    --color-brand-sage: #7FA06A;
+    --color-brand-cream: #F3EFE4;
+    --color-brand-ivory: #FDFBF6;
+
+    --shadow-organic: 0 1px 2px rgba(20, 48, 31, 0.04), 0 6px 18px rgba(20, 48, 31, 0.06);
+    --shadow-elevated: 0 2px 4px rgba(20, 48, 31, 0.05), 0 14px 34px rgba(20, 48, 31, 0.09);
+
+    --radius: 10px;
+    --header-h: 4rem;
   }
-  
+
+  [data-theme="dark"] {
+    --color-primary: #5FB483;
+    --color-primary-foreground: #0B130F;
+    --color-secondary: #D8B64A;
+    --color-secondary-foreground: #0B130F;
+    --color-accent: #93B57E;
+    --color-accent-foreground: #0B130F;
+
+    --color-background: #0E1512;
+    --color-foreground: #E8EEE9;
+    --color-card: #151F1A;
+    --color-card-foreground: #E8EEE9;
+    --color-popover: #151F1A;
+    --color-popover-foreground: #E8EEE9;
+    --color-muted: #1B2721;
+    --color-muted-foreground: #A7B3AB;
+
+    --color-border: #2A3830;
+    --color-input: #121A16;
+    --color-ring: #5FB483;
+
+    --color-text-primary: #E8EEE9;
+    --color-text-secondary: #A7B3AB;
+
+    --color-brand-gold: #D8B64A;
+    --color-brand-forest: #0B130F;
+    --color-brand-cream: #1B2721;
+    --color-brand-ivory: #121A16;
+
+    --shadow-organic: 0 1px 2px rgba(0, 0, 0, 0.3), 0 6px 18px rgba(0, 0, 0, 0.25);
+    --shadow-elevated: 0 2px 4px rgba(0, 0, 0, 0.35), 0 14px 34px rgba(0, 0, 0, 0.35);
+  }
+
   * {
     @apply border-border;
   }
-  
+
+  html {
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+  }
+
   body {
     @apply bg-background text-foreground;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', system-ui, sans-serif;
   }
-  
+
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Playfair Display', serif;
+    font-family: 'Playfair Display', Georgia, serif;
+    letter-spacing: -0.01em;
   }
-  
+
   .font-accent {
-    font-family: 'Crimson Text', serif;
+    font-family: 'Crimson Text', Georgia, serif;
+  }
+
+  ::selection {
+    background: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
   }
 }
 
 @layer components {
-  .organic-shadow {
-    box-shadow: var(--shadow-organic);
-  }
-  
-  .elevated-shadow {
-    box-shadow: var(--shadow-elevated);
-  }
-  
+  .organic-shadow { box-shadow: var(--shadow-organic); }
+  .elevated-shadow { box-shadow: var(--shadow-elevated); }
+
   .organic-transition {
     transition: all 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94);
   }
-  
   .gentle-transition {
     transition: all 600ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Shared page gutter so every page lines up with the header */
+  .page-container {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Eyebrow label used above section headings */
+  .eyebrow {
+    @apply inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.18em] text-primary;
   }
 }

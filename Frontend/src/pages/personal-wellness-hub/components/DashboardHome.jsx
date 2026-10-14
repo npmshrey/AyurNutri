@@ -42,7 +42,6 @@ const DashboardHome = ({ onNavigate }) => {
         });
 
         const body = await res.json().catch(() => ({}));
-        console.log("🔍 /api/patient/overview:", body);
 
         if (!res.ok) {
           throw new Error(body.message || "Failed to load your dashboard");
@@ -96,7 +95,6 @@ const DashboardHome = ({ onNavigate }) => {
         );
 
         const body = await res.json().catch(() => ({}));
-        console.log(`🔍 /api/patients/${cpId}/week-plans:`, body);
 
         if (!res.ok) {
           throw new Error(body.message || "Failed to load weekly plans");

@@ -1,174 +1,153 @@
 // src/pages/ayurvedic-intelligence-center/IntelligenceCenterDashboard.jsx
-
-import React, { useState } from "react";
+// The learning area. Rendered on its own page (index.jsx) and inside the
+// patient's Wellness Hub, so it has no header of its own.
+//
+// Merged from two near-identical copies. Dropped the "Knowledge Search" tab:
+// it returned the same two hardcoded results whatever you searched for.
+import React, { useLayoutEffect, useRef, useState } from "react";
 import Icon from "../../components/AppIcon";
+import { gsap, useGSAP, MOTION_OK } from "../../lib/motion";
 
-// Import the Intelligence Center modules
 import DoshaVisualization from "./components/DoshaVisualization";
 import LearningPathCards from "./components/LearningPathCards";
 import InteractiveTools from "./components/InteractiveTools";
 import VideoLibrary from "./components/VideoLibrary";
 import ConceptInfographics from "./components/ConceptInfographics";
-import SearchAndFilter from "./components/SearchAndFilter";
+
+const SECTIONS = [
+  { id: "overview", name: "Overview", icon: "Compass" },
+  { id: "learning", name: "Learning paths", icon: "BookOpen" },
+  { id: "tools", name: "Interactive tools", icon: "Calculator" },
+  { id: "videos", name: "Videos", icon: "PlayCircle" },
+  { id: "concepts", name: "Concept guides", icon: "Layers" },
+];
+
+const ENTRY_CARDS = [
+  { id: "learning", icon: "BookOpen", title: "Learning paths", body: "Short, ordered modules from the doshas to seasonal eating." },
+  { id: "tools", icon: "Calculator", title: "Interactive tools", body: "A dosha self-check and food-combination checks you can try now." },
+  { id: "videos", icon: "PlayCircle", title: "Videos", body: "Explainers on agni, the six tastes and daily routine." },
+  { id: "concepts", icon: "Layers", title: "Concept guides", body: "Rasa, guna, virya and vipaka, one idea at a time." },
+];
 
 const IntelligenceCenterDashboard = () => {
-  const [activeSection, setActiveSection] = useState("overview");
-  const [searchResults, setSearchResults] = useState(null);
+  const [active, setActive] = useState("overview");
+  const tabsRef = useRef(null);
+  const pillRef = useRef(null);
+  const contentRef = useRef(null);
 
-  const navigationSections = [
-    { id: "overview", name: "Overview", icon: "Home" },
-    { id: "learning", name: "Learning Paths", icon: "BookOpen" },
-    { id: "tools", name: "Interactive Tools", icon: "Calculator" },
-    { id: "videos", name: "Video Library", icon: "Play" },
-    { id: "concepts", name: "Concept Guides", icon: "Layers" },
-    
-  ];
+  // Slide the highlight under the active tab.
+  useLayoutEffect(() => {
+    const tabs = tabsRef.current;
+    const btn = tabs?.querySelector(`[data-tab="${active}"]`);
+    if (!btn || !pillRef.current) return;
+    gsap.to(pillRef.current, {
+      x: btn.offsetLeft,
+      width: btn.offsetWidth,
+      duration: 0.45,
+      ease: "power3.out",
+    });
+    // keep the active tab visible when the strip scrolls on phones
+    btn.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+  }, [active]);
 
-  const handleSearch = (filters) => {
-    const mockResults = [
-      {
-        title: "Vata Balancing Foods for Autumn",
-        type: "Article",
-        excerpt: "Discover grounding foods that help balance Vata in cold seasons.",
-        relevance: 95,
-      },
-      {
-        title: "Understanding Agni",
-        type: "Video",
-        excerpt: "Learn how to assess digestive fire using Ayurvedic principles.",
-        relevance: 88,
-      },
-    ];
+  // Fade the new section in.
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+      mm.add(MOTION_OK, () => {
+        gsap.from(contentRef.current, { y: 16, autoAlpha: 0, duration: 0.5, clearProps: "transform,opacity,visibility" });
+      });
+      return () => mm.revert();
+    },
+    { dependencies: [active] }
+  );
 
-    setSearchResults(mockResults);
-  };
-
-  const renderActiveSection = () => {
-    switch (activeSection) {
-      case "overview":
-        return <OverviewSection setActiveSection={setActiveSection} />;
-
+  const render = () => {
+    switch (active) {
       case "learning":
         return <LearningPathCards />;
-
       case "tools":
         return <InteractiveTools />;
-
       case "videos":
         return <VideoLibrary />;
-
       case "concepts":
         return <ConceptInfographics />;
-
-      case "search":
-        return <SearchAndFilter onSearch={handleSearch} />;
-
       default:
-        return <OverviewSection setActiveSection={setActiveSection} />;
+        return <Overview onOpen={setActive} />;
     }
   };
 
   return (
-    <div className="pb-20">
-      {/* Intelligence Center Tabs */}
+    <div className="pb-16">
       <div className="mb-8 flex justify-center">
-        <div className="flex items-center space-x-1 bg-background/80 backdrop-blur-sm rounded-xl p-2 organic-shadow max-w-full overflow-x-auto">
-          <div className="flex items-center space-x-6">
-            {navigationSections?.map((section) => (
-              <button
-                key={section.id}
-                onClick={() => setActiveSection(section.id)}
-                className={`flex items-center space-x-2 px-4 py-3 rounded-lg organic-transition whitespace-nowrap ${
-                  activeSection === section.id
-                    ? "bg-brand-gold text-white elevated-shadow"
-                    : "text-text-secondary hover:text-primary hover:bg-muted/50"
-                }`}
-              >
-                <Icon name={section.icon} size={18} />
-                <span className="font-medium">{section.name}</span>
-              </button>
-            ))}
-          </div>
+        <div
+          ref={tabsRef}
+          role="tablist"
+          aria-label="Learning sections"
+          className="relative flex max-w-full gap-1 overflow-x-auto rounded-full border border-border bg-card p-1 [scrollbar-width:none]"
+        >
+          <span ref={pillRef} aria-hidden="true" className="absolute left-0 top-1 bottom-1 rounded-full bg-primary" />
+          {SECTIONS.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              role="tab"
+              data-tab={s.id}
+              aria-selected={active === s.id}
+              onClick={() => setActive(s.id)}
+              className={`relative z-10 flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                active === s.id ? "text-primary-foreground" : "text-text-secondary hover:text-text-primary"
+              }`}
+            >
+              <Icon name={s.icon} size={16} />
+              {s.name}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Content */}
-      <div>{renderActiveSection()}</div>
-
-
-      {/* Search Results */}
-      {searchResults && (
-        <div className="mt-10 bg-background rounded-xl p-6 organic-shadow">
-          <h3 className="text-lg font-semibold text-primary mb-4 flex items-center">
-            <Icon name="Search" size={20} className="mr-2" />
-            Search Results ({searchResults.length})
-          </h3>
-
-          <div className="space-y-4">
-            {searchResults.map((item, index) => (
-              <div
-                key={index}
-                className="border border-border rounded-lg p-4 hover:bg-muted/30 organic-transition"
-              >
-                <div className="flex items-start justify-between mb-2">
-                  <h4 className="text-primary font-semibold">{item.title}</h4>
-                  <span className="text-xs px-2 py-1 rounded-full bg-brand-sage/20 text-brand-sage">
-                    {item.type}
-                  </span>
-                </div>
-                <p className="text-text-secondary text-sm">{item.excerpt}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <div ref={contentRef} role="tabpanel">
+        {render()}
+      </div>
     </div>
   );
 };
 
-// ---------------- OVERVIEW SECTION ------------------
-
-const OverviewSection = ({ setActiveSection }) => (
+const Overview = ({ onOpen }) => (
   <div className="space-y-12">
-    <div className="text-center bg-gradient-to-br from-brand-ivory via-brand-cream to-brand-sage/10 rounded-3xl p-12 border border-brand-gold/20">
-      <div className="max-w-4xl mx-auto">
-        <div className="flex justify-center mb-6">
-          <div className="relative">
-            <div className="w-24 h-24 bg-gradient-to-br from-brand-gold to-brand-sage rounded-full flex items-center justify-center elevated-shadow">
-              <Icon name="Brain" size={40} className="text-white" />
-            </div>
-            <div className="absolute -top-2 -right-2 w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-              <Icon name="Sparkles" size={16} className="text-white" />
-            </div>
-          </div>
-        </div>
-
-        <h1 className="text-4xl lg:text-5xl font-display font-bold text-primary mb-4">
-          Ayurvedic Intelligence Center
-        </h1>
-
-        <p className="text-lg text-text-secondary mb-6">
-          Explore interactive learning modules, Ayurvedic insights & powerful
-          assessment tools.
-        </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <button
-            className="bg-brand-gold text-white px-6 py-3 rounded-lg"
-            onClick={() => setActiveSection("learning")}
-          >
-            Start Learning Journey
-          </button>
-
-          <button
-            className="border border-brand-gold text-brand-gold px-6 py-3 rounded-lg"
-            onClick={() => setActiveSection("tools")}
-          >
-            Try Interactive Tools
-          </button>
-        </div>
-      </div>
+    <div className="rounded-3xl border border-border bg-card p-8 text-center shadow-[var(--shadow-organic)] sm:p-12">
+      <p className="eyebrow justify-center">Learn Ayurveda</p>
+      <h1 className="mt-4 font-display text-4xl font-semibold text-text-primary sm:text-5xl">
+        The ideas behind your plan
+      </h1>
+      <p className="mx-auto mt-4 max-w-2xl text-lg leading-relaxed text-text-secondary">
+        Why a practitioner calls a food heating or heavy, what your dosha result means, and how to
+        eat with the seasons. Short modules, no jargon without an explanation.
+      </p>
     </div>
+
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {ENTRY_CARDS.map((c) => (
+        <button
+          key={c.id}
+          type="button"
+          onClick={() => onOpen(c.id)}
+          className="group rounded-2xl border border-border bg-card p-6 text-left shadow-[var(--shadow-organic)] transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-primary/30 hover:shadow-[var(--shadow-elevated)]"
+        >
+          <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+            <Icon name={c.icon} size={18} />
+          </span>
+          <h3 className="mt-4 font-display text-lg font-semibold text-text-primary">{c.title}</h3>
+          <p className="mt-1.5 text-sm leading-relaxed text-text-secondary">{c.body}</p>
+          <span className="mt-4 inline-flex items-center gap-1 text-sm font-medium text-primary">
+            Open
+            <Icon name="ArrowRight" size={15} className="transition-transform duration-300 group-hover:translate-x-1" />
+          </span>
+        </button>
+      ))}
+    </div>
+
+    <DoshaVisualization />
   </div>
 );
 

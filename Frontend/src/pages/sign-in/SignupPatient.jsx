@@ -1,254 +1,137 @@
 // src/pages/sign-in/SignupPatient.jsx
+// The old form never asked for age, but the backend requires it, so every
+// patient signup failed with "All fields are required." Age is now part of
+// the form and checked here before the request goes out.
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-import { Eye, EyeOff } from "lucide-react";
+import {
+  AuthLayout,
+  PasswordField,
+  SelectField,
+  FormMessage,
+  AuthLink,
+} from "../../components/auth/AuthLayout";
 
-const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
+
+const EMPTY = { fullName: "", email: "", phoneNumber: "", age: "", gender: "", password: "", confirmPassword: "" };
+
+const validate = (f) => {
+  const errors = {};
+  if (!f.fullName.trim()) errors.fullName = "Tell us your name.";
+  if (!/^\S+@\S+\.\S+$/.test(f.email.trim())) errors.email = "Enter a valid email address.";
+  if (!/^[0-9+\-\s]{7,15}$/.test(f.phoneNumber.trim())) errors.phoneNumber = "Enter a valid phone number.";
+  const age = Number(f.age);
+  if (!f.age || !Number.isInteger(age) || age < 1 || age > 120) errors.age = "Enter your age in years.";
+  if (!f.gender) errors.gender = "Choose an option.";
+  if (f.password.length < 6) errors.password = "Use at least 6 characters.";
+  if (f.confirmPassword !== f.password) errors.confirmPassword = "Passwords don't match.";
+  return errors;
+};
 
 const SignupPatient = () => {
   const navigate = useNavigate();
-  const [fullName, setFullName] = useState("");
-  const [email, setEmail] = useState("");
-  const [phoneNumber, setPhoneNumber] = useState("");
-  const [gender, setGender] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
-  const [errorMsg, setErrorMsg] = useState("");
+  const [form, setForm] = useState(EMPTY);
+  const [errors, setErrors] = useState({});
+  const [serverError, setServerError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // shared input styling (border etc.)
-  const inputClassName =
-    "border border-gray-300 rounded-xl bg-white px-3 py-2 " +
-    "focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600";
+  const set = (key) => (e) => {
+    setForm((f) => ({ ...f, [key]: e.target.value }));
+    if (errors[key]) setErrors((er) => ({ ...er, [key]: undefined }));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg("");
-
-    if (!fullName || !email || !phoneNumber || !gender || !password) {
-      setErrorMsg("Please fill all required fields.");
-      return;
-    }
-
-    if (password.length < 6) {
-      setErrorMsg("Password should be at least 6 characters long.");
-      return;
-    }
-
-    if (password !== confirmPassword) {
-      setErrorMsg("Passwords do not match.");
-      return;
-    }
+    setServerError("");
+    const found = validate(form);
+    setErrors(found);
+    if (Object.keys(found).length) return;
 
     try {
       setLoading(true);
-
       const res = await axios.post(`${API_BASE}/api/auth/signup/patient`, {
-        fullName: fullName.trim(),
-        email: email.trim(),
-        password,
-        phoneNumber: phoneNumber.trim(),
-        gender: gender.trim(),
+        fullName: form.fullName.trim(),
+        email: form.email.trim(),
+        phoneNumber: form.phoneNumber.trim(),
+        age: Number(form.age),
+        gender: form.gender,
+        password: form.password,
       });
-
-      const { token, user } = res.data || {};
-
-      if (token) {
-        localStorage.setItem("authToken", token);
-      }
-      if (user) {
-        localStorage.setItem("currentUser", JSON.stringify(user));
-      }
-
-      navigate("/personal-wellness-hub");
+      const { token, user, patientId } = res.data || {};
+      if (token) localStorage.setItem("authToken", token);
+      if (user) localStorage.setItem("currentUser", JSON.stringify(user));
+      if (patientId) localStorage.setItem("patientId", patientId);
+      navigate("/personal-wellness-hub", { replace: true });
     } catch (err) {
-      console.error("PATIENT SIGNUP ERROR:", err);
-      const msg =
+      setServerError(
         err?.response?.data?.message ||
-        "Sign up failed. Please check your details and try again.";
-      setErrorMsg(msg);
+          (err?.request ? "Can't reach the server. Check your connection and try again." : "Sign up failed.")
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#fdf7ee] bg-gradient-to-b from-[#fdf7ee] via-[#f6f0e5] to-[#f3ecdf] flex flex-col">
-      <div className="h-20" />
-
-      <main className="flex-1 flex items-center justify-center px-4 py-10">
-        <div className="max-w-5xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-center animate-fadeInUp">
-          {/* Left text */}
-          <div className="hidden md:block">
-            <p className="text-sm uppercase tracking-[0.2em] text-emerald-700/80 font-semibold mb-3">
-              For Users
-            </p>
-            <h1 className="text-3xl font-serif font-semibold text-[#1f2933] mb-4">
-              Begin your{" "}
-              <span className="text-emerald-700">
-                Ayurvedic wellness journey
-              </span>
-              .
-            </h1>
-            <p className="text-[#4b5563] text-base mb-4">
-              Create a free account to unlock personalized diet plans, guided
-              insights, and holistic recommendations aligned with your dosha.
-            </p>
-            <ul className="text-sm text-[#374151] space-y-1">
-              <li>• Personalized nutrition & lifestyle guidance</li>
-              <li>• Progress dashboards and insights</li>
-              <li>• Easy access to Ayurvedic experts</li>
-            </ul>
-          </div>
-
-          {/* Right form */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-emerald-900/5 p-6 sm:p-8">
-            <div className="mb-6">
-              <p className="text-xs uppercase tracking-[0.18em] text-emerald-700/80 font-semibold mb-2">
-                Create account
-              </p>
-              <h2 className="text-2xl font-semibold text-[#111827]">
-                User profile
-              </h2>
-              <p className="text-sm text-[#6b7280] mt-1">
-                It only takes a moment to set up your profile.
-              </p>
-            </div>
-
-            {errorMsg && (
-              <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                {errorMsg}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Input
-                label="Full Name"
-                required
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                className={inputClassName}
-              />
-
-              <Input
-                label="Email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className={inputClassName}
-              />
-
-              <Input
-                label="Phone Number"
-                required
-                value={phoneNumber}
-                onChange={(e) => setPhoneNumber(e.target.value)}
-                className={inputClassName}
-              />
-
-              {/* Gender dropdown */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Gender <span className="text-red-500">*</span>
-                </label>
-                <select
-                  required
-                  value={gender}
-                  onChange={(e) => setGender(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-xl bg-white
-                             focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:border-emerald-600"
-                >
-                  <option value="">Select gender</option>
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Non-binary">Non-binary</option>
-                  <option value="Prefer not to say">Prefer not to say</option>
-                </select>
-              </div>
-
-              {/* Password with eye toggle */}
-              <div className="relative">
-                <Input
-                  label="Password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className={inputClassName}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 mt-3 cursor-pointer"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-
-              {/* Confirm Password with eye toggle */}
-              <div className="relative">
-                <Input
-                  label="Confirm Password"
-                  type={showConfirmPassword ? "text" : "password"}
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className={inputClassName}
-                />
-                <button
-                  type="button"
-                  onClick={() =>
-                    setShowConfirmPassword((prev) => !prev)
-                  }
-                  className="absolute right-3 top-1/2 -translate-y-1/2 mt-3 cursor-pointer"
-                  aria-label={
-                    showConfirmPassword ? "Hide password" : "Show password"
-                  }
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff size={18} />
-                  ) : (
-                    <Eye size={18} />
-                  )}
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between text-xs sm:text-sm">
-                <span className="text-[#6b7280]">
-                  Already have an account?{" "}
-                  <Link
-                    to="/signin"
-                    className="text-emerald-700 font-semibold hover:underline"
-                  >
-                    Sign in
-                  </Link>
-                </span>
-              </div>
-
-              <Button
-                type="submit"
-                loading={loading}
-                fullWidth
-                size="lg"
-                className="mt-2 bg-[#0f766e] hover:bg-[#115e59] shadow-md shadow-emerald-700/30"
-              >
-                Create User Account
-              </Button>
-            </form>
+    <AuthLayout
+      aside={{
+        kicker: "Patients",
+        heading: "Start with your dosha.",
+        body: "Create a free account, take the questionnaire, and your practitioner can build a plan around the result.",
+        points: [
+          "A short dosha questionnaire with results you keep",
+          "Weekly plans approved by a real practitioner",
+          "Daily check-ins that take seconds",
+        ],
+      }}
+      eyebrow="Create account"
+      title="Patient profile"
+      subtitle="Takes about a minute."
+      footer={
+        <>
+          Already registered? <AuthLink to="/signin">Sign in</AuthLink>
+          <span className="mx-2 text-border">·</span>
+          Practitioner? <AuthLink to="/signup/doctor">Register here</AuthLink>
+        </>
+      }
+    >
+      <FormMessage>{serverError}</FormMessage>
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <div data-auth-item>
+          <Input label="Full name" autoComplete="name" required value={form.fullName} onChange={set("fullName")} error={errors.fullName} />
+        </div>
+        <div data-auth-item className="grid gap-4 sm:grid-cols-2">
+          <Input label="Email" type="email" autoComplete="email" required value={form.email} onChange={set("email")} error={errors.email} />
+          <Input label="Phone" type="tel" autoComplete="tel" required value={form.phoneNumber} onChange={set("phoneNumber")} error={errors.phoneNumber} />
+        </div>
+        <div data-auth-item className="grid gap-4 sm:grid-cols-2">
+          <Input label="Age" type="number" inputMode="numeric" min={1} max={120} required value={form.age} onChange={set("age")} error={errors.age} />
+          <div>
+            <SelectField label="Gender" required value={form.gender} onChange={set("gender")}>
+              <option value="">Select</option>
+              <option value="Female">Female</option>
+              <option value="Male">Male</option>
+              <option value="Non-binary">Non-binary</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+            </SelectField>
+            {errors.gender && <p className="mt-1.5 text-xs text-destructive">{errors.gender}</p>}
           </div>
         </div>
-      </main>
-    </div>
+        <div data-auth-item className="grid gap-4 sm:grid-cols-2">
+          <PasswordField autoComplete="new-password" required value={form.password} onChange={set("password")} error={errors.password} />
+          <PasswordField label="Confirm password" autoComplete="new-password" required value={form.confirmPassword} onChange={set("confirmPassword")} error={errors.confirmPassword} />
+        </div>
+        <div data-auth-item>
+          <Button type="submit" loading={loading} fullWidth size="lg" className="rounded-full">
+            Create account
+          </Button>
+        </div>
+      </form>
+    </AuthLayout>
   );
 };
 

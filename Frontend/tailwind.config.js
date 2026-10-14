@@ -1,5 +1,19 @@
+/**
+ * Colours are CSS variables (see src/styles/tailwind.css) so dark mode can
+ * swap them. Tailwind can't apply opacity modifiers like bg-primary/10 to a
+ * plain var(), so every tint silently rendered as nothing. Wrapping each
+ * token in color-mix() makes the modifiers work while keeping the variables.
+ */
+const token = (name) => ({ opacityValue }) =>
+  opacityValue === undefined || opacityValue === "1"
+    ? `var(${name})`
+    : `color-mix(in srgb, var(${name}) calc(${opacityValue} * 100%), transparent)`;
+
 /** @type {import('tailwindcss').Config} */
 export default {
+  // Follow the in-app theme toggle (html[data-theme="dark"]) rather than
+  // the operating system setting, so dark: utilities match everything else.
+  darkMode: ["selector", '[data-theme="dark"]'],
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -7,59 +21,59 @@ export default {
   theme: {
     extend: {
       colors: {
-        border: 'var(--color-border)', /* warm-gray-200 */
-        input: 'var(--color-input)', /* white */
-        ring: 'var(--color-ring)', /* calming-sage */
-        background: 'var(--color-background)', /* pure-canvas */
-        foreground: 'var(--color-foreground)', /* gray-900 */
+        border: token('--color-border'), /* warm-gray-200 */
+        input: token('--color-input'), /* white */
+        ring: token('--color-ring'), /* calming-sage */
+        background: token('--color-background'), /* pure-canvas */
+        foreground: token('--color-foreground'), /* gray-900 */
         primary: {
-          DEFAULT: 'var(--color-primary)', /* deep-forest-green */
-          foreground: 'var(--color-primary-foreground)', /* white */
+          DEFAULT: token('--color-primary'), /* deep-forest-green */
+          foreground: token('--color-primary-foreground'), /* white */
         },
         secondary: {
-          DEFAULT: 'var(--color-secondary)', /* warm-gold */
-          foreground: 'var(--color-secondary-foreground)', /* gray-900 */
+          DEFAULT: token('--color-secondary'), /* warm-gold */
+          foreground: token('--color-secondary-foreground'), /* gray-900 */
         },
         destructive: {
-          DEFAULT: 'var(--color-destructive)', /* muted-red */
-          foreground: 'var(--color-destructive-foreground)', /* white */
+          DEFAULT: token('--color-destructive'), /* muted-red */
+          foreground: token('--color-destructive-foreground'), /* white */
         },
         muted: {
-          DEFAULT: 'var(--color-muted)', /* warm-cream */
-          foreground: 'var(--color-muted-foreground)', /* gray-600 */
+          DEFAULT: token('--color-muted'), /* warm-cream */
+          foreground: token('--color-muted-foreground'), /* gray-600 */
         },
         accent: {
-          DEFAULT: 'var(--color-accent)', /* calming-sage */
-          foreground: 'var(--color-accent-foreground)', /* gray-900 */
+          DEFAULT: token('--color-accent'), /* calming-sage */
+          foreground: token('--color-accent-foreground'), /* gray-900 */
         },
         popover: {
-          DEFAULT: 'var(--color-popover)', /* white */
-          foreground: 'var(--color-popover-foreground)', /* gray-900 */
+          DEFAULT: token('--color-popover'), /* white */
+          foreground: token('--color-popover-foreground'), /* gray-900 */
         },
         card: {
-          DEFAULT: 'var(--color-card)', /* subtle-green-surface */
-          foreground: 'var(--color-card-foreground)', /* gray-900 */
+          DEFAULT: token('--color-card'), /* subtle-green-surface */
+          foreground: token('--color-card-foreground'), /* gray-900 */
         },
         success: {
-          DEFAULT: 'var(--color-success)', /* earthy-green */
-          foreground: 'var(--color-success-foreground)', /* white */
+          DEFAULT: token('--color-success'), /* earthy-green */
+          foreground: token('--color-success-foreground'), /* white */
         },
         warning: {
-          DEFAULT: 'var(--color-warning)', /* warm-amber */
-          foreground: 'var(--color-warning-foreground)', /* white */
+          DEFAULT: token('--color-warning'), /* warm-amber */
+          foreground: token('--color-warning-foreground'), /* white */
         },
         error: {
-          DEFAULT: 'var(--color-error)', /* muted-red */
-          foreground: 'var(--color-error-foreground)', /* white */
+          DEFAULT: token('--color-error'), /* muted-red */
+          foreground: token('--color-error-foreground'), /* white */
         },
         /* Brand Specific Colors */
-        'brand-gold': 'var(--color-brand-gold)', /* rich-gold */
-        'brand-forest': 'var(--color-brand-forest)', /* deep-forest */
-        'brand-sage': 'var(--color-brand-sage)', /* calming-sage */
-        'brand-cream': 'var(--color-brand-cream)', /* warm-cream */
-        'brand-ivory': 'var(--color-brand-ivory)', /* soft-ivory */
-        'text-primary': 'var(--color-text-primary)', /* gray-900 */
-        'text-secondary': 'var(--color-text-secondary)', /* gray-600 */
+        'brand-gold': token('--color-brand-gold'), /* rich-gold */
+        'brand-forest': token('--color-brand-forest'), /* deep-forest */
+        'brand-sage': token('--color-brand-sage'), /* calming-sage */
+        'brand-cream': token('--color-brand-cream'), /* warm-cream */
+        'brand-ivory': token('--color-brand-ivory'), /* soft-ivory */
+        'text-primary': token('--color-text-primary'), /* gray-900 */
+        'text-secondary': token('--color-text-secondary'), /* gray-600 */
       },
       fontFamily: {
         'display': ['Playfair Display', 'serif'],

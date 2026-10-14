@@ -1,49 +1,45 @@
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import Button from 'components/ui/Button';
-import Icon from 'components/AppIcon';
+import React, { useRef } from "react";
+import { useNavigate } from "react-router-dom";
+import Header from "components/ui/Header";
+import Button from "components/ui/Button";
+import Icon from "components/AppIcon";
+import { useEnter } from "../lib/motion";
 
 const NotFound = () => {
   const navigate = useNavigate();
+  const ref = useRef(null);
+  useEnter(ref);
 
-  const handleGoHome = () => {
-    navigate('/');
+  const goBack = () => {
+    // window.history.length is 1 when this tab opened straight onto a bad URL.
+    if (window.history.length > 1) navigate(-1);
+    else navigate("/");
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background p-4">
-      <div className="text-center max-w-md">
-        <div className="flex justify-center mb-6">
-          <div className="relative">
-            <h1 className="text-9xl font-bold text-primary opacity-20">404</h1>
-          </div>
-        </div>
-
-        <h2 className="text-2xl font-medium text-onBackground mb-2">Page Not Found</h2>
-        <p className="text-onBackground/70 mb-8">
-          The page you're looking for doesn't exist. Let's get you back!
+    <div ref={ref} className="min-h-screen bg-background">
+      <Header />
+      <main className="page-container flex min-h-screen flex-col items-center justify-center py-24 text-center">
+        <p data-enter className="font-display text-8xl font-semibold text-primary/15 sm:text-9xl" aria-hidden="true">
+          404
         </p>
-
-        <div className="flex flex-col sm:flex-row gap-4 justify-center">
-          <Button
-            variant="primary"
-            icon={<Icon name="ArrowLeft" />}
-            iconPosition="left"
-            onClick={() => window.history?.back()}
-          >
-            Go Back
+        <h1 data-enter className="mt-2 font-display text-3xl font-semibold text-text-primary">
+          This page doesn't exist
+        </h1>
+        <p data-enter className="mt-3 max-w-md text-text-secondary">
+          The link may be old, or the address has a typo. Here are a couple of ways back.
+        </p>
+        <div data-enter className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Button variant="outline" className="rounded-full px-6" onClick={goBack}>
+            <Icon name="ArrowLeft" size={16} className="mr-2" />
+            Go back
           </Button>
-
-          <Button
-            variant="outline"
-            icon={<Icon name="Home" />}
-            iconPosition="left"
-            onClick={handleGoHome}
-          >
-            Back to Home
+          <Button className="rounded-full px-6" onClick={() => navigate("/")}>
+            <Icon name="Home" size={16} className="mr-2" />
+            Homepage
           </Button>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

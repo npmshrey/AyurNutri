@@ -4,17 +4,16 @@ import { useParams, useNavigate, useLocation } from "react-router-dom";
 import useAuth from "../../../hooks/useAuth";
 import Button from "../../../components/ui/Button";
 
-// IMPORTANT: must match FoodCardList's JSON import path and name
-import foodsRaw from "./data.json";
+import { useFoodLibrary as useLiveFoodLibrary } from "../../../lib/foods";
 
 const API_BASE =
   import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
 
 /**
- * Simple shared food library hook.
+ * Food library, loaded live from the backend (GET /api/foods).
  */
 function useFoodLibrary() {
-  return foodsRaw || [];
+  return useLiveFoodLibrary().foods;
 }
 
 /**

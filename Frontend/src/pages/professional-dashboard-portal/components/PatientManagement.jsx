@@ -207,7 +207,6 @@ const PatientManagement = () => {
       }
 
       const data = await res.json();
-      console.log("🩺 /api/patients response:", data);
 
       const list = Array.isArray(data) ? data : data.patients || [];
       setPatients(list);

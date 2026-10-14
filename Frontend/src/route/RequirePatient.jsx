@@ -1,17 +1,22 @@
-// src/routes/RequirePatient.jsx
+// src/route/RequirePatient.jsx
 import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { readSession } from "./session";
 
 const RequirePatient = () => {
-  const token = localStorage.getItem("authToken");
-  const user = JSON.parse(localStorage.getItem("currentUser") || "{}");
+  const location = useLocation();
+  const { token, user } = readSession();
 
-  const isPatient = token && user?.role === "patient";
-
-  if (!isPatient) {
-    return <Navigate to="/signin" replace />;
+  if (!token || !user) {
+    // Remember where they were going so sign-in can send them back.
+    return <Navigate to="/signin" replace state={{ from: location }} />;
   }
-
+  if (user.role === "doctor") {
+    return <Navigate to="/professional-dashboard-portal" replace />;
+  }
+  if (user.role !== "patient") {
+    return <Navigate to="/signin" replace state={{ from: location }} />;
+  }
   return <Outlet />;
 };
 

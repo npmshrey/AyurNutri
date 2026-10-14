@@ -1,9 +1,13 @@
 import React, { useMemo, useState } from "react";
 import axios from "axios";
-import foodData from "./data.json";
+import { useFoodLibrary } from "../../../lib/foods";
 
+// Was falling back to :5000 while every other component in the app falls
+// back to :9000 (the backend's actual default port) — a copy-paste
+// mismatch that silently pointed this component at the wrong port whenever
+// VITE_API_BASE_URL wasn't set.
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
 
 // Small pill chip
 const Chip = ({ children, variant = "default" }) => {
@@ -53,9 +57,10 @@ const getDoshaChips = (doshaEffect = {}) => {
 };
 
 export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
-  // Data source – use prop if provided, else data.json
+  // Data source – use prop if provided, else the live library from the API
+  const { foods: liveFoods, loading: libraryLoading, error: libraryError } = useFoodLibrary();
   const data =
-    Array.isArray(dataSource) && dataSource.length ? dataSource : foodData || [];
+    Array.isArray(dataSource) && dataSource.length ? dataSource : liveFoods;
 
   // Pagination / filters
   const [page, setPage] = useState(1);
@@ -370,7 +375,11 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
 
         {filtered.length === 0 && (
           <div className="text-center text-gray-500 text-sm mt-6">
-            No foods match your filters.
+            {libraryLoading
+              ? "Loading the food library…"
+              : libraryError
+              ? libraryError
+              : "No foods match your filters."}
           </div>
         )}
 

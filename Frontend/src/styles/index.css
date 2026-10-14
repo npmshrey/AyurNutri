@@ -1,66 +1,50 @@
-:root{
-  --ayur-primary: #0F6C3F;
-  --ayur-mint: #E8F7EE;
-  --ayur-beige: #E8E2D9;
-  --ayur-border: #D6D1C9;
-  --ayur-text-dark: #2A2A2A;
-  --ayur-text-med: #555555;
-  --ayur-bg: #FAF9F6;
+/*
+  Legacy helpers still used by dashboard components, plus dark-mode
+  fallbacks for components that hardcode light colours (bg-white,
+  text-gray-800, bg-[#E8E2D9] ...) instead of using the design tokens in
+  tailwind.css. Anything built on the tokens switches themes on its own.
+*/
 
-  /* theme base */
-  --bg-color: #FAF9F6;
-  --text-color: #111827;
+:root {
+  --ayur-primary: var(--color-primary);
+  --ayur-mint: #E8F3EC;
+  --ayur-beige: #EFE9DC;
+  --ayur-border: var(--color-border);
+  --ayur-text-dark: var(--color-text-primary);
+  --ayur-text-med: var(--color-text-secondary);
+  --ayur-bg: var(--color-background);
 }
 
-/* DARK THEME – jab <html data-theme="dark"> set hota hai */
-[data-theme="dark"] {
-  --bg-color: #020617;     /* almost black */
-  --text-color: #E5E7EB;   /* light gray text */
-
-  --ayur-bg: #020617;
-  --ayur-text-dark: #E5E7EB;
-  --ayur-text-med: #9CA3AF;
-}
-
-/* -------- GLOBAL BACKGROUND / TEXT -------- */
-
-html,
-body {
-  background-color: var(--bg-color);
-  color: var(--text-color);
-}
-
-body {
-  margin: 0;
-  padding: 0;
-  font-family: Inter;
-}
-
-/* helpers from your design */
-.bg-background { background-color: var(--bg-color); }
 .bg-cream { background-color: var(--ayur-bg); }
 .bg-beige { background-color: var(--ayur-beige); }
-.text-primary { color: var(--ayur-primary); }
 .text-muted { color: var(--ayur-text-med); }
 .border-ayur { border-color: var(--ayur-border); }
 
-/* -------- DARK MODE OVERRIDES (GLOBAL) -------- */
+/* -------- DARK MODE FALLBACKS FOR HARDCODED LIGHT CLASSES -------- */
+[data-theme="dark"] {
+  --ayur-mint: #17291F;
+  --ayur-beige: #1B2721;
+}
 
-/* common light backgrounds → dark */
-[data-theme="dark"] .bg-background,
-[data-theme="dark"] .bg-cream,
-[data-theme="dark"] .bg-beige,
 [data-theme="dark"] .bg-white,
 [data-theme="dark"] .bg-slate-50,
 [data-theme="dark"] .bg-slate-100,
-[data-theme="dark"] .bg-slate-200,
 [data-theme="dark"] .bg-gray-50,
-[data-theme="dark"] .bg-gray-100 {
-  background-color: #020617 !important;
+[data-theme="dark"] .bg-gray-100,
+[data-theme="dark"] .bg-\[\#E8E2D9\],
+[data-theme="dark"] .bg-\[\#FAF9F6\],
+[data-theme="dark"] .bg-\[\#F9F6ED\],
+[data-theme="dark"] .bg-\[\#FAFAF7\] {
+  background-color: var(--color-card) !important;
 }
 
-/* 🔥 gradient sections (hero / auth-selection / cards) */
-/* pehle sirf -br, -r, -t the; ab saare directions cover */
+[data-theme="dark"] .bg-green-50,
+[data-theme="dark"] .bg-emerald-50,
+[data-theme="dark"] .bg-green-100 {
+  background-color: #17291F !important;
+}
+
+/* Light gradients with hardcoded stops can't be themed — flatten them */
 [data-theme="dark"] .bg-gradient-to-br,
 [data-theme="dark"] .bg-gradient-to-bl,
 [data-theme="dark"] .bg-gradient-to-tr,
@@ -70,72 +54,54 @@ body {
 [data-theme="dark"] .bg-gradient-to-t,
 [data-theme="dark"] .bg-gradient-to-b {
   background-image: none !important;
-  background-color: #020617 !important;
+  background-color: var(--color-background) !important;
 }
 
-/* muted / card backgrounds */
-[data-theme="dark"] .bg-muted,
-[data-theme="dark"] .bg-card,
-[data-theme="dark"] .bg-card\/50 {
-  background-color: #020617 !important;
-}
-
-/* borders */
-[data-theme="dark"] .border-border,
-[data-theme="dark"] .border-ayur,
 [data-theme="dark"] .border-gray-200,
+[data-theme="dark"] .border-gray-300,
 [data-theme="dark"] .border-slate-200 {
-  border-color: #374151 !important;
+  border-color: var(--color-border) !important;
 }
 
-/* headings & primary text – brighten */
-[data-theme="dark"] h1,
-[data-theme="dark"] h2,
-[data-theme="dark"] h3,
-[data-theme="dark"] h4,
-[data-theme="dark"] h5,
-[data-theme="dark"] h6,
-[data-theme="dark"] .text-text-primary,
 [data-theme="dark"] .text-slate-900,
 [data-theme="dark"] .text-slate-800,
 [data-theme="dark"] .text-gray-900,
 [data-theme="dark"] .text-gray-800 {
-  color: #F9FAFB !important;
+  color: var(--color-text-primary) !important;
 }
 
-/* secondary / paragraph text */
-[data-theme="dark"] p,
-[data-theme="dark"] .text-text-secondary,
 [data-theme="dark"] .text-slate-700,
 [data-theme="dark"] .text-slate-600,
 [data-theme="dark"] .text-slate-500,
 [data-theme="dark"] .text-gray-700,
 [data-theme="dark"] .text-gray-600,
 [data-theme="dark"] .text-gray-500 {
-  color: #9CA3AF !important;
+  color: var(--color-text-secondary) !important;
 }
 
-/* subtle labels / meta info */
-[data-theme="dark"] .text-slate-400,
-[data-theme="dark"] .text-gray-400 {
-  color: #6B7280 !important;
+[data-theme="dark"] .text-emerald-800,
+[data-theme="dark"] .text-emerald-700,
+[data-theme="dark"] .text-green-800,
+[data-theme="dark"] .text-green-700 {
+  color: var(--color-primary) !important;
 }
 
-/* chips / small badges with light bg shouldn't disappear */
-[data-theme="dark"] .bg-primary\/10 {
-  background-color: rgba(16, 185, 129, 0.15) !important;
+[data-theme="dark"] input,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea {
+  background-color: var(--color-input);
+  color: var(--color-text-primary);
 }
 
-/* Card hover lift effect */
+/* -------- SMALL SHARED EFFECTS -------- */
 .card-hover {
   transition: transform .22s ease, box-shadow .22s ease;
 }
 .card-hover:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 10px 30px rgba(16,24,32,0.08);
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-elevated);
 }
 
-/* Subtle fade-up animation */
 .fade-up {
   transform: translateY(6px);
   opacity: 0;
@@ -144,14 +110,6 @@ body {
 .fade-up.in-view {
   transform: translateY(0);
   opacity: 1;
-}
-
-/* reset + animation you already had */
-* {
-  box-sizing: border-box;
-  line-height: normal;
-  font-family: inherit;
-  margin: unset;
 }
 
 @keyframes drawerSlideIn {
@@ -165,16 +123,15 @@ body {
 }
 
 @keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0px);
-  }
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fadeInUp {
   animation: fadeInUp 0.7s ease-out forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-fadeInUp { animation: none; }
+  .card-hover:hover { transform: none; }
 }

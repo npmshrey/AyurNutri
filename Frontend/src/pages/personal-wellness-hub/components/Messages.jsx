@@ -1,8 +1,9 @@
 import React, { useEffect, useState, useRef } from "react";
+import { API_BASE } from "../../../lib/api";
 import useAuth from "../../../hooks/useAuth";
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:9000");
+const socket = io(API_BASE);
 
 const LONG_PRESS_DURATION = 550; // ms to detect long press
 
@@ -104,7 +105,7 @@ const Messages = () => {
   /* ------------------------- LOAD DOCTORS --------------------------- */
   useEffect(() => {
     (async () => {
-      const res = await fetch("http://localhost:9000/api/doctors");
+      const res = await fetch(`${API_BASE}/api/doctors`);
       const data = await res.json();
       setDoctors(data);
       if (data.length > 0) setActiveDoctorId(data[0]._id);
@@ -119,7 +120,7 @@ const Messages = () => {
       const token = localStorage.getItem("authToken");
 
       const res = await fetch(
-        `http://localhost:9000/api/chat/thread?patientId=${user.id}&doctorId=${activeDoctorId}`,
+        `${API_BASE}/api/chat/thread?patientId=${user.id}&doctorId=${activeDoctorId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -158,7 +159,7 @@ const Messages = () => {
     const token = localStorage.getItem("authToken");
 
     try {
-      const res = await fetch("http://localhost:9000/api/chat/send", {
+      const res = await fetch(`${API_BASE}/api/chat/send`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,
@@ -216,7 +217,7 @@ const Messages = () => {
     const token = localStorage.getItem("authToken");
 
     try {
-      const res = await fetch("http://localhost:9000/api/chat/send-file", {
+      const res = await fetch(`${API_BASE}/api/chat/send-file`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData,
@@ -243,16 +244,12 @@ const Messages = () => {
 
     const token = localStorage.getItem("authToken");
 
-    await fetch("http://localhost:9000/api/chat/delete-message", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        messageId: selectedMsg._id,
-        mode, // "me" or "everyone"
-      }),
+    // The backend exposes one PATCH route per mode; this used to POST to a
+    // /delete-message endpoint that never existed, so deletes silently failed.
+    const path = mode === "everyone" ? "delete-for-everyone" : "delete-for-me";
+    await fetch(`${API_BASE}/api/chat/${path}/${selectedMsg._id}`, {
+      method: "PATCH",
+      headers: { Authorization: `Bearer ${token}` },
     });
 
     if (mode === "me") {
@@ -309,7 +306,7 @@ const Messages = () => {
 
         {isPdf && (
           <a
-            href={"http://localhost:9000" + msg.fileUrl}
+            href={API_BASE + msg.fileUrl}
             target="_blank"
             rel="noreferrer"
             className="underline"
@@ -320,7 +317,7 @@ const Messages = () => {
 
         {!isImg && !isPdf && (
           <a
-            href={"http://localhost:9000" + msg.fileUrl}
+            href={API_BASE + msg.fileUrl}
             target="_blank"
             rel="noreferrer"
             className="underline"

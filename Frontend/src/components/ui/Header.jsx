@@ -1,311 +1,272 @@
 // src/components/ui/Header.jsx
-import React, { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+// Site-wide header. Used on public pages, auth pages and the doctor portal.
+//
+// Fixes over the previous version:
+//  - It no longer logs the user out when they land on the homepage. That
+//    used to happen *during render* and triggered a hard page reload, so a
+//    signed-in user clicking the logo was silently signed out.
+//  - The logo points at "/" (it pointed at a route that doesn't exist).
+//  - Signed-in users always get a way back to their own dashboard.
+//  - The mobile menu is a real panel that closes on navigation and Escape.
+import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Link, NavLink, useLocation, useNavigate } from "react-router-dom";
 import Icon from "../AppIcon";
 import Button from "./Button";
 import useAuth from "../../hooks/useAuth";
+import useTheme from "../../hooks/useTheme";
 import Logo from "../../assets/logo.jpg";
+import { gsap, MOTION_OK } from "../../lib/motion";
 
-const Header = ({ className = "", isHomePage = false }) => {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const [theme, setTheme] = useState("light"); // 🟢 new
+const NAV_LINKS = [
+  { to: "/", label: "Home", end: true },
+  { to: "/ayurvedic-intelligence-center", label: "Learn Ayurveda" },
+  { to: "/personal-wellness-hub", label: "Wellness Hub" },
+  { to: "/professional-dashboard-portal", label: "For Practitioners" },
+];
 
-  const location = useLocation();
+let hasAnimatedIn = false; // animate the header in once per visit, not per page
+
+const Header = ({ className = "", fluid = false, showNav = true }) => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [scrolled, setScrolled] = useState(false);
+
+  const headerRef = useRef(null);
+  const navRef = useRef(null);
+  const pillRef = useRef(null);
+  const menuRef = useRef(null);
+
+  const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { user, isAuthenticated, isDoctor, logout } = useAuth();
+  const { theme, toggleTheme } = useTheme();
 
-  const { user, isAuthenticated, isDoctor, isPatient, logout } = useAuth();
+  const dashboardPath = isDoctor
+    ? "/professional-dashboard-portal"
+    : "/personal-wellness-hub";
 
-  const pathname = location?.pathname || "/";
+  const displayName = (() => {
+    const base = (user?.fullName || user?.name || "").trim();
+    if (!base) return "My account";
+    const first = base.split(/\s+/)[0];
+    return isDoctor && !/^dr\.?/i.test(base) ? `Dr. ${first}` : first;
+  })();
 
-  // Detect homepage (more robust)
-  const isHome =
-    pathname === "/" ||
-    pathname.includes("homepage") ||
-    pathname.startsWith("/homepage-ayur-nutri-platform");
+  // Visitors who aren't signed in go to the matching sign-in page instead of
+  // bouncing off a protected route.
+  const resolveNavTarget = (to) => {
+    if (to === "/personal-wellness-hub" && !(isAuthenticated && !isDoctor)) {
+      return isAuthenticated ? "/professional-dashboard-portal" : "/signin";
+    }
+    if (to === "/professional-dashboard-portal" && !(isAuthenticated && isDoctor)) {
+      return isAuthenticated ? "/personal-wellness-hub" : "/signin/doctor";
+    }
+    return to;
+  };
 
-  const isDoctorDashboard = pathname.startsWith(
-    "/professional-dashboard-portal"
-  );
-  const isAuthSelection = pathname.startsWith("/auth-selection");
+  // Hide the dashboard link that doesn't belong to the signed-in role.
+  const visibleLinks = NAV_LINKS.filter((l) => {
+    if (!isAuthenticated) return true;
+    if (isDoctor) return l.to !== "/personal-wellness-hub";
+    return l.to !== "/professional-dashboard-portal";
+  });
 
-  const role = isDoctor ? "doctor" : isPatient ? "patient" : null;
-
-  // scroll effect
   useEffect(() => {
-    const onScroll = () => setIsScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", onScroll);
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  // 🟢 theme initial load
+  // Close the mobile menu whenever the route changes, and on Escape.
+  useEffect(() => setMenuOpen(false), [pathname]);
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem("theme");
-      const initial = saved === "dark" ? "dark" : "light";
-      setTheme(initial);
-      document.documentElement.setAttribute("data-theme", initial);
-    } catch (e) {
-      document.documentElement.setAttribute("data-theme", "light");
-    }
+    if (!menuOpen) return;
+    const onKey = (e) => e.key === "Escape" && setMenuOpen(false);
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [menuOpen]);
+
+  // First-visit entrance.
+  useLayoutEffect(() => {
+    if (hasAnimatedIn) return;
+    hasAnimatedIn = true;
+    const mm = gsap.matchMedia();
+    mm.add(MOTION_OK, () => {
+      gsap.from(headerRef.current, { yPercent: -100, duration: 0.7, ease: "power3.out", clearProps: "transform" });
+    });
+    return () => mm.revert();
   }, []);
 
-  // 🟢 theme change → html[data-theme] + localStorage
-  useEffect(() => {
-    try {
-      document.documentElement.setAttribute("data-theme", theme);
-      localStorage.setItem("theme", theme);
-    } catch (e) {
-      // ignore
+  // Sliding highlight behind the active desktop link.
+  useLayoutEffect(() => {
+    const nav = navRef.current;
+    const pill = pillRef.current;
+    if (!nav || !pill) return;
+    const place = (animate) => {
+      const active = nav.querySelector("[data-active='true']");
+      if (!active) {
+        gsap.to(pill, { autoAlpha: 0, duration: 0.2 });
+        return;
+      }
+      const props = {
+        x: active.offsetLeft,
+        width: active.offsetWidth,
+        autoAlpha: 1,
+      };
+      if (animate) gsap.to(pill, { ...props, duration: 0.45, ease: "power3.out" });
+      else gsap.set(pill, props);
+    };
+    place(false);
+    const onResize = () => place(false);
+    window.addEventListener("resize", onResize);
+    document.fonts?.ready?.then(() => place(false));
+    return () => window.removeEventListener("resize", onResize);
+  }, [pathname, isAuthenticated]);
+
+  // Mobile menu open/close animation.
+  useLayoutEffect(() => {
+    const el = menuRef.current;
+    if (!el) return;
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (menuOpen) {
+      gsap.set(el, { display: "block" });
+      if (reduce) return;
+      gsap.fromTo(el, { height: 0, autoAlpha: 0 }, { height: "auto", autoAlpha: 1, duration: 0.4, ease: "power3.out" });
+      gsap.from(el.querySelectorAll("[data-menu-item]"), { y: -8, autoAlpha: 0, duration: 0.35, stagger: 0.05, delay: 0.08 });
+    } else if (!reduce && el.style.display === "block") {
+      gsap.to(el, { height: 0, autoAlpha: 0, duration: 0.28, ease: "power2.in", onComplete: () => gsap.set(el, { display: "none" }) });
+    } else {
+      gsap.set(el, { display: "none" });
     }
-  }, [theme]);
+  }, [menuOpen]);
 
-  const toggleTheme = () => {
-    setTheme((prev) => (prev === "light" ? "dark" : "light"));
-  };
+  const isActive = (link) =>
+    link.end ? pathname === link.to : pathname.startsWith(link.to);
 
-  // Navigation Fixes
-  const handleProfessionalPortal = () => {
-    if (role === "doctor") navigate("/professional-dashboard-portal");
-    else navigate("/signin/doctor");
-  };
-
-  const handleWellnessHub = () => {
-    if (role === "patient") navigate("/personal-wellness-hub");
-    else navigate("/signin");
-  };
-
-  const handleSignInClick = () => {
-    setIsMobileMenuOpen(false);
-    navigate("/auth-selection");
-  };
-
-  const getDisplayName = () => {
-    if (!user) return "";
-    const base = user.fullName || user.name || "";
-    if (isDoctor && !/^dr\.?/i.test(base.trim())) return `Dr. ${base}`;
-    return base;
-  };
+  const inner = fluid ? "px-4 sm:px-6 lg:px-8" : "page-container";
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 organic-transition ${
-        isScrolled
-          ? "bg-background/95 backdrop-blur-md elevated-shadow border-b border-border"
-          : "bg-background/80 backdrop-blur-sm"
+      ref={headerRef}
+      className={`fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow,border-color] duration-300 ${
+        scrolled || menuOpen
+          ? "bg-background/90 backdrop-blur-md border-b border-border shadow-[0_1px_0_rgba(0,0,0,0.02)]"
+          : "bg-background/70 backdrop-blur-sm border-b border-transparent"
       } ${className}`}
     >
-      <div className="max-w-7xl mx-auto">
-        <div className="grid grid-cols-3 items-center h-16 px-4 sm:px-6 lg:px-8">
-          {/* Logo */}
-          <div className="col-span-1 flex items-center">
-            <Link
-              to="/homepage-ayur-nutri-platform"
-              className="flex items-center space-x-3 organic-transition hover:opacity-80"
-            >
-              <div className="relative">
-                <img
-                  src={Logo}
-                  alt="AyurNutri Logo"
-                  className="w-10 h-10 rounded-full object-contain"
-                />
-              </div>
+      <div className={inner}>
+        <div className="flex h-16 items-center justify-between gap-4">
+          <Link to="/" className="flex items-center gap-3 shrink-0 group" aria-label="AyurNutri home">
+            <img
+              src={Logo}
+              alt=""
+              className="h-9 w-9 rounded-full object-contain transition-transform duration-300 group-hover:rotate-[-8deg]"
+            />
+            <span className="flex flex-col leading-none">
+              <span className="font-display text-lg font-semibold text-primary">AyurNutri</span>
+              <span className="hidden sm:block font-accent text-[11px] text-text-secondary mt-0.5">
+                Ayurveda, measured
+              </span>
+            </span>
+          </Link>
 
-              <div className="flex flex-col">
-                <span className="text-xl font-display font-semibold text-primary leading-tight">
-                  AyurNutri
-                </span>
-                <span className="text-xs font-accent text-text-secondary leading-none">
-                  Ancient Wisdom • Modern Precision
-                </span>
-              </div>
-            </Link>
-          </div>
-
-          {/* Desktop Navigation */}
-          {!isDoctorDashboard && !isAuthSelection && (
-            <nav className="col-span-1 hidden lg:flex items-center justify-center">
-              <div className="flex items-center space-x-1 bg-background/80 backdrop-blur-sm rounded-xl p-2 organic-shadow">
-                <button
-                  onClick={handleProfessionalPortal}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm ${
-                    pathname.startsWith("/professional-dashboard-portal")
-                      ? "bg-primary/10 text-primary border border-primary/20"
-                      : "text-text-secondary hover:text-primary hover:bg-muted/50"
+          {showNav && (
+            <nav ref={navRef} className="relative hidden lg:flex items-center gap-1 rounded-full border border-border bg-card/60 p-1">
+              <span
+                ref={pillRef}
+                aria-hidden="true"
+                className="absolute left-0 top-1 bottom-1 rounded-full bg-primary/10 opacity-0"
+              />
+              {visibleLinks.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={resolveNavTarget(link.to)}
+                  data-active={isActive(link) ? "true" : "false"}
+                  className={`relative z-10 rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
+                    isActive(link) ? "text-primary" : "text-text-secondary hover:text-text-primary"
                   }`}
                 >
-                  <Icon name="Stethoscope" size={16} />
-                  <span>Professional Portal</span>
-                </button>
-
-                <button
-                  onClick={handleWellnessHub}
-                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm ${
-                    pathname.startsWith("/personal-wellness-hub")
-                      ? "bg-primary/10 text-primary border border-primary/20"
-                      : "text-text-secondary hover:text-primary hover:bg-muted/50"
-                  }`}
-                >
-                  <Icon name="Heart" size={16} />
-                  <span>Wellness Hub</span>
-                </button>
-              </div>
+                  {link.label}
+                </NavLink>
+              ))}
             </nav>
           )}
 
-          {/* Right Section */}
-          <div className="col-span-1 flex items-center justify-end space-x-3">
-            {/* 🟢 Theme toggle (desktop) */}
+          <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={toggleTheme}
-              className="hidden sm:flex w-9 h-9 items-center justify-center rounded-md border border-border text-lg hover:bg-muted/50 organic-transition"
-              aria-label="Toggle theme"
+              className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-text-secondary transition-colors hover:text-primary hover:bg-muted"
+              aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
             >
-              {theme === "light" ? "🌙" : "☀️"}
+              <Icon name={theme === "dark" ? "Sun" : "Moon"} size={16} />
             </button>
 
-            {/* HOMEPAGE AUTH LOGIC */}
-            {isHome &&
-              (() => {
-                if (isAuthenticated) {
-                  // auto-logout silently when user reaches homepage
-                  logout();
-                }
-
-                return (
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="bg-brand-gold hover:bg-brand-gold/90 hidden lg:flex"
-                    onClick={handleSignInClick}
-                  >
-                    Sign In
-                  </Button>
-                );
-              })()}
-
-            {/* Logged-in user (ONLY on dashboard pages) */}
-            {!isHome && isAuthenticated && (
-              <div className="hidden lg:flex items-center space-x-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() =>
-                    isDoctor
-                      ? navigate("/professional-dashboard-portal")
-                      : navigate("/personal-wellness-hub")
-                  }
-                >
-                  <Icon name="User" size={16} />
-                  <span className="text-sm">{getDisplayName()}</span>
+            {isAuthenticated ? (
+              <div className="hidden lg:flex items-center gap-2">
+                <Button variant="ghost" size="sm" onClick={() => navigate(dashboardPath)} className="rounded-full">
+                  <Icon name="LayoutDashboard" size={15} className="mr-2" />
+                  {displayName}
                 </Button>
-
-                <Button variant="outline" size="sm" onClick={logout}>
-                  Logout
+                <Button variant="outline" size="sm" onClick={logout} className="rounded-full">
+                  Log out
                 </Button>
               </div>
+            ) : (
+              <Button
+                size="sm"
+                className="hidden lg:inline-flex rounded-full px-5"
+                onClick={() => navigate("/auth-selection")}
+              >
+                Sign in
+              </Button>
             )}
 
-            {/* Mobile menu button */}
             <button
-              onClick={() => setIsMobileMenuOpen((v) => !v)}
-              className="lg:hidden p-2 rounded-md hover:bg-muted/50 organic-transition"
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted"
+              aria-label={menuOpen ? "Close menu" : "Open menu"}
+              aria-expanded={menuOpen}
             >
-              <Icon name={isMobileMenuOpen ? "X" : "Menu"} size={24} />
+              <Icon name={menuOpen ? "X" : "Menu"} size={20} />
             </button>
           </div>
         </div>
+      </div>
 
-        {/* MOBILE MENU */}
-        {isMobileMenuOpen && (
-          <div className="lg:hidden border-t border-border bg-background/95 backdrop-blur-md px-4 py-4 space-y-4">
-            {/* 🟢 Theme toggle (mobile) */}
-            <button
-              type="button"
-              onClick={toggleTheme}
-              className="w-10 h-10 mb-2 flex items-center justify-center rounded-md border border-border text-lg hover:bg-muted/50 organic-transition"
-              aria-label="Toggle theme"
+      {/* Mobile menu */}
+      <div ref={menuRef} className="lg:hidden overflow-hidden" style={{ display: "none" }}>
+        <div className="page-container pb-5 pt-1 space-y-1">
+          {visibleLinks.map((link) => (
+            <Link
+              key={link.to}
+              data-menu-item
+              to={resolveNavTarget(link.to)}
+              className={`block rounded-lg px-3 py-2.5 text-base font-medium ${
+                isActive(link) ? "bg-primary/10 text-primary" : "text-text-primary hover:bg-muted"
+              }`}
             >
-              {theme === "light" ? "🌙" : "☀️"}
-            </button>
-
-            <button
-              className="w-full flex items-center space-x-3 px-3 py-3 rounded-md hover:bg-muted/50"
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                navigate("/ayurvedic-intelligence-center");
-              }}
-            >
-              <Icon name="Brain" size={20} />
-              <span>Intelligence Center</span>
-            </button>
-
-            <button
-              className="w-full flex items-center space-x-3 px-3 py-3 rounded-md hover:bg-muted/50"
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                handleProfessionalPortal();
-              }}
-            >
-              <Icon name="Stethoscope" size={20} />
-              <span>Professional Portal</span>
-            </button>
-
-            <button
-              className="w-full flex items-center space-x-3 px-3 py-3 rounded-md hover:bg-muted/50"
-              onClick={() => {
-                setIsMobileMenuOpen(false);
-                handleWellnessHub();
-              }}
-            >
-              <Icon name="Heart" size={20} />
-              <span>Wellness Hub</span>
-            </button>
-
-            <hr className="border-border" />
-
-            {!isAuthenticated ? (
-              <Button
-                variant="default"
-                fullWidth
-                className="bg-brand-gold hover:bg-brand-gold/90"
-                onClick={() => {
-                  setIsMobileMenuOpen(false);
-                  handleSignInClick();
-                }}
-              >
-                Sign In
-              </Button>
-            ) : (
+              {link.label}
+            </Link>
+          ))}
+          <div data-menu-item className="pt-3 mt-2 border-t border-border flex gap-2">
+            {isAuthenticated ? (
               <>
-                <Button
-                  variant="ghost"
-                  fullWidth
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    isDoctor
-                      ? navigate("/professional-dashboard-portal")
-                      : navigate("/personal-wellness-hub");
-                  }}
-                >
-                  {getDisplayName()}
+                <Button fullWidth onClick={() => navigate(dashboardPath)}>
+                  My dashboard
                 </Button>
-
-                <Button
-                  variant="default"
-                  fullWidth
-                  onClick={() => {
-                    setIsMobileMenuOpen(false);
-                    logout();
-                  }}
-                >
-                  Logout
+                <Button fullWidth variant="outline" onClick={logout}>
+                  Log out
                 </Button>
               </>
+            ) : (
+              <Button fullWidth onClick={() => navigate("/auth-selection")}>
+                Sign in or create an account
+              </Button>
             )}
           </div>
-        )}
+        </div>
       </div>
     </header>
   );

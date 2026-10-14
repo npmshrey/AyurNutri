@@ -1,165 +1,108 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import Input from "../../components/ui/Input";
 import Button from "../../components/ui/Button";
-import { Eye, EyeOff } from "lucide-react";
+import { AuthLayout, PasswordField, FormMessage, AuthLink } from "../../components/auth/AuthLayout";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
 
+const DOCTOR_AREAS = ["/professional-dashboard-portal", "/doctor/"];
+
 const SignInDoctor = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [emailOrPhone, setEmailOrPhone] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [loading, setLoading] = useState(false);
+
+  const from = location.state?.from?.pathname;
+  const destination =
+    from && DOCTOR_AREAS.some((p) => from.startsWith(p)) ? from : "/professional-dashboard-portal";
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setErrorMsg("");
 
-    if (!emailOrPhone || !password) {
-      setErrorMsg("Please enter your email/phone and password.");
+    if (!emailOrPhone.trim() || !password) {
+      setErrorMsg("Enter your registered email or phone number and your password.");
       return;
     }
 
     try {
       setLoading(true);
-
       const res = await axios.post(`${API_BASE}/api/auth/login/doctor`, {
-        emailOrPhone,
+        emailOrPhone: emailOrPhone.trim(),
         password,
       });
-
       const { token, user } = res.data || {};
-
-      // Auto-verified in Option A → no need to check user.verified
       if (token) localStorage.setItem("authToken", token);
       if (user) localStorage.setItem("currentUser", JSON.stringify(user));
-
-      navigate("/professional-dashboard-portal");
+      navigate(destination, { replace: true });
     } catch (err) {
-      console.error("DOCTOR SIGNIN ERROR:", err);
-
-      const msg =
-        err?.response?.data?.message || "Login failed. Invalid credentials.";
-
-      setErrorMsg(msg);
+      setErrorMsg(
+        err?.response?.data?.message ||
+          (err?.request ? "Can't reach the server. Check your connection and try again." : "Sign in failed.")
+      );
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#fdf7ee] bg-gradient-to-b from-[#fdf7ee] via-[#f6f0e5] to-[#f3ecdf] flex flex-col">
-      <div className="h-20" />
-
-      <main className="flex-1 flex items-center justify-center px-4 py-10">
-        <div className="max-w-5xl w-full mx-auto grid grid-cols-1 md:grid-cols-2 gap-10 items-center animate-fadeInUp">
-          {/* Left info */}
-          <div className="hidden md:block">
-            <p className="text-sm uppercase tracking-[0.2em] text-emerald-700/80 font-semibold mb-3">
-              For Doctors
-            </p>
-            <h1 className="text-3xl font-serif font-semibold text-[#1f2933] mb-4">
-              Log in to your{" "}
-              <span className="text-emerald-700">professional portal</span>.
-            </h1>
-            <p className="text-[#4b5563] text-base mb-4">
-              Access your patient panel, generate precision diet plans, and
-              review practice analytics powered by Ayurvedic intelligence.
-            </p>
-            <ul className="text-sm text-[#374151] space-y-1">
-              <li>• Manage cases and follow-up schedules</li>
-              <li>• Generate evidence-backed plans</li>
-              <li>• Track outcomes at a glance</li>
-            </ul>
-          </div>
-
-          {/* Right form */}
-          <div className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-xl border border-emerald-900/5 p-6 sm:p-8">
-            <div className="mb-6">
-              <p className="text-xs uppercase tracking-[0.18em] text-emerald-700/80 font-semibold mb-2">
-                Sign In
-              </p>
-              <h2 className="text-2xl font-semibold text-[#111827]">
-                Doctor Account
-              </h2>
-              <p className="text-sm text-[#6b7280] mt-1">
-                Use your registered professional email or phone.
-              </p>
-            </div>
-
-            {errorMsg && (
-              <div className="mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
-                {errorMsg}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <Input
-                label="Email or Phone"
-                placeholder="e.g. doctor@example.com or 9876543210"
-                className="border border-gray-300 rounded-xl focus:border-emerald-600"
-                required
-                value={emailOrPhone}
-                onChange={(e) => setEmailOrPhone(e.target.value)}
-              />
-
-              {/* Password with eye icon */}
-              <div className="relative">
-                <Input
-                  label="Password"
-                  placeholder="Enter your password"
-                  className="border border-gray-300 rounded-xl focus:border-emerald-600"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 mt-3 cursor-pointer"
-                >
-                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-              </div>
-
-              <div className="flex items-center justify-between text-xs sm:text-sm">
-                <span className="text-[#6b7280]">
-                  New to AyurNutri?{" "}
-                  <Link
-                    to="/signup/doctor"
-                    className="text-emerald-700 font-semibold hover:underline"
-                  >
-                    Create a doctor account
-                  </Link>
-                </span>
-                <Link
-                  to="/reset"
-                  className="text-emerald-700 font-semibold hover:underline"
-                >
-                  Forgot password?
-                </Link>
-              </div>
-
-              <Button
-                type="submit"
-                loading={loading}
-                fullWidth
-                size="lg"
-                className="mt-2 bg-[#0f766e] hover:bg-[#115e59] shadow-md shadow-emerald-700/30"
-              >
-                Sign In as Doctor
-              </Button>
-            </form>
+    <AuthLayout
+      aside={{
+        kicker: "Practitioners",
+        heading: "Your patients, their plans, one workspace.",
+        body: "Review AI-drafted weekly plans, adjust them, and see how each patient is actually getting on.",
+        points: [
+          "Link patients by the email or phone they signed up with",
+          "Approve every plan before a patient sees it",
+          "Adherence and daily logs without chasing anyone",
+        ],
+      }}
+      eyebrow="Sign in"
+      title="Practitioner account"
+      subtitle="Use your registered professional email or phone."
+      footer={
+        <>
+          New to AyurNutri? <AuthLink to="/signup/doctor">Register your practice</AuthLink>
+          <span className="mx-2 text-border">·</span>
+          Patient? <AuthLink to="/signin">Sign in here</AuthLink>
+        </>
+      }
+    >
+      <FormMessage>{errorMsg}</FormMessage>
+      <form onSubmit={handleSubmit} className="space-y-4" noValidate>
+        <div data-auth-item>
+          <Input
+            label="Email or phone"
+            autoComplete="username"
+            placeholder="doctor@clinic.in"
+            required
+            value={emailOrPhone}
+            onChange={(e) => setEmailOrPhone(e.target.value)}
+          />
+        </div>
+        <div data-auth-item>
+          <PasswordField
+            autoComplete="current-password"
+            required
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <div className="mt-2 text-right text-sm">
+            <AuthLink to="/reset">Forgot password?</AuthLink>
           </div>
         </div>
-      </main>
-    </div>
+        <div data-auth-item>
+          <Button type="submit" loading={loading} fullWidth size="lg" className="rounded-full">
+            Sign in
+          </Button>
+        </div>
+      </form>
+    </AuthLayout>
   );
 };
 

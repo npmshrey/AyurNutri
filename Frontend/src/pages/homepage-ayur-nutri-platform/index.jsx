@@ -1,47 +1,50 @@
 import React, { useEffect } from "react";
 import { Helmet } from "react-helmet";
+import { useLocation } from "react-router-dom";
 import Header from "../../components/ui/Header";
 import HeroSection from "./components/HeroSection";
-import PlatformShowcase from "./components/PlatformShowcase";
-import LiveDemo from "./components/LiveDemo";
+import FactsStrip from "./components/FactsStrip";
+import HowItWorks from "./components/HowItWorks";
+import FoodLibraryPreview from "./components/FoodLibraryPreview";
+import FoodMarquee from "./components/FoodMarquee";
+import Audience from "./components/Audience";
+import ClosingCta from "./components/ClosingCta";
 import Footer from "./components/Footer";
 
 const HomepageAyurNutriPlatform = () => {
+  const { hash } = useLocation();
+
+  // Links like "/#how-it-works" (footer, other pages) should land on that
+  // section. React Router doesn't do this by itself.
   useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
+    if (!hash) return;
+    const t = setTimeout(() => {
+      document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 120);
+    return () => clearTimeout(t);
+  }, [hash]);
 
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>
-          AyurNutri - Where Ancient Wisdom Meets Modern Precision | Ayurvedic-Nutrition Intelligence Platform
-        </title>
+        <title>AyurNutri — Ayurvedic diet planning, checked by a practitioner</title>
         <meta
           name="description"
-          content="Revolutionary healthcare platform bridging Ayurvedic wisdom with cutting-edge nutritional science."
+          content="Dosha assessment, AI-drafted weekly diet plans from a food library with both nutrient and Ayurvedic data, reviewed by a practitioner and followed day by day."
         />
-        <meta
-          name="keywords"
-          content="Ayurveda, nutrition, healthcare, AI, personalized medicine, dosha"
-        />
-        <meta property="og:title" content="AyurNutri - Ancient Wisdom Meets Modern Precision" />
-        <meta
-          property="og:description"
-          content="The world's first comprehensive platform for personalized Ayurvedic-nutrition intelligence."
-        />
-        <meta property="og:type" content="website" />
-        <link rel="canonical" href="/homepage-ayur-nutri-platform" />
+        <link rel="canonical" href="/" />
       </Helmet>
 
-      {/* Header with homepage flag */}
-      <Header isHomePage={true} />
+      <Header />
 
-      {/* Main Content */}
       <main className="pt-16">
         <HeroSection />
-        <PlatformShowcase />
-        <LiveDemo />
+        <FactsStrip />
+        <HowItWorks />
+        <FoodLibraryPreview />
+        <FoodMarquee />
+        <Audience />
+        <ClosingCta />
       </main>
 
       <Footer />

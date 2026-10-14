@@ -1,17 +1,22 @@
-// src/routes/RequireDoctor.jsx
+// src/route/RequireDoctor.jsx
 import React from "react";
-import { Navigate, Outlet } from "react-router-dom";
+import { Navigate, Outlet, useLocation } from "react-router-dom";
+import { readSession } from "./session";
 
 const RequireDoctor = () => {
-  const doctorAuth = JSON.parse(localStorage.getItem("doctorAuth") || "{}");
+  const location = useLocation();
+  const { token, user } = readSession();
 
-  const isDoctor =
-    doctorAuth?.token && doctorAuth?.role === "doctor";
-
-  if (!isDoctor) {
-    return <Navigate to="/signin/doctor" replace />;
+  if (!token || !user) {
+    return <Navigate to="/signin/doctor" replace state={{ from: location }} />;
   }
-
+  if (user.role === "patient") {
+    // A signed-in patient belongs in their own hub, not on a sign-in page.
+    return <Navigate to="/personal-wellness-hub" replace />;
+  }
+  if (user.role !== "doctor") {
+    return <Navigate to="/signin/doctor" replace state={{ from: location }} />;
+  }
   return <Outlet />;
 };
 
