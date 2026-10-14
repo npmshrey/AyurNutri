@@ -6,7 +6,6 @@ import HeroSection from "./components/HeroSection";
 import FactsStrip from "./components/FactsStrip";
 import HowItWorks from "./components/HowItWorks";
 import FoodLibraryPreview from "./components/FoodLibraryPreview";
-import FoodMarquee from "./components/FoodMarquee";
 import Audience from "./components/Audience";
 import ClosingCta from "./components/ClosingCta";
 import Footer from "./components/Footer";
@@ -27,7 +26,7 @@ const HomepageAyurNutriPlatform = () => {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>AyurNutri — Ayurvedic diet planning, checked by a practitioner</title>
+        <title>AyurNutri | Ayurvedic diet planning for dietitians and patients</title>
         <meta
           name="description"
           content="Dosha assessment, AI-drafted weekly diet plans from a food library with both nutrient and Ayurvedic data, reviewed by a practitioner and followed day by day."
@@ -42,7 +41,6 @@ const HomepageAyurNutriPlatform = () => {
         <FactsStrip />
         <HowItWorks />
         <FoodLibraryPreview />
-        <FoodMarquee />
         <Audience />
         <ClosingCta />
       </main>

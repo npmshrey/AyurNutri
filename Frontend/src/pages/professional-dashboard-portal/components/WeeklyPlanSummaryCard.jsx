@@ -56,7 +56,7 @@ const WeeklyPlanSummaryCard = ({ clinicalPatientId, onOpenPlanner }) => {
 
   if (loading) {
     return (
-      <div className="border border-border rounded-lg p-3 text-xs text-gray-600 bg-white">
+      <div className="border border-border rounded-lg p-3 text-xs text-text-secondary bg-card">
         Loading weekly plan…
       </div>
     );
@@ -64,18 +64,18 @@ const WeeklyPlanSummaryCard = ({ clinicalPatientId, onOpenPlanner }) => {
 
   if (err) {
     return (
-      <div className="border border-border rounded-lg p-3 text-xs text-red-600 bg-red-50">
+      <div className="border border-border rounded-lg p-3 text-xs text-error bg-error/10">
         {err}
       </div>
     );
   }
 
   return (
-    <div className="border border-border rounded-lg p-3 bg-[#FAF5EE]">
+    <div className="border border-border rounded-lg p-3 bg-muted">
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <Icon name="Calendar" size={14} className="text-primary" />
-          <span className="text-xs font-semibold text-gray-800">
+          <span className="text-xs font-semibold text-text-primary">
             Weekly Plan
           </span>
         </div>
@@ -90,24 +90,24 @@ const WeeklyPlanSummaryCard = ({ clinicalPatientId, onOpenPlanner }) => {
 
       {latestPlan ? (
         <>
-          <p className="text-xs text-gray-800">
+          <p className="text-xs text-text-primary">
             {latestPlan.title || "Plan"}
           </p>
-          <p className="text-[11px] text-gray-500">
+          <p className="text-[11px] text-text-secondary">
             {latestPlan.weekStartDate
               ? new Date(latestPlan.weekStartDate).toLocaleDateString(
                   undefined,
                   { month: "short", day: "numeric" }
                 )
-              : "—"}{" "}
+              : "-"}{" "}
             · {latestPlan.durationDays || latestPlan.days?.length || 0} days
           </p>
-          <p className="text-[11px] text-emerald-700 mt-1">
+          <p className="text-[11px] text-primary mt-1">
             Progress: {latestPlan.progressPercent ?? 0}%
           </p>
         </>
       ) : (
-        <p className="text-[11px] text-gray-500">
+        <p className="text-[11px] text-text-secondary">
           No weekly plan assigned yet.
         </p>
       )}

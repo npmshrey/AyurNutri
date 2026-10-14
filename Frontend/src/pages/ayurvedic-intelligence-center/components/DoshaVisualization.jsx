@@ -17,7 +17,7 @@ const DOSHAS = [
     accent: "#4F8FB0",
     qualities: ["Light", "Dry", "Cold", "Rough", "Subtle", "Mobile"],
     body: "Thin build, dry skin, cold hands and feet, appetite that comes and goes.",
-    mind: "Creative and quick, enthusiastic — anxious when out of balance.",
+    mind: "Creative and quick, enthusiastic, and anxious when out of balance.",
     eat: "Warm, moist, grounding food at regular times. Go easy on raw and cold.",
   },
   {
@@ -30,7 +30,7 @@ const DOSHAS = [
     accent: "#C9771C",
     qualities: ["Hot", "Sharp", "Light", "Liquid", "Spreading", "Oily"],
     body: "Medium build, runs warm, strong appetite and usually good digestion.",
-    mind: "Focused, organised, competitive — irritable when out of balance.",
+    mind: "Focused, organised, competitive, and irritable when out of balance.",
     eat: "Cooling, sweet and bitter foods. Hold back on very spicy, sour and salty.",
   },
   {
@@ -43,7 +43,7 @@ const DOSHAS = [
     accent: "#3C7A4E",
     qualities: ["Heavy", "Slow", "Cool", "Oily", "Smooth", "Stable"],
     body: "Sturdy build, smooth skin, slower digestion, steady energy.",
-    mind: "Calm, loving and patient — sluggish when out of balance.",
+    mind: "Calm, loving and patient, and sluggish when out of balance.",
     eat: "Light, warm, lightly spiced meals in smaller portions. Less heavy and oily food.",
   },
 ];
@@ -64,19 +64,10 @@ const DoshaVisualization = () => {
       const mm = gsap.matchMedia();
       mm.add(MOTION_OK, () => {
         gsap.from(panelRef.current.querySelectorAll("[data-d]"), {
-          y: 14,
-          autoAlpha: 0,
-          duration: 0.5,
-          stagger: 0.05,
-          clearProps: "transform,opacity,visibility",
-        });
-        gsap.from(panelRef.current.querySelectorAll("[data-chip]"), {
-          scale: 0.8,
+          y: 8,
           autoAlpha: 0,
           duration: 0.35,
-          stagger: 0.03,
-          delay: 0.15,
-          ease: "back.out(2)",
+          stagger: 0.05,
           clearProps: "transform,opacity,visibility",
         });
       });
@@ -131,7 +122,7 @@ const DoshaVisualization = () => {
           </p>
           <div data-d className="mt-5 flex flex-wrap gap-2">
             {d.qualities.map((q) => (
-              <span key={q} data-chip className="rounded-full border border-border bg-background px-3 py-1 text-xs font-medium text-text-primary">
+              <span key={q} data-chip className="rounded-md border border-border bg-background px-3 py-1 text-xs font-medium text-text-primary">
                 {q}
               </span>
             ))}
@@ -158,7 +149,7 @@ const DoshaVisualization = () => {
             <ul className="mt-3 flex flex-wrap gap-2">
               {favour.length === 0 && <li className="text-xs text-text-secondary">{calms.loading ? "Loading…" : "Nothing found in the library."}</li>}
               {favour.map((f) => (
-                <li key={f} data-chip className="rounded-full bg-card px-3 py-1 text-xs text-text-primary shadow-sm">{f}</li>
+                <li key={f} data-chip className="rounded-md bg-card px-3 py-1 text-xs text-text-primary shadow-sm">{f}</li>
               ))}
             </ul>
           </div>
@@ -169,7 +160,7 @@ const DoshaVisualization = () => {
             <ul className="mt-3 flex flex-wrap gap-2">
               {reduce.length === 0 && <li className="text-xs text-text-secondary">{raises.loading ? "Loading…" : "Nothing found in the library."}</li>}
               {reduce.map((f) => (
-                <li key={f} data-chip className="rounded-full bg-card px-3 py-1 text-xs text-text-primary shadow-sm">{f}</li>
+                <li key={f} data-chip className="rounded-md bg-card px-3 py-1 text-xs text-text-primary shadow-sm">{f}</li>
               ))}
             </ul>
           </div>

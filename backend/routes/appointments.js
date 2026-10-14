@@ -3,13 +3,27 @@ import Appointment from "../models/appointment.js";
 import Patient from "../models/Patient.js";
 import Doctor from "../models/doctor.js";
 import ClinicalPatient from "../models/ClinicalPatient.js";
+import { verifyToken } from "../middlewares/authMiddleware.js";
 
 const router = express.Router();
+
+// Every appointment route needs a signed-in user. These routes used to be
+// open, so anyone could list, book, accept or delete any appointment.
+router.use(verifyToken);
+
+const isOwner = (apt, user) =>
+  (user.role === "patient" && String(apt.patientId?._id || apt.patientId) === String(user.id)) ||
+  (user.role === "doctor" && String(apt.doctorId?._id || apt.doctorId) === String(user.id));
 
 /* ------------------ CREATE NEW APPOINTMENT ------------------ */
 router.post("/", async (req, res) => {
   try {
-    const { patientId, doctorId, sessionType, date, time } = req.body;
+    if (req.user.role !== "patient") {
+      return res.status(403).json({ success: false, message: "Only patients can book appointments" });
+    }
+    // Book for the signed-in patient, never for an id sent in the body.
+    const patientId = req.user.id;
+    const { doctorId, sessionType, date, time } = req.body;
 
     if (!patientId || !doctorId || !sessionType || !date || !time) {
       return res.status(400).json({
@@ -69,8 +83,6 @@ router.post("/:id/accept", async (req, res) => {
   try {
     const aptId = req.params.id;
 
-    console.log("📌 Accepting appointment:", aptId);
-
     const appointment = await Appointment.findById(aptId)
       .populate("patientId")
       .populate("doctorId");
@@ -80,6 +92,10 @@ router.post("/:id/accept", async (req, res) => {
         success: false,
         message: "Appointment not found",
       });
+    }
+
+    if (req.user.role !== "doctor" || !isOwner(appointment, req.user)) {
+      return res.status(403).json({ success: false, message: "Not your appointment" });
     }
 
     if (!appointment.patientId) {
@@ -147,7 +163,7 @@ router.post("/:id/accept", async (req, res) => {
       patient: populated,
     });
   } catch (err) {
-    console.error("🔥 ACCEPT APPOINTMENT ERROR:", err);
+    console.error("Accept appointment error:", err);
     return res.status(500).json({
       success: false,
       message: "Server error during accept",
@@ -167,6 +183,10 @@ router.post("/:id/reject", async (req, res) => {
         .status(404)
         .json({ success: false, message: "Appointment not found" });
 
+    if (req.user.role !== "doctor" || !isOwner(apt, req.user)) {
+      return res.status(403).json({ success: false, message: "Not your appointment" });
+    }
+
     apt.status = "Rejected";
     await apt.save();
 
@@ -183,9 +203,19 @@ router.post("/:id/reject", async (req, res) => {
 /* ------------------ GET APPOINTMENTS BY PATIENT ------------------ */
 router.get("/patient/:id", async (req, res) => {
   try {
-    const appointments = await Appointment.find({
-      patientId: req.params.id,
-    })
+    // A patient sees their own; a doctor sees only this patient's
+    // appointments that are with them.
+    const filter = { patientId: req.params.id };
+    if (req.user.role === "patient") {
+      if (String(req.user.id) !== String(req.params.id)) {
+        return res.status(403).json({ success: false, message: "Not your appointments" });
+      }
+    } else if (req.user.role === "doctor") {
+      filter.doctorId = req.user.id;
+    } else {
+      return res.status(403).json({ success: false, message: "Access not allowed" });
+    }
+    const appointments = await Appointment.find(filter)
       .populate("doctorId", "fullName email phoneNumber verified")
       .sort({ createdAt: -1 });
 
@@ -202,6 +232,9 @@ router.get("/patient/:id", async (req, res) => {
 /* ------------------ GET APPOINTMENTS BY DOCTOR ------------------ */
 router.get("/doctor/:id", async (req, res) => {
   try {
+    if (req.user.role !== "doctor" || String(req.user.id) !== String(req.params.id)) {
+      return res.status(403).json({ success: false, message: "Not your appointments" });
+    }
     const appointments = await Appointment.find({
       doctorId: req.params.id,
     })
@@ -224,14 +257,18 @@ router.get("/doctor/:id", async (req, res) => {
 /* ------------------ DELETE APPOINTMENT ------------------ */
 router.delete("/:id", async (req, res) => {
   try {
-    const deleted = await Appointment.findByIdAndDelete(req.params.id);
+    const apt = await Appointment.findById(req.params.id);
 
-    if (!deleted) {
+    if (!apt) {
       return res.status(404).json({
         success: false,
         message: "Appointment not found",
       });
     }
+    if (!isOwner(apt, req.user)) {
+      return res.status(403).json({ success: false, message: "Not your appointment" });
+    }
+    await apt.deleteOne();
 
     return res.json({
       success: true,

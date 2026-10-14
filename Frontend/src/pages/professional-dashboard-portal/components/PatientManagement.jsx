@@ -1,5 +1,6 @@
 // src/pages/.../PatientManagement.jsx
 import React, { useEffect, useState } from "react";
+import Icon from "../../../components/AppIcon";
 import { useNavigate } from "react-router-dom";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
@@ -103,18 +104,18 @@ const PatientManagement = () => {
       case "completed":
         return "Completed";
       default:
-        return status || "—";
+        return status || "-";
     }
   };
 
   const getDoshaColor = (dosha) => {
     if (dosha?.toLowerCase().includes("vata"))
-      return "bg-blue-100 text-blue-800";
+      return "bg-primary/10 text-primary";
     if (dosha?.toLowerCase().includes("pitta"))
-      return "bg-red-100 text-red-800";
+      return "bg-error/10 text-error";
     if (dosha?.toLowerCase().includes("kapha"))
-      return "bg-green-100 text-green-800";
-    return "bg-gray-100 text-gray-800";
+      return "bg-primary/10 text-primary";
+    return "bg-muted text-text-primary";
   };
 
   const formatDateTimeLocal = (value) => {
@@ -462,44 +463,44 @@ const PatientManagement = () => {
   return (
     <div className="space-y-6">
       {/* Header + Toolbar with gradient */}
-      <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-r from-emerald-50 via-primary/5 to-emerald-100 organic-shadow">
+      <div className="relative overflow-hidden rounded-2xl border border-border bg-muted organic-shadow">
         {/* Soft blobs */}
-        <div className="absolute -left-16 top-10 h-32 w-32 rounded-full bg-emerald-200/60 blur-2xl" />
-        <div className="absolute -right-20 -bottom-10 h-40 w-40 rounded-full bg-emerald-300/40 blur-3xl" />
+        <div className="absolute -left-16 top-10 h-32 w-32 rounded-full bg-primary/20 blur-2xl" />
+        <div className="absolute -right-20 -bottom-10 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
 
         <div className="relative p-4 md:p-5 space-y-4">
           {/* Top row */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <p className="text-[11px] uppercase tracking-[0.18em] text-emerald-800/80 font-semibold mb-1">
+              <p className="text-[11px] uppercase tracking-[0.18em] text-primary/80 font-semibold mb-1">
                 Patient Management
               </p>
-              <h2 className="text-xl md:text-2xl font-display font-semibold text-emerald-950 mb-1">
+              <h2 className="text-xl md:text-2xl font-display font-semibold text-primary mb-1">
                 Clinical patient panel
               </h2>
-              <p className="text-sm text-emerald-900/80">
+              <p className="text-sm text-primary/80">
                 Search, filter and review active clinical records.
               </p>
             </div>
 
             <div className="flex flex-col items-start sm:items-end gap-1 text-xs">
-              <div className="inline-flex items-center gap-2 rounded-full bg-white/80 px-3 py-1 border border-emerald-100 shadow-sm">
-                <span className="inline-flex h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="font-medium text-emerald-900">
+              <div className="inline-flex items-center gap-2 rounded-md bg-card/80 px-3 py-1 border border-border shadow-sm">
+                <span className="inline-flex h-2 w-2 rounded-full bg-primary animate-pulse" />
+                <span className="font-medium text-primary">
                   {loading ? "Syncing patients…" : "Patients in sync"}
                 </span>
               </div>
-              <div className="flex items-center gap-3 text-[11px] text-emerald-900/80">
+              <div className="flex items-center gap-3 text-[11px] text-primary/80">
                 <span>
                   Total:{" "}
-                  <span className="font-semibold text-emerald-950">
+                  <span className="font-semibold text-primary">
                     {patients.length}
                   </span>
                 </span>
                 {selectedFilter !== "all" && (
-                  <span className="inline-flex items-center gap-1 rounded-full border border-emerald-200 px-2 py-[2px] bg-white/70">
-                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-                    <span className="capitalize text-emerald-900/90">
+                  <span className="inline-flex items-center gap-1 rounded-md border border-border px-2 py-[2px] bg-card/70">
+                    <span className="h-1.5 w-1.5 rounded-full bg-primary" />
+                    <span className="capitalize text-primary/90">
                       {filterOptions.find((f) => f.value === selectedFilter)
                         ?.label || "Filtered"}
                     </span>
@@ -510,7 +511,7 @@ const PatientManagement = () => {
           </div>
 
           {/* Toolbar */}
-          <div className="bg-white/80 backdrop-blur rounded-xl border border-emerald-100 p-3 md:p-4 flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
+          <div className="bg-card/80 backdrop-blur rounded-xl border border-border p-3 md:p-4 flex flex-col lg:flex-row gap-3 lg:items-center lg:justify-between">
             <div className="flex-1 flex flex-col md:flex-row gap-2 md:items-center">
               <Input
                 placeholder="Search by name or condition"
@@ -532,7 +533,7 @@ const PatientManagement = () => {
 
             <div className="flex flex-col md:flex-row gap-2 md:items-center text-xs md:text-[13px]">
               <div className="flex items-center gap-2">
-                <span className="text-emerald-900/70 hidden md:inline">
+                <span className="text-primary/70 hidden md:inline">
                   Status
                 </span>
                 <Select
@@ -542,7 +543,7 @@ const PatientManagement = () => {
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className="text-emerald-900/70 hidden md:inline">
+                <span className="text-primary/70 hidden md:inline">
                   Dosha
                 </span>
                 <Select
@@ -556,8 +557,8 @@ const PatientManagement = () => {
 
           {/* Error inline */}
           {errorMsg && (
-            <div className="flex items-start gap-2 text-xs text-red-700 bg-red-50/90 border border-red-200 rounded-md px-3 py-2">
-              <span className="mt-[3px] h-1.5 w-1.5 rounded-full bg-red-500" />
+            <div className="flex items-start gap-2 text-xs text-error bg-error/10/90 border border-error/30 rounded-md px-3 py-2">
+              <span className="mt-[3px] h-1.5 w-1.5 rounded-full bg-error" />
               <span>{errorMsg}</span>
             </div>
           )}
@@ -577,7 +578,7 @@ const PatientManagement = () => {
           </div>
           {loading && (
             <span className="text-sm text-text-secondary flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="h-2 w-2 rounded-full bg-primary animate-pulse" />
               Loading…
             </span>
           )}
@@ -605,7 +606,7 @@ const PatientManagement = () => {
                       )}
                       {patient?.dosha && (
                         <span
-                          className={`text-xs px-2 py-1 rounded-full ${getDoshaColor(
+                          className={`text-xs px-2 py-1 rounded-md ${getDoshaColor(
                             patient?.dosha
                           )}`}
                         >
@@ -629,7 +630,7 @@ const PatientManagement = () => {
 
                   <div className="text-right space-y-1 shrink-0">
                     <span
-                      className={`text-xs px-2 py-1 rounded-full inline-block ${getStatusColor(
+                      className={`text-xs px-2 py-1 rounded-md inline-block ${getStatusColor(
                         patient?.status
                       )}`}
                     >
@@ -657,7 +658,7 @@ const PatientManagement = () => {
       {/* New Patient Modal (no button in header, but kept for now) */}
       {showNewPatientModal && (
         <div className="fixed inset-0 flex items-center justify-center bg-black/40 z-50">
-          <div className="bg-white rounded-2xl p-6 shadow-2xl w-full max-w-md organic-shadow">
+          <div className="bg-card rounded-2xl p-6 shadow-2xl w-full max-w-md organic-shadow">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-text-primary">
@@ -673,7 +674,7 @@ const PatientManagement = () => {
                 size="sm"
                 onClick={() => setShowNewPatientModal(false)}
               >
-                ✕
+                <Icon name="X" size={18} />
               </Button>
             </div>
 
@@ -772,27 +773,27 @@ const PatientManagement = () => {
       {/* Details / Edit Modal - centered clinical sheet */}
       {showDetails && selectedPatient && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3">
-          <div className="w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl border border-emerald-100 overflow-hidden flex flex-col">
+          <div className="w-full max-w-4xl max-h-[90vh] bg-card rounded-2xl shadow-2xl border border-border overflow-hidden flex flex-col">
             {/* Header */}
-            <div className="relative border-b border-emerald-100 bg-gradient-to-r from-emerald-50 via-primary/5 to-emerald-100 px-5 py-4">
+            <div className="relative border-b border-border bg-muted px-5 py-4">
               {/* subtle blobs */}
-              <div className="pointer-events-none absolute -left-10 top-6 h-24 w-24 rounded-full bg-emerald-200/50 blur-2xl" />
-              <div className="pointer-events-none absolute -right-16 -bottom-8 h-28 w-28 rounded-full bg-emerald-300/40 blur-3xl" />
+              <div className="pointer-events-none absolute -left-10 top-6 h-24 w-24 rounded-full bg-primary/20 blur-2xl" />
+              <div className="pointer-events-none absolute -right-16 -bottom-8 h-28 w-28 rounded-full bg-primary/20 blur-3xl" />
 
               <div className="relative flex items-start justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="text-lg md:text-xl font-semibold text-emerald-950">
+                    <h3 className="text-lg md:text-xl font-semibold text-primary">
                       {selectedPatient.name}
                     </h3>
-                    <span className="text-[11px] px-2 py-[2px] rounded-full bg-white/70 border border-emerald-200 text-emerald-800">
+                    <span className="text-[11px] px-2 py-[2px] rounded-md bg-card/70 border border-border text-primary">
                       {getStatusLabel(selectedPatient.status)}
                     </span>
                   </div>
-                  <p className="text-[11px] uppercase tracking-[0.18em] text-emerald-800/80 font-semibold">
+                  <p className="text-[11px] uppercase tracking-[0.18em] text-primary/80 font-semibold">
                     Clinical record
                   </p>
-                  <p className="mt-1 text-xs text-emerald-900/80">
+                  <p className="mt-1 text-xs text-primary/80">
                     Review health profile, notes and diet plan for this
                     patient.
                   </p>
@@ -806,14 +807,14 @@ const PatientManagement = () => {
                   >
                     Close
                   </Button>
-                  <div className="text-[11px] text-emerald-900/80">
+                  <div className="text-[11px] text-primary/80">
                     Age:{" "}
                     <span className="font-medium">
-                      {selectedPatient.age || "—"}
+                      {selectedPatient.age || "-"}
                     </span>{" "}
                     · Dosha:{" "}
                     <span className="font-medium">
-                      {selectedPatient.dosha || "—"}
+                      {selectedPatient.dosha || "-"}
                     </span>
                   </div>
                 </div>
@@ -833,8 +834,8 @@ const PatientManagement = () => {
                       </span>
                     </div>
                     <div className="text-xs text-text-secondary space-y-1">
-                      <div>Age: {selectedPatient.age || "—"}</div>
-                      <div>Dosha: {selectedPatient.dosha || "—"}</div>
+                      <div>Age: {selectedPatient.age || "-"}</div>
+                      <div>Dosha: {selectedPatient.dosha || "-"}</div>
                     </div>
 
                     {selectedPatient.patientAccountId && (
@@ -1104,7 +1105,7 @@ const PatientManagement = () => {
                         .map((rep, idx) => (
                           <div
                             key={rep._id || idx}
-                            className="border border-border rounded-md p-2 bg-white"
+                            className="border border-border rounded-md p-2 bg-card"
                           >
                             <div className="flex justify-between items-center mb-1">
                               <div className="text-sm font-semibold text-text-primary">
@@ -1137,7 +1138,7 @@ const PatientManagement = () => {
                     </div>
 
                     {/* New report form */}
-                    <div className="space-y-2 rounded-xl border border-border bg-white p-3">
+                    <div className="space-y-2 rounded-xl border border-border bg-card p-3">
                       <Input
                         placeholder="Report title (e.g. Initial assessment)"
                         value={editFields.reportTitle}
@@ -1163,7 +1164,7 @@ const PatientManagement = () => {
                           Diagnosis / clinical impression
                         </div>
                         <textarea
-                          className="w-full border border-border rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="w-full border border-border rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                           rows={2}
                           value={editFields.reportDiagnosis}
                           onChange={(e) =>
@@ -1179,7 +1180,7 @@ const PatientManagement = () => {
                           Detailed notes
                         </div>
                         <textarea
-                          className="w-full border border-border rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="w-full border border-border rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                           rows={3}
                           value={editFields.reportNotes}
                           onChange={(e) =>
@@ -1195,7 +1196,7 @@ const PatientManagement = () => {
                           Tests / investigations recommended
                         </div>
                         <textarea
-                          className="w-full border border-border rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="w-full border border-border rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                           rows={2}
                           value={editFields.reportTestsRecommended}
                           onChange={(e) =>
@@ -1211,7 +1212,7 @@ const PatientManagement = () => {
                           Plan / recommendations
                         </div>
                         <textarea
-                          className="w-full border border-border rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                          className="w-full border border-border rounded-md p-2 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
                           rows={3}
                           value={editFields.reportPlan}
                           onChange={(e) =>
@@ -1261,7 +1262,7 @@ const PatientManagement = () => {
                     </p>
                     <Button
                       variant="default"
-                      className="w-full bg-green-700 text-white hover:bg-green-800 text-sm"
+                      className="w-full bg-primary text-white hover:bg-primary/90 text-sm"
                       onClick={() => {
                         navigate(
                           `/doctor/diet-builder/${selectedPatient._id}`,
@@ -1294,7 +1295,7 @@ const PatientManagement = () => {
             </div>
 
             {/* Footer actions */}
-            <div className="border-t border-border bg-white px-5 py-3 flex justify-end gap-2">
+            <div className="border-t border-border bg-card px-5 py-3 flex justify-end gap-2">
               <Button
                 variant="outline"
                 size="sm"

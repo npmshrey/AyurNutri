@@ -126,10 +126,14 @@ const SignupPatient = () => {
           <PasswordField label="Confirm password" autoComplete="new-password" required value={form.confirmPassword} onChange={set("confirmPassword")} error={errors.confirmPassword} />
         </div>
         <div data-auth-item>
-          <Button type="submit" loading={loading} fullWidth size="lg" className="rounded-full">
+          <Button type="submit" loading={loading} fullWidth size="lg" className="rounded-md">
             Create account
           </Button>
         </div>
+        <p data-auth-item className="text-center text-xs text-text-secondary">
+          By creating an account you agree to the <AuthLink to="/terms">Terms and Conditions</AuthLink> and{" "}
+          <AuthLink to="/privacy">Privacy Policy</AuthLink>.
+        </p>
       </form>
     </AuthLayout>
   );

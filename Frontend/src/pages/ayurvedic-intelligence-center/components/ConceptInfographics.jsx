@@ -4,6 +4,22 @@ import Button from '../../../components/ui/Button';
 
 const ConceptInfographics = () => {
   const [selectedConcept, setSelectedConcept] = useState('rasa');
+  const [shareLabel, setShareLabel] = useState('Share link');
+
+  const share = async () => {
+    const url = window.location.href;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'Ayurvedic concepts | AyurNutri', url });
+        return;
+      }
+      await navigator.clipboard.writeText(url);
+      setShareLabel('Link copied');
+    } catch (err) {
+      if (err?.name !== 'AbortError') setShareLabel("Couldn't copy the link");
+    }
+    setTimeout(() => setShareLabel('Share link'), 2500);
+  };
 
   const concepts = [
     {
@@ -213,12 +229,12 @@ const ConceptInfographics = () => {
         <div key={index} className="bg-background rounded-xl p-6 organic-shadow">
           <div className="text-center mb-4">
             <div className={`w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center ${
-              type?.name?.includes('Heating') ? 'bg-red-100' : 'bg-blue-100'
+              type?.name?.includes('Heating') ? 'bg-error/10' : 'bg-primary/10'
             }`}>
               <Icon 
                 name={type?.name?.includes('Heating') ? 'Flame' : 'Snowflake'} 
                 size={24} 
-                className={type?.name?.includes('Heating') ? 'text-red-500' : 'text-blue-500'}
+                className={type?.name?.includes('Heating') ? 'text-error' : 'text-primary'}
               />
             </div>
             <h4 className="text-lg font-semibold text-primary">{type?.name}</h4>
@@ -378,7 +394,7 @@ const ConceptInfographics = () => {
                   <div className="flex items-center space-x-2 text-sm text-text-secondary">
                     <span>{concept?.sanskrit}</span>
                     <button className="text-xs bg-muted px-1 rounded">
-                      🔊 {concept?.pronunciation}
+                      <Icon name="Volume2" size={14} className="inline mr-1.5 -mt-0.5" />{concept?.pronunciation}
                     </button>
                   </div>
                 </div>
@@ -389,7 +405,7 @@ const ConceptInfographics = () => {
         </div>
       </div>
       {/* Selected Concept Header */}
-      <div className="text-center bg-gradient-to-r from-brand-cream to-brand-ivory rounded-2xl p-6 border border-brand-gold/20">
+      <div className="text-center bg-muted rounded-2xl p-6 border border-brand-gold/20">
         <div className="flex items-center justify-center space-x-4 mb-3">
           <div 
             className="w-16 h-16 rounded-full flex items-center justify-center"
@@ -408,7 +424,7 @@ const ConceptInfographics = () => {
             <div className="flex items-center space-x-2 text-text-secondary">
               <span className="text-lg">{selectedConceptData?.sanskrit}</span>
               <button className="text-sm bg-muted px-2 py-1 rounded">
-                🔊 {selectedConceptData?.pronunciation}
+                <Icon name="Volume2" size={14} className="inline mr-1.5 -mt-0.5" />{selectedConceptData?.pronunciation}
               </button>
             </div>
           </div>
@@ -418,38 +434,23 @@ const ConceptInfographics = () => {
         </p>
       </div>
       {/* Infographic Content */}
-      <div className="bg-gradient-to-br from-brand-ivory to-brand-cream rounded-2xl p-8">
+      <div className="bg-muted rounded-2xl p-8">
         {renderInfographic()}
       </div>
-      {/* Download Options */}
-      <div className="text-center bg-background rounded-xl p-6 organic-shadow">
+      {/* Print / share */}
+      <div className="text-center bg-background rounded-xl p-6 border border-border print:hidden">
         <h3 className="text-lg font-semibold text-primary mb-3">
-          Take These Concepts With You
+          Keep a copy
         </h3>
         <p className="text-text-secondary mb-4">
-          Download high-resolution infographics for your practice or study materials.
+          Print this concept, or save it as a PDF from the print dialog, or send the link to someone.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
-          <Button 
-            variant="default"
-            iconName="Download"
-            iconPosition="left"
-          >
-            Download PDF Guide
+          <Button variant="default" iconName="Printer" iconPosition="left" onClick={() => window.print()}>
+            Print or save as PDF
           </Button>
-          <Button 
-            variant="outline"
-            iconName="Image"
-            iconPosition="left"
-          >
-            Download Infographic
-          </Button>
-          <Button 
-            variant="outline"
-            iconName="Share"
-            iconPosition="left"
-          >
-            Share with Colleagues
+          <Button variant="outline" iconName="Share2" iconPosition="left" onClick={share}>
+            {shareLabel}
           </Button>
         </div>
       </div>

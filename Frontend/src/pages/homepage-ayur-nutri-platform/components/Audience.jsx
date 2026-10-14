@@ -1,32 +1,35 @@
 import React, { useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
+import Ambient from "../../../components/Ambient";
 import { useReveal } from "../../../lib/motion";
 
 const CARDS = [
   {
     tag: "For patients",
-    title: "Know what to eat this week, and why",
+    title: "See your plan and keep track of it",
     points: [
       "Take the dosha questionnaire and keep your results",
-      "See the plan your practitioner approved, meal by meal",
-      "Photograph a dish for a quick nutrient estimate",
+      "See the weekly plan your practitioner approved",
+      "Tick off meals and exercise each day",
+      "Photograph a dish for a rough nutrient estimate",
       "Message your practitioner and book sessions",
     ],
     cta: "Create a patient account",
     to: "/signup",
-    secondary: { label: "I already have one", to: "/signin" },
+    secondary: { label: "Patient sign in", to: "/signin" },
     icon: "HeartPulse",
   },
   {
     tag: "For practitioners",
-    title: "Spend your time on judgement, not charts",
+    title: "Manage patients and their weekly plans",
     points: [
-      "Link patients by the email or phone they signed up with",
-      "Get a dosha-aware first draft of each weekly plan",
-      "Edit and approve before anything goes out",
-      "Watch adherence without chasing patients for updates",
+      "Link patients by the email or phone they registered with",
+      "Get a first draft of each weekly plan, based on the dosha",
+      "Edit and approve every plan before it is sent",
+      "See which meals and days were followed",
+      "Keep clinical notes and uploaded reports together",
     ],
     cta: "Register as a practitioner",
     to: "/signup/doctor",
@@ -41,47 +44,45 @@ const Audience = () => {
   useReveal(ref);
 
   return (
-    <section ref={ref} className="py-24">
-      <div className="page-container">
-        <div data-reveal className="mx-auto max-w-2xl text-center">
-          <p className="eyebrow justify-center">Two sides of one consultation</p>
-          <h2 className="mt-4 font-display text-3xl font-semibold text-text-primary sm:text-4xl">
-            Built for the patient and the person advising them
+    <section ref={ref} className="relative isolate overflow-hidden py-20">
+      <Ambient
+        fields={[
+          { tone: "sage", className: "left-[-4rem] top-1/4 h-80 w-80" },
+          { tone: "green", className: "right-[-2rem] bottom-[10%] h-72 w-96" },
+        ]}
+      />
+      <div className="page-container relative">
+        <div data-reveal className="max-w-2xl">
+          <p className="eyebrow">Who it's for</p>
+          <h2 className="mt-3 font-display text-3xl font-semibold text-text-primary">
+            Separate accounts for patients and practitioners
           </h2>
         </div>
 
-        <div data-reveal-group className="mt-12 grid gap-6 md:grid-cols-2">
+        <div data-reveal-group className="mt-10 grid gap-6 md:grid-cols-2">
           {CARDS.map((c) => (
-            // Reveal animates this wrapper; the card's own hover lift stays on
-            // the article so the two transforms don't fight.
-            <div key={c.tag} className="flex">
-            <article
-              className="group flex w-full flex-col rounded-3xl border border-border bg-card p-7 shadow-[var(--shadow-organic)] transition-[transform,box-shadow] duration-300 hover:-translate-y-1 hover:shadow-[var(--shadow-elevated)] sm:p-9"
-            >
-              <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary transition-transform duration-300 group-hover:scale-110">
-                <Icon name={c.icon} size={20} />
+            <div key={c.tag}>
+            <article className="glass lift flex h-full flex-col rounded-xl p-7 sm:p-8">
+              <span className="flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-primary">
+                <Icon name={c.icon} size={18} />
               </span>
-              <p className="mt-5 text-xs font-semibold uppercase tracking-[0.16em] text-text-secondary">{c.tag}</p>
-              <h3 className="mt-2 font-display text-2xl font-semibold text-text-primary">{c.title}</h3>
-              <ul className="mt-5 flex-1 space-y-3">
+              <p className="mt-5 text-xs font-semibold uppercase tracking-[0.14em] text-text-secondary">{c.tag}</p>
+              <h3 className="mt-2 font-display text-xl font-semibold text-text-primary">{c.title}</h3>
+              <ul className="mt-5 flex-1 space-y-2.5">
                 {c.points.map((p) => (
-                  <li key={p} className="flex gap-3 text-text-secondary">
-                    <Icon name="Check" size={18} className="mt-0.5 shrink-0 text-primary" />
+                  <li key={p} className="flex gap-3 text-sm text-text-secondary">
+                    <Icon name="Check" size={16} className="mt-0.5 shrink-0 text-primary" />
                     <span>{p}</span>
                   </li>
                 ))}
               </ul>
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
-                <Button className="rounded-full px-6" onClick={() => navigate(c.to)}>
+              <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center">
+                <Button className="rounded-md" onClick={() => navigate(c.to)}>
                   {c.cta}
                 </Button>
-                <button
-                  type="button"
-                  onClick={() => navigate(c.secondary.to)}
-                  className="text-sm font-medium text-primary underline-offset-4 hover:underline"
-                >
+                <Link to={c.secondary.to} className="px-1 text-sm font-medium text-primary underline-offset-4 hover:underline">
                   {c.secondary.label}
-                </button>
+                </Link>
               </div>
             </article>
             </div>

@@ -7,7 +7,7 @@ import { cn } from "../../utils/cn";
  *
  * Previously the id was Math.random() on every render, so the label kept
  * losing its link to the field (and browser autofill got confused) as the
- * user typed. It also used border-input, which is white — borders were
+ * user typed. It also used border-input, which is white - borders were
  * invisible on white cards unless each page overrode them.
  */
 const Input = React.forwardRef(

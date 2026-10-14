@@ -1,248 +1,189 @@
-import React, { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useRef, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
-import vataImg from "../../../assets/vata.jpg";
+import Ambient from "../../../components/Ambient";
 import { gsap, useGSAP, MOTION_OK } from "../../../lib/motion";
 import { useApi } from "../../../lib/api";
 
-const SLOTS = ["Breakfast", "Lunch", "Dinner"];
-const DOSHA_COLORS = { vata: "#4F8FB0", pitta: "#C9771C", kapha: "#3C7A4E" };
-
-const DOSHAS = [
-  { name: "Vata", element: "air + space", icon: "Wind", tone: "text-sky-700 bg-sky-50 dark:bg-sky-950/40 dark:text-sky-300" },
-  { name: "Pitta", element: "fire + water", icon: "Flame", tone: "text-orange-700 bg-orange-50 dark:bg-orange-950/40 dark:text-orange-300" },
-  { name: "Kapha", element: "earth + water", icon: "Mountain", tone: "text-emerald-700 bg-emerald-50 dark:bg-emerald-950/40 dark:text-emerald-300" },
+const SLOTS = [
+  { slot: "Breakfast", icon: "Sunrise" },
+  { slot: "Lunch", icon: "Sun" },
+  { slot: "Dinner", icon: "Moon" },
 ];
 
-// Headline split into lines so each line can rise into view on its own.
-const HEADLINE = ["Diet plans that respect", "the dosha and the numbers."];
+const HEADLINE = ["Ayurvedic diet planning,", "with the nutrition numbers", "alongside."];
+
+// One food per meal, picked from the live library.
+const SampleDay = () => {
+  const listRef = useRef(null);
+  const [seed, setSeed] = useState(0);
+  const { data, loading, error } = useApi("/api/foods", {
+    params: { random: 1, complete: 1, limit: 80 },
+    deps: [seed],
+  });
+  const items = data?.items || [];
+  // Pick a different food for each meal.
+  const used = new Set();
+  const day = SLOTS.map((s) => {
+    const food = items.find((f) => !used.has(f.id) && (f.mealSlots || []).includes(s.slot));
+    if (food) used.add(food.id);
+    return { ...s, food };
+  });
+  const total = day.reduce((sum, m) => sum + (m.food?.nutritionPerServing?.caloriesKcal || 0), 0);
+
+  // Rows slide in each time a new day arrives.
+  useGSAP(
+    () => {
+      if (!data) return;
+      const mm = gsap.matchMedia();
+      mm.add(MOTION_OK, () => {
+        gsap.from(listRef.current.querySelectorAll("[data-row]"), {
+          x: 14,
+          autoAlpha: 0,
+          duration: 0.5,
+          stagger: 0.08,
+          clearProps: "transform,opacity,visibility",
+        });
+      });
+      return () => mm.revert();
+    },
+    { dependencies: [data], scope: listRef }
+  );
+
+  return (
+    <div className="glass rounded-2xl">
+      <div className="flex items-center justify-between border-b border-border/70 px-5 py-4">
+        <div>
+          <p className="text-sm font-semibold text-text-primary">A sample day</p>
+          <p className="text-xs text-text-secondary">Drawn from the food library just now</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setSeed((s) => s + 1)}
+          className="group inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-xs font-medium text-primary transition-colors hover:bg-primary/10"
+        >
+          <Icon
+            name="RefreshCw"
+            size={13}
+            className={`transition-transform duration-500 group-hover:rotate-180 ${loading ? "animate-spin" : ""}`}
+          />
+          Another day
+        </button>
+      </div>
+
+      <ul ref={listRef} className="divide-y divide-border/70">
+        {day.map(({ slot, icon, food }) => (
+          <li key={slot} data-row className="flex items-start gap-3 px-5 py-4">
+            <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+              <Icon name={icon} size={15} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-xs text-text-secondary">{slot}</p>
+              {food ? (
+                <>
+                  <p className="truncate font-medium text-text-primary">{food.name}</p>
+                  <p className="mt-0.5 text-xs text-text-secondary">
+                    {[
+                      food.ayurveda?.virya && `Virya: ${food.ayurveda.virya}`,
+                      (food.ayurveda?.rasa || []).length && `Rasa: ${food.ayurveda.rasa.join(", ")}`,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </p>
+                </>
+              ) : (
+                <div className={`mt-1 h-4 w-40 rounded bg-muted ${loading ? "animate-pulse" : ""}`} />
+              )}
+            </div>
+            {food && (
+              <p className="shrink-0 text-sm text-text-secondary">
+                {food.nutritionPerServing?.caloriesKcal} <span className="text-xs">kcal</span>
+              </p>
+            )}
+          </li>
+        ))}
+      </ul>
+
+      <div className="flex items-center justify-between border-t border-border/70 px-5 py-3 text-sm">
+        <span className="text-text-secondary">{error ? "Couldn't reach the food library." : "Total"}</span>
+        {!error && <span className="font-semibold text-text-primary">{total ? `${total} kcal` : ""}</span>}
+      </div>
+    </div>
+  );
+};
 
 const HeroSection = () => {
   const ref = useRef(null);
-  const chipRef = useRef(null);
   const navigate = useNavigate();
-  const [dosha, setDosha] = useState(0);
-
-  // A sample day assembled live from the food library: one item per meal.
-  const { data: foodData } = useApi("/api/foods", { params: { random: 1, complete: 1, limit: 80 } });
-  const sampleDay = SLOTS.map((slot) => ({
-    slot,
-    food: (foodData?.items || []).find((f) => (f.mealSlots || []).includes(slot)),
-  })).filter((m) => m.food);
-  const dayKcal = sampleDay.reduce((sum, m) => sum + (m.food.nutritionPerServing?.caloriesKcal || 0), 0);
-
-  // Real average dosha split across every assessment taken on the platform.
-  const { data: stats } = useApi("/api/stats/public");
-  const mix = stats?.doshaMix;
 
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
       mm.add(MOTION_OK, () => {
-        const tl = gsap.timeline({ defaults: { ease: "power4.out" } });
-        tl.from("[data-line] > span", { yPercent: 110, duration: 1, stagger: 0.12 })
-          .from("[data-hero-fade]", { y: 18, autoAlpha: 0, duration: 0.8, stagger: 0.08 }, "-=0.6")
-          .from("[data-hero-art]", { scale: 0.94, autoAlpha: 0, duration: 1.1, ease: "power3.out" }, 0.15);
-
-        // Slow float on the illustration — enough to feel alive, not distracting.
-        gsap.to("[data-float]", { y: -10, duration: 3.2, ease: "sine.inOut", yoyo: true, repeat: -1 });
-      });
-
-      // Floating cards drift with the pointer on desktop, each at its own
-      // depth. Cards appear only once their live data has loaded, so they're
-      // looked up on each move rather than once at mount.
-      mm.add(`${MOTION_OK} and (min-width: 1024px) and (pointer: fine)`, () => {
-        const movers = new WeakMap();
-        const moverFor = (el) => {
-          if (!movers.has(el)) {
-            movers.set(el, {
-              depth: Number(el.dataset.depth),
-              x: gsap.quickTo(el, "x", { duration: 0.8, ease: "power3.out" }),
-              y: gsap.quickTo(el, "y", { duration: 0.8, ease: "power3.out" }),
-            });
-          }
-          return movers.get(el);
-        };
-        const onMove = (e) => {
-          const rect = ref.current.getBoundingClientRect();
-          const nx = (e.clientX - rect.left) / rect.width - 0.5;
-          const ny = (e.clientY - rect.top) / rect.height - 0.5;
-          ref.current.querySelectorAll("[data-depth]").forEach((el) => {
-            const m = moverFor(el);
-            m.x(nx * m.depth);
-            m.y(ny * m.depth);
-          });
-        };
-        ref.current.addEventListener("mousemove", onMove);
-        return () => ref.current?.removeEventListener("mousemove", onMove);
+        const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+        tl.from("[data-eyebrow]", { y: 10, autoAlpha: 0, duration: 0.5 })
+          // Each headline line rises out of its own clipped row.
+          .from("[data-line]", { yPercent: 105, duration: 0.8, stagger: 0.09 }, "-=0.2")
+          .from("[data-after]", { y: 12, autoAlpha: 0, duration: 0.55, stagger: 0.07, clearProps: "transform,opacity,visibility" }, "-=0.45")
+          .from("[data-card]", { y: 24, autoAlpha: 0, duration: 0.8, clearProps: "transform,opacity,visibility" }, 0.25);
       });
       return () => mm.revert();
     },
     { scope: ref }
   );
 
-  // Cycle the dosha chip every few seconds.
-  useEffect(() => {
-    const id = setInterval(() => setDosha((d) => (d + 1) % DOSHAS.length), 2800);
-    return () => clearInterval(id);
-  }, []);
-
-  useGSAP(
-    () => {
-      if (!chipRef.current) return;
-      const mm = gsap.matchMedia();
-      mm.add(MOTION_OK, () => {
-        gsap.fromTo(chipRef.current, { y: 8, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.45, ease: "power2.out" });
-      });
-      return () => mm.revert();
-    },
-    { dependencies: [dosha] }
-  );
-
-  const scrollToHowItWorks = () =>
-    document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth", block: "start" });
-
-  const current = DOSHAS[dosha];
-
   return (
-    <section ref={ref} className="relative overflow-hidden">
-      {/* Soft background: two blurred colour washes plus a fine dot grid. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-0">
-        <div className="absolute -top-48 -left-40 h-[520px] w-[520px] rounded-full bg-primary/[0.07] blur-3xl" />
-        <div className="absolute top-20 right-[-10rem] h-[460px] w-[460px] rounded-full bg-secondary/15 blur-3xl" />
-        <div
-          className="absolute inset-0 opacity-[0.35] dark:opacity-[0.12]"
-          style={{
-            backgroundImage: "radial-gradient(var(--color-border) 1px, transparent 1px)",
-            backgroundSize: "22px 22px",
-            maskImage: "radial-gradient(ellipse at 30% 40%, black 30%, transparent 75%)",
-            WebkitMaskImage: "radial-gradient(ellipse at 30% 40%, black 30%, transparent 75%)",
-          }}
-        />
-      </div>
+    <section ref={ref} className="relative isolate overflow-hidden border-b border-border">
+      <Ambient
+        grid
+        fields={[
+          { tone: "green", className: "-left-24 top-10 h-80 w-80" },
+          { tone: "gold", className: "right-[8%] top-[18%] h-72 w-72" },
+          { tone: "sage", className: "bottom-[-6rem] right-[30%] h-80 w-[26rem]" },
+        ]}
+      />
 
-      <div className="page-container relative grid items-center gap-12 pb-20 pt-10 lg:min-h-[calc(100vh-var(--header-h))] lg:grid-cols-[1.1fr_0.9fr] lg:pb-16">
+      <div className="page-container relative grid grid-cols-[minmax(0,1fr)] items-center gap-12 py-16 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] lg:py-24">
         <div>
-          <p data-hero-fade className="eyebrow">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary" />
-            For Ayurvedic dietitians and their patients
-          </p>
+          <p data-eyebrow className="eyebrow">For Ayurvedic dietitians and their patients</p>
 
-          <h1 className="mt-5 font-display text-[2.6rem] font-semibold leading-[1.08] text-text-primary sm:text-6xl">
+          <h1 className="mt-4 font-display text-4xl font-semibold leading-tight text-text-primary sm:text-5xl">
             {HEADLINE.map((line, i) => (
-              <span key={line} data-line className="block overflow-hidden pb-1">
-                <span className={`block ${i === 1 ? "text-primary" : ""}`}>{line}</span>
+              <span key={line} className="block overflow-hidden pb-1">
+                <span data-line className={`block ${i === 2 ? "text-primary" : ""}`}>
+                  {line}
+                </span>
               </span>
             ))}
           </h1>
 
-          <p data-hero-fade className="mt-6 max-w-xl text-lg leading-relaxed text-text-secondary">
-            AyurNutri scores a patient's Vata, Pitta and Kapha, drafts a week of meals from a food
-            library that knows both calories and rasa, and puts the practitioner in charge of every
-            plan before it reaches the patient.
+          <p data-after className="mt-5 max-w-xl text-lg leading-relaxed text-text-secondary">
+            Assess a patient's dosha, build a week of meals from a food library that records both
+            nutrients and Ayurvedic properties, and see each day whether the plan is being followed.
           </p>
 
-          <div data-hero-fade className="mt-8 flex flex-col gap-3 sm:flex-row">
-            <Button size="lg" className="rounded-full px-7" onClick={() => navigate("/auth-selection")}>
-              Get started
-              <Icon name="ArrowRight" size={18} className="ml-2" />
+          <div data-after className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <Button size="lg" className="rounded-md px-6" onClick={() => navigate("/auth-selection")}>
+              Create an account
             </Button>
-            <Button size="lg" variant="outline" className="rounded-full px-7 bg-card/60" onClick={scrollToHowItWorks}>
-              See how it works
-            </Button>
+            <Link
+              to="/#how-it-works"
+              className="group inline-flex items-center justify-center gap-1.5 px-2 py-2 text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              How it works
+              <Icon name="ArrowRight" size={15} className="transition-transform duration-300 group-hover:translate-x-1" />
+            </Link>
           </div>
 
-          <p data-hero-fade className="mt-5 flex items-center gap-2 text-sm text-text-secondary">
+          <p data-after className="mt-6 flex items-center gap-2 text-sm text-text-secondary">
             <Icon name="ShieldCheck" size={16} className="text-primary" />
-            Every AI-drafted plan is reviewed by a practitioner first.
+            Plans drafted by the AI are reviewed by a practitioner before a patient sees them.
           </p>
         </div>
 
-        <div data-hero-art className="relative mx-auto w-full max-w-md lg:max-w-none">
-          {/* A day assembled live from the food library */}
-          {sampleDay.length > 0 && (
-            <div
-              data-depth="28"
-              className="absolute -left-10 top-10 z-10 hidden w-64 rounded-2xl border border-border bg-card/95 p-4 shadow-[var(--shadow-elevated)] backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-700 lg:block xl:-left-16"
-            >
-              <p className="flex items-center justify-between text-xs font-semibold text-text-secondary">
-                <span>A day from the library</span>
-                <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] text-primary">{dayKcal} kcal</span>
-              </p>
-              <ul className="mt-3 space-y-2.5 text-sm">
-                {sampleDay.map(({ slot, food }) => (
-                  <li key={slot} className="flex items-center gap-2.5">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-primary">
-                      <Icon name={slot === "Breakfast" ? "Sunrise" : slot === "Lunch" ? "Sun" : "Moon"} size={13} />
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="block text-[11px] text-text-secondary">{slot}</span>
-                      <span className="block truncate text-text-primary">{food.name}</span>
-                    </span>
-                    <span className="text-[11px] text-text-secondary">{food.nutritionPerServing?.caloriesKcal}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-
-          {/* Real average across every dosha assessment taken; hidden until there is one */}
-          {mix && (
-            <div
-              data-depth="-22"
-              className="absolute -right-6 top-16 z-10 hidden w-56 rounded-2xl border border-border bg-card/95 p-4 shadow-[var(--shadow-elevated)] backdrop-blur-md animate-in fade-in slide-in-from-bottom-4 duration-700 lg:block xl:-right-10"
-            >
-              <p className="text-xs font-semibold text-text-secondary">
-                Average dosha mix · {stats.assessments} assessment{stats.assessments === 1 ? "" : "s"}
-              </p>
-              <div className="mt-3 space-y-2">
-                {["vata", "pitta", "kapha"].map((d) => (
-                  <div key={d}>
-                    <div className="flex justify-between text-xs">
-                      <span className="capitalize text-text-primary">{d}</span>
-                      <span className="text-text-secondary">{mix[d]}%</span>
-                    </div>
-                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
-                      <div className="h-full rounded-full" style={{ width: `${mix[d]}%`, backgroundColor: DOSHA_COLORS[d] }} />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          <div className="relative rounded-[2rem] border border-border bg-card p-6 shadow-[var(--shadow-elevated)]">
-            <div data-float>
-              <img
-                src={vataImg}
-                alt="Illustrations of the three doshas: Vata, Pitta and Kapha"
-                className="mx-auto w-full max-w-sm rounded-2xl object-contain mix-blend-multiply dark:mix-blend-normal dark:opacity-90"
-              />
-            </div>
-
-            <div className="mt-4 flex items-center justify-between gap-3 rounded-2xl border border-border bg-background/70 px-4 py-3">
-              <div ref={chipRef} className="flex items-center gap-3">
-                <span className={`flex h-10 w-10 items-center justify-center rounded-full ${current.tone}`}>
-                  <Icon name={current.icon} size={18} />
-                </span>
-                <span>
-                  <span className="block text-sm font-semibold text-text-primary">{current.name}</span>
-                  <span className="block text-xs text-text-secondary">{current.element}</span>
-                </span>
-              </div>
-              <div className="flex gap-1.5" aria-hidden="true">
-                {DOSHAS.map((d, i) => (
-                  <span
-                    key={d.name}
-                    className={`h-1.5 rounded-full transition-all duration-500 ${
-                      i === dosha ? "w-6 bg-primary" : "w-1.5 bg-border"
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
+        <div data-card className="relative">
+          <SampleDay />
         </div>
       </div>
     </section>

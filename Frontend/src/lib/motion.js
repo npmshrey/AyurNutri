@@ -15,9 +15,9 @@ export const MOTION_OK = "(prefers-reduced-motion: no-preference)";
 
 /**
  * Staggered entrance for elements marked data-enter inside `scope`.
- * Runs once on mount — used for page headers, auth cards, hero copy.
+ * Runs once on mount - used for page headers, auth cards, hero copy.
  */
-export function useEnter(scope, { delay = 0.05, stagger = 0.08, y = 22 } = {}, deps = []) {
+export function useEnter(scope, { delay = 0.05, stagger = 0.06, y = 12 } = {}, deps = []) {
   useGSAP(
     () => {
       const mm = gsap.matchMedia();
@@ -27,7 +27,7 @@ export function useEnter(scope, { delay = 0.05, stagger = 0.08, y = 22 } = {}, d
         gsap.from(items, {
           y,
           autoAlpha: 0,
-          duration: 0.8,
+          duration: 0.6,
           delay,
           stagger,
           clearProps: "transform,opacity,visibility",
@@ -51,9 +51,9 @@ export function useReveal(scope, deps = []) {
       mm.add(MOTION_OK, () => {
         gsap.utils.toArray("[data-reveal]", scope.current).forEach((el) => {
           gsap.from(el, {
-            y: 32,
+            y: 14,
             autoAlpha: 0,
-            duration: 0.9,
+            duration: 0.6,
             clearProps: "transform,opacity,visibility",
             scrollTrigger: { trigger: el, start: "top 92%", once: true },
           });
@@ -61,10 +61,10 @@ export function useReveal(scope, deps = []) {
 
         gsap.utils.toArray("[data-reveal-group]", scope.current).forEach((group) => {
           gsap.from(group.children, {
-            y: 28,
+            y: 12,
             autoAlpha: 0,
-            duration: 0.75,
-            stagger: 0.09,
+            duration: 0.55,
+            stagger: 0.06,
             clearProps: "transform,opacity,visibility",
             scrollTrigger: { trigger: group, start: "top 90%", once: true },
           });

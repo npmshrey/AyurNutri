@@ -37,6 +37,13 @@ const COLUMNS = [
       { name: "Register your practice", to: "/signup/doctor" },
     ],
   },
+  {
+    title: "Legal",
+    links: [
+      { name: "Privacy Policy", to: "/privacy" },
+      { name: "Terms and Conditions", to: "/terms" },
+    ],
+  },
 ];
 
 const Footer = () => {
@@ -109,7 +116,7 @@ const Footer = () => {
             </form>
           </div>
 
-          <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 lg:col-span-7 lg:col-start-6">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 lg:col-span-8 lg:col-start-5">
             {COLUMNS.map((col) => (
               <div key={col.title}>
                 <h4 className="font-body text-xs font-semibold uppercase tracking-[0.16em] text-text-primary">

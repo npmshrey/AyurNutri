@@ -1,15 +1,14 @@
 {
   "short_name": "AyurNutri",
-  "name": "AyurNutri Platform",
+  "name": "AyurNutri",
+  "description": "Ayurvedic diet planning for dietitians and their patients.",
   "icons": [
-    {
-      "src": "/favicon.ico",
-      "sizes": "64x64 32x32 24x24 16x16",
-      "type": "image/x-icon"
-    }
+    { "src": "/favicon.ico", "sizes": "16x16 32x32 48x48 64x64", "type": "image/x-icon" },
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png" }
   ],
-  "start_url": ".",
+  "start_url": "/",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#1F5A3A",
+  "background_color": "#FAF8F3"
 }

@@ -53,8 +53,8 @@ export default function Chatbot() {
     if (!reduce) {
       gsap.fromTo(
         panelRef.current,
-        { scale: 0.9, autoAlpha: 0, transformOrigin: "bottom right" },
-        { scale: 1, autoAlpha: 1, duration: 0.35, ease: "back.out(1.4)" }
+        { y: 8, autoAlpha: 0 },
+        { y: 0, autoAlpha: 1, duration: 0.25, ease: "power2.out" }
       );
     }
     inputRef.current?.focus();
@@ -64,7 +64,7 @@ export default function Chatbot() {
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     if (reduce || !panelRef.current) return setOpen(false);
     gsap.to(panelRef.current, {
-      scale: 0.92,
+      y: 8,
       autoAlpha: 0,
       duration: 0.2,
       ease: "power2.in",

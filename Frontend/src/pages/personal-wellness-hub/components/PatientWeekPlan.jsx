@@ -146,7 +146,7 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
 
     const previousPlan = plan;
 
-    // 🔄 Optimistically update local state
+    // Optimistically update local state
     let optimisticPlan = previousPlan;
     try {
       if (previousPlan) {
@@ -215,7 +215,7 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
     const arr = (day.meals && day.meals[mealKey]) || [];
     if (!arr.length) {
       return (
-        <p className="text-[11px] text-gray-400 italic">
+        <p className="text-[11px] text-text-secondary italic">
           No {mealKey} items.
         </p>
       );
@@ -236,7 +236,7 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
             <li key={`${mealKey}-${idx}`} className="flex items-center gap-2">
               <input
                 type="checkbox"
-                className="h-3 w-3 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                className="h-3 w-3 rounded border-border text-primary focus:ring-ring"
                 checked={checked}
                 disabled={isPastDay || savingKey === itemKey}
                 onChange={(e) => {
@@ -253,7 +253,7 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
               />
               <span
                 className={`text-[11px] truncate ${
-                  isPastDay ? "text-gray-400" : "text-slate-800"
+                  isPastDay ? "text-text-secondary" : "text-text-primary"
                 }`}
               >
                 {label}
@@ -269,7 +269,7 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
     const arr = day.exercises || [];
     if (!arr.length) {
       return (
-        <p className="text-[11px] text-gray-400 italic">
+        <p className="text-[11px] text-text-secondary italic">
           No exercises added.
         </p>
       );
@@ -285,7 +285,7 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
             <li key={idx} className="flex items-center gap-2">
               <input
                 type="checkbox"
-                className="h-3 w-3 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
+                className="h-3 w-3 rounded border-border text-primary focus:ring-ring"
                 checked={checked}
                 disabled={isPastDay || savingKey === itemKey}
                 onChange={(e) => {
@@ -301,7 +301,7 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
               />
               <span
                 className={`text-[11px] truncate ${
-                  isPastDay ? "text-gray-400" : "text-slate-800"
+                  isPastDay ? "text-text-secondary" : "text-text-primary"
                 }`}
               >
                 {ex.name}{" "}
@@ -317,7 +317,7 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
 
   if (loading && !plan) {
     return (
-      <div className="text-sm text-gray-600 bg-white border rounded-xl shadow-sm px-4 py-3">
+      <div className="text-sm text-text-secondary bg-card border rounded-xl shadow-sm px-4 py-3">
         Loading weekly plan…
       </div>
     );
@@ -325,7 +325,7 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
 
   if (err && !plan) {
     return (
-      <div className="text-sm text-red-600 bg-white border rounded-xl shadow-sm px-4 py-3">
+      <div className="text-sm text-error bg-card border rounded-xl shadow-sm px-4 py-3">
         {err}
       </div>
     );
@@ -333,47 +333,47 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
 
   if (!plan) {
     return (
-      <div className="text-sm text-gray-500 bg-white border rounded-xl shadow-sm px-4 py-3">
+      <div className="text-sm text-text-secondary bg-card border rounded-xl shadow-sm px-4 py-3">
         No weekly plan found for this patient.
       </div>
     );
   }
 
   return (
-    <div className="mt-4 bg-white border rounded-2xl shadow-sm p-4 sm:p-5 lg:p-6">
+    <div className="mt-4 bg-card border rounded-2xl shadow-sm p-4 sm:p-5 lg:p-6">
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between mb-4">
         <div className="space-y-1.5">
-          <h2 className="text-xl font-semibold text-slate-900 tracking-tight">
+          <h2 className="text-xl font-semibold text-text-primary tracking-tight">
             {plan.title || "Weekly Diet & Exercise Plan"}
           </h2>
-          <p className="text-xs text-slate-500">
+          <p className="text-xs text-text-secondary">
             Week starting{" "}
             {plan.weekStartDate
               ? new Date(plan.weekStartDate).toLocaleDateString()
-              : "—"}
+              : "-"}
           </p>
 
           <div className="flex flex-wrap items-center gap-2 pt-1">
-            <span className="inline-flex items-center rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-medium text-emerald-800 border border-emerald-100">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 mr-1.5" />
+            <span className="inline-flex items-center rounded-md bg-primary/10 px-2.5 py-1 text-[10px] font-medium text-primary border border-border">
+              <span className="w-2 h-2 rounded-full bg-primary mr-1.5" />
               Today
             </span>
-            <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-1 text-[10px] font-medium text-slate-700 border border-slate-200">
-              <span className="w-2 h-2 rounded-full bg-slate-500 mr-1.5" />
+            <span className="inline-flex items-center rounded-md bg-muted px-2.5 py-1 text-[10px] font-medium text-text-primary border border-border">
+              <span className="w-2 h-2 rounded-full bg-muted-foreground mr-1.5" />
               Past day (locked)
             </span>
           </div>
         </div>
 
         <div className="flex flex-col items-end gap-1">
-          <p className="text-xs text-slate-500">Overall Progress</p>
-          <p className="text-2xl font-semibold text-emerald-700 leading-tight">
+          <p className="text-xs text-text-secondary">Overall Progress</p>
+          <p className="text-2xl font-semibold text-primary leading-tight">
             {plan.progressPercent ?? 0}%
           </p>
-          <div className="mt-1 w-32 sm:w-40 h-1.5 bg-emerald-50 rounded-full overflow-hidden">
+          <div className="mt-1 w-32 sm:w-40 h-1.5 bg-primary/10 rounded-full overflow-hidden">
             <div
-              className="h-full bg-emerald-500 rounded-full transition-all"
+              className="h-full bg-primary rounded-full transition-all"
               style={{
                 width: `${Math.min(
                   100,
@@ -405,15 +405,15 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
           return (
             <div
               key={day.date || dayIndex}
-              className={`flex flex-col justify-between border rounded-2xl p-3 sm:p-4 bg-[#FAF3E7] shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition-transform duration-150 hover:-translate-y-[1px] hover:shadow-md ${
+              className={`flex flex-col justify-between border rounded-2xl p-3 sm:p-4 bg-muted shadow-[0_1px_2px_rgba(15,23,42,0.06)] transition-transform duration-150 hover:-translate-y-[1px] hover:shadow-md ${
                 isToday
-                  ? "border-emerald-500/80 ring-1 ring-emerald-100"
+                  ? "border-primary/80 ring-1 ring-ring"
                   : "border-[#E2D4C3]"
               } ${isPastDay ? "opacity-95" : ""}`}
             >
               {/* Day header */}
               <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-semibold text-slate-900">
+                <p className="text-xs font-semibold text-text-primary">
                   {day.date
                     ? new Date(day.date).toLocaleDateString(undefined, {
                         weekday: "short",
@@ -424,12 +424,12 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
                 </p>
                 <div className="flex items-center gap-1.5">
                   {isToday && (
-                    <span className="text-[10px] px-2 py-[2px] rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                    <span className="text-[10px] px-2 py-[2px] rounded-md bg-primary/10 text-primary border border-border">
                       Today
                     </span>
                   )}
                   {isPastDay && (
-                    <span className="text-[10px] px-2 py-[2px] rounded-full bg-slate-100 text-slate-600 border border-slate-200">
+                    <span className="text-[10px] px-2 py-[2px] rounded-md bg-muted text-text-secondary border border-border">
                       Past
                     </span>
                   )}
@@ -438,51 +438,51 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
 
               {/* Planned vs completed */}
               <div className="mb-3 space-y-1.5 text-[11px]">
-                <div className="rounded-md bg-white/70 px-2 py-1.5 border border-[#E8D9C5]">
+                <div className="rounded-md bg-card/70 px-2 py-1.5 border border-[#E8D9C5]">
                   <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-text-secondary">
                       Planned
                     </span>
                     <div className="flex flex-wrap gap-1">
-                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-[2px] text-[10px] text-slate-700">
+                      <span className="inline-flex items-center rounded-md bg-muted px-2 py-[2px] text-[10px] text-text-primary">
                         {Math.round(assigned.calories)} kcal
                       </span>
-                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-[2px] text-[10px] text-slate-700">
+                      <span className="inline-flex items-center rounded-md bg-muted px-2 py-[2px] text-[10px] text-text-primary">
                         {Math.round(assigned.protein)}g protein
                       </span>
-                      <span className="inline-flex items-center rounded-full bg-slate-100 px-2 py-[2px] text-[10px] text-slate-700">
+                      <span className="inline-flex items-center rounded-md bg-muted px-2 py-[2px] text-[10px] text-text-primary">
                         {Math.round(assigned.carbs)}g carbs
                       </span>
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-md bg-emerald-50/70 px-2 py-1.5 border border-emerald-100">
+                <div className="rounded-md bg-primary/10 px-2 py-1.5 border border-border">
                   <div className="flex flex-wrap items-center justify-between gap-x-2 gap-y-1">
-                    <span className="text-[10px] font-semibold uppercase tracking-wide text-emerald-700">
+                    <span className="text-[10px] font-semibold uppercase tracking-wide text-primary">
                       Completed
                     </span>
                     <div className="flex flex-wrap gap-1">
-                      <span className="inline-flex items-center rounded-full bg-white px-2 py-[2px] text-[10px] text-emerald-700">
+                      <span className="inline-flex items-center rounded-md bg-card px-2 py-[2px] text-[10px] text-primary">
                         {Math.round(consumed.calories)} kcal
                       </span>
-                      <span className="inline-flex items-center rounded-full bg-white px-2 py-[2px] text-[10px] text-emerald-700">
+                      <span className="inline-flex items-center rounded-md bg-card px-2 py-[2px] text-[10px] text-primary">
                         {Math.round(consumed.protein)}g protein
                       </span>
-                      <span className="inline-flex items-center rounded-full bg-white px-2 py-[2px] text-[10px] text-emerald-700">
+                      <span className="inline-flex items-center rounded-md bg-card px-2 py-[2px] text-[10px] text-primary">
                         {Math.round(consumed.carbs)}g carbs
                       </span>
                     </div>
                   </div>
 
                   <div className="mt-1.5">
-                    <div className="w-full h-1.5 rounded-full bg-emerald-100 overflow-hidden">
+                    <div className="w-full h-1.5 rounded-full bg-primary/10 overflow-hidden">
                       <div
-                        className="h-full rounded-full bg-emerald-600"
+                        className="h-full rounded-full bg-primary"
                         style={{ width: `${completionRatio}%` }}
                       />
                     </div>
-                    <p className="mt-0.5 text-[10px] text-emerald-800">
+                    <p className="mt-0.5 text-[10px] text-primary">
                       {completionRatio
                         ? `${Math.round(
                             completionRatio
@@ -493,7 +493,7 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
                 </div>
 
                 {isPastDay && (
-                  <p className="text-[10px] text-slate-500">
+                  <p className="text-[10px] text-text-secondary">
                     Past day – checkboxes are locked.
                   </p>
                 )}
@@ -502,16 +502,16 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
               {/* Meals + Exercise */}
               <div className="space-y-1.5">
                 {mealKeys.map((mk) => (
-                  <div key={mk} className="rounded-md bg-white/70 px-2 py-1.5">
-                    <p className="text-[11px] font-semibold capitalize text-slate-800 mb-0.5">
+                  <div key={mk} className="rounded-md bg-card/70 px-2 py-1.5">
+                    <p className="text-[11px] font-semibold capitalize text-text-primary mb-0.5">
                       {mk}
                     </p>
                     {renderMealList(day, mk, dayIndex, isPastDay)}
                   </div>
                 ))}
 
-                <div className="mt-2 rounded-md bg-[#F4E7D5] px-2 py-1.5 border border-[#E1D2BF]">
-                  <p className="text-[11px] font-semibold text-slate-800 mb-0.5">
+                <div className="mt-2 rounded-md bg-muted px-2 py-1.5 border border-border">
+                  <p className="text-[11px] font-semibold text-text-primary mb-0.5">
                     Exercise
                   </p>
                   {renderExerciseList(day, dayIndex, isPastDay)}
@@ -523,8 +523,8 @@ export default function PatientWeekPlan({ patientId, planId: initialPlanId }) {
       </div>
 
       {savingKey && (
-        <p className="mt-3 text-[11px] text-slate-500 flex items-center gap-2">
-          <span className="inline-block w-3 h-3 rounded-full border-2 border-emerald-500 border-t-transparent animate-spin" />
+        <p className="mt-3 text-[11px] text-text-secondary flex items-center gap-2">
+          <span className="inline-block w-3 h-3 rounded-full border-2 border-primary border-t-transparent animate-spin" />
           Saving your changes…
         </p>
       )}

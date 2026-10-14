@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import Icon from "../../../components/AppIcon";
 import { API_BASE } from "../../../lib/api";
 import useAuth from "../../../hooks/useAuth";
 import { io } from "socket.io-client";
@@ -295,8 +296,8 @@ const Messages = () => {
 
     const bubbleColor =
       msg.senderRole === "patient"
-        ? "bg-emerald-700 text-white"
-        : "bg-gray-200 text-black";
+        ? "bg-primary text-white"
+        : "bg-muted text-text-primary";
 
     return (
       <div className={`inline-block p-2 rounded-lg ${bubbleColor} max-w-xs`}>
@@ -311,7 +312,7 @@ const Messages = () => {
             rel="noreferrer"
             className="underline"
           >
-            📄 PDF Document
+            <Icon name="FileText" size={14} className="inline mr-1.5 -mt-0.5" />PDF document
           </a>
         )}
 
@@ -322,7 +323,7 @@ const Messages = () => {
             rel="noreferrer"
             className="underline"
           >
-            📎 File
+            <Icon name="Paperclip" size={14} className="inline mr-1.5 -mt-0.5" />File
           </a>
         )}
       </div>
@@ -335,17 +336,17 @@ const Messages = () => {
 
     if (status === "sent") {
       // single grey tick
-      return <span className="ml-1 text-[10px] text-gray-500">✓</span>;
+      return <Icon name="Check" size={12} className="ml-1 inline text-text-secondary" />;
     }
 
     if (status === "delivered") {
       // double grey tick
-      return <span className="ml-1 text-[10px] text-gray-500">✓✓</span>;
+      return <Icon name="CheckCheck" size={12} className="ml-1 inline text-text-secondary" />;
     }
 
     if (status === "seen") {
       // double blue tick
-      return <span className="ml-1 text-[10px] text-blue-500">✓✓</span>;
+      return <Icon name="CheckCheck" size={12} className="ml-1 inline text-primary" />;
     }
 
     return null;
@@ -368,8 +369,8 @@ const Messages = () => {
               onClick={() => setActiveDoctorId(d._id)}
               className={`p-4 border rounded-lg cursor-pointer mb-3 ${
                 activeDoctorId === d._id
-                  ? "bg-emerald-50 border-emerald-600"
-                  : "bg-white"
+                  ? "bg-primary/10 border-primary"
+                  : "bg-card"
               }`}
             >
               <div className="font-semibold">{d.fullName}</div>
@@ -387,7 +388,7 @@ const Messages = () => {
 
               <div
                 ref={chatBoxRef}
-                className="h-96 bg-white border rounded p-4 overflow-auto mb-4"
+                className="h-96 bg-card border rounded p-4 overflow-auto mb-4"
               >
                 {messages.map((m) => {
                   const isMe = m.senderRole === "patient";
@@ -411,8 +412,8 @@ const Messages = () => {
                         <div
                           className={`inline-block p-3 rounded ${
                             isMe
-                              ? "bg-emerald-700 text-white"
-                              : "bg-gray-200 text-black"
+                              ? "bg-primary text-white"
+                              : "bg-muted text-text-primary"
                           }`}
                         >
                           {m.text}
@@ -420,7 +421,7 @@ const Messages = () => {
                       )}
 
                       <div
-                        className={`text-xs text-gray-500 mt-1 flex items-center ${
+                        className={`text-xs text-text-secondary mt-1 flex items-center ${
                           isMe ? "justify-end" : "justify-start"
                         }`}
                       >
@@ -435,24 +436,24 @@ const Messages = () => {
               {/* POPUP MENU */}
               {showMenu && (
                 <div
-                  className="absolute bg-white shadow-lg rounded border p-2 z-50"
+                  className="absolute bg-card shadow-lg rounded border p-2 z-50"
                   style={{ top: menuPos.y, left: menuPos.x }}
                 >
                   <button
                     onClick={() => deleteMessage("me")}
-                    className="block w-full text-left px-3 py-2 hover:bg-gray-100"
+                    className="block w-full text-left px-3 py-2 hover:bg-muted"
                   >
                     Delete for Me
                   </button>
                   <button
                     onClick={() => deleteMessage("everyone")}
-                    className="block w-full text-left px-3 py-2 hover:bg-gray-100 text-red-600"
+                    className="block w-full text-left px-3 py-2 hover:bg-muted text-error"
                   >
                     Delete for Everyone
                   </button>
                   <button
                     onClick={() => setShowMenu(false)}
-                    className="block w-full text-left px-3 py-2 hover:bg-gray-100"
+                    className="block w-full text-left px-3 py-2 hover:bg-muted"
                   >
                     Cancel
                   </button>
@@ -463,9 +464,9 @@ const Messages = () => {
               <div className="flex gap-3 items-center">
                 <button
                   onClick={() => fileInputRef.current.click()}
-                  className="px-3 py-2 bg-gray-200 rounded"
+                  className="px-3 py-2 bg-muted rounded"
                 >
-                  📎
+                  <Icon name="Paperclip" size={18} />
                 </button>
                 <input
                   type="file"
@@ -483,7 +484,7 @@ const Messages = () => {
 
                 <button
                   onClick={handleSend}
-                  className="px-4 py-2 bg-emerald-700 text-white rounded"
+                  className="px-4 py-2 bg-primary text-white rounded"
                 >
                   Send
                 </button>

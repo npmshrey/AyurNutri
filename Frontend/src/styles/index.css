@@ -44,7 +44,7 @@
   background-color: #17291F !important;
 }
 
-/* Light gradients with hardcoded stops can't be themed — flatten them */
+/* Light gradients with hardcoded stops can't be themed - flatten them */
 [data-theme="dark"] .bg-gradient-to-br,
 [data-theme="dark"] .bg-gradient-to-bl,
 [data-theme="dark"] .bg-gradient-to-tr,

@@ -206,19 +206,19 @@ const FoodPickerModal = ({ open, onClose, onConfirm, title }) => {
 
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-3xl flex flex-col max-h-[85vh] border border-emerald-100">
+      <div className="bg-card rounded-xl shadow-xl w-full max-w-3xl flex flex-col max-h-[85vh] border border-border">
         {/* Header */}
-        <div className="flex items-center justify-between border-b px-4 py-3 bg-gradient-to-r from-emerald-50 via-primary/5 to-emerald-50">
+        <div className="flex items-center justify-between border-b px-4 py-3 bg-muted">
           <div>
-            <h3 className="text-sm font-semibold text-emerald-900">
+            <h3 className="text-sm font-semibold text-primary">
               {title || "Select foods"}
             </h3>
-            <p className="text-[11px] text-emerald-800/80">
+            <p className="text-[11px] text-primary/80">
               Selected: {selectedCount} item{selectedCount === 1 ? "" : "s"}
             </p>
           </div>
           <button
-            className="text-emerald-700 text-lg"
+            className="text-primary text-lg"
             type="button"
             onClick={onClose}
           >
@@ -227,7 +227,7 @@ const FoodPickerModal = ({ open, onClose, onConfirm, title }) => {
         </div>
 
         {/* Search + filters */}
-        <div className="border-b px-4 py-2 bg-gray-50 space-y-2">
+        <div className="border-b px-4 py-2 bg-muted space-y-2">
           {/* Search bar */}
           <input
             type="text"
@@ -248,10 +248,10 @@ const FoodPickerModal = ({ open, onClose, onConfirm, title }) => {
                     key={opt.key}
                     type="button"
                     onClick={() => setDoshaFilter(opt.key)}
-                    className={`px-2 py-1 rounded-full border ${
+                    className={`px-2 py-1 rounded-md border ${
                       active
-                        ? "bg-emerald-600 text-white border-emerald-600"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-100"
+                        ? "bg-primary text-white border-primary"
+                        : "bg-card text-text-primary border-border hover:bg-muted"
                     }`}
                   >
                     {opt.label}
@@ -263,7 +263,7 @@ const FoodPickerModal = ({ open, onClose, onConfirm, title }) => {
             <div className="flex items-center gap-3 justify-between sm:justify-end">
               {/* Sort select */}
               <div className="flex items-center gap-1 text-[11px]">
-                <span className="text-gray-500">Sort by:</span>
+                <span className="text-text-secondary">Sort by:</span>
                 <select
                   className="border rounded px-2 py-1 text-[11px] border-border"
                   value={sortKey}
@@ -271,13 +271,13 @@ const FoodPickerModal = ({ open, onClose, onConfirm, title }) => {
                 >
                   <option value="relevance">Relevance</option>
                   <option value="nameAsc">Name A–Z</option>
-                  <option value="calAsc">Calories (low → high)</option>
-                  <option value="calDesc">Calories (high → low)</option>
+                  <option value="calAsc">Calories (low to high)</option>
+                  <option value="calDesc">Calories (high to low)</option>
                 </select>
               </div>
 
               {/* Selected count (compact) */}
-              <div className="hidden sm:block text-[11px] text-gray-500">
+              <div className="hidden sm:block text-[11px] text-text-secondary">
                 {selectedCount} selected
               </div>
             </div>
@@ -287,7 +287,7 @@ const FoodPickerModal = ({ open, onClose, onConfirm, title }) => {
         {/* Food Grid */}
         <div className="flex-1 overflow-y-auto p-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
           {filteredFoods.length === 0 && (
-            <div className="text-xs text-gray-500 col-span-full">
+            <div className="text-xs text-text-secondary col-span-full">
               No foods found
               {query ? ` for "${query}"` : ""}.
             </div>
@@ -313,8 +313,8 @@ const FoodPickerModal = ({ open, onClose, onConfirm, title }) => {
                 onClick={() => toggle(key)}
                 className={`border rounded-lg px-3 py-2 text-left shadow-sm ${
                   active
-                    ? "border-emerald-500 bg-emerald-50"
-                    : "border-border hover:border-emerald-300"
+                    ? "border-primary bg-primary/10"
+                    : "border-border hover:border-border"
                 }`}
               >
                 <div className="font-medium text-sm text-text-primary">
@@ -327,7 +327,7 @@ const FoodPickerModal = ({ open, onClose, onConfirm, title }) => {
                   </div>
                 )}
 
-                <div className="mt-1 text-[11px] text-gray-700">
+                <div className="mt-1 text-[11px] text-text-primary">
                   {calories != null && (
                     <span>
                       {calories} kcal
@@ -341,7 +341,7 @@ const FoodPickerModal = ({ open, onClose, onConfirm, title }) => {
                 </div>
 
                 {dosha && (
-                  <div className="mt-1 inline-flex items-center px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[11px]">
+                  <div className="mt-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-primary/10 text-primary border border-border text-[11px]">
                     Dosha: {String(dosha)}
                   </div>
                 )}
@@ -351,8 +351,8 @@ const FoodPickerModal = ({ open, onClose, onConfirm, title }) => {
         </div>
 
         {/* Footer */}
-        <div className="border-t px-4 py-3 flex justify-between items-center gap-2 bg-white">
-          <div className="text-[11px] text-gray-500">
+        <div className="border-t px-4 py-3 flex justify-between items-center gap-2 bg-card">
+          <div className="text-[11px] text-text-secondary">
             {selectedCount === 0
               ? "No items selected yet."
               : `${selectedCount} item${
@@ -656,14 +656,14 @@ export default function DoctorWeekPlanner({ initialPatientName }) {
     "Patient";
 
   return (
-    <div className="min-h-screen bg-[#fdf7ee] flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col">
       {/* Header */}
-      <header className="px-6 py-4 border-b border-border flex items-center justify-between bg-gradient-to-r from-emerald-50 via-primary/5 to-emerald-100">
+      <header className="px-6 py-4 border-b border-border flex items-center justify-between bg-muted">
         <div>
-          <h1 className="text-xl font-semibold text-emerald-950">
+          <h1 className="text-xl font-semibold text-primary">
             Weekly plan for {resolvedName}
           </h1>
-          <p className="text-xs text-emerald-900/80">
+          <p className="text-xs text-primary/80">
             Create a structured multi-day plan using the saved diet chart and
             food library.
           </p>
@@ -682,14 +682,14 @@ export default function DoctorWeekPlanner({ initialPatientName }) {
             </div>
           )}
           {error && !saving && (
-            <div className="text-sm text-red-600">{error}</div>
+            <div className="text-sm text-error">{error}</div>
           )}
 
           {/* Plan controls card */}
-          <div className="bg-white rounded-xl border border-border p-4 shadow-sm space-y-3">
+          <div className="bg-card rounded-xl border border-border p-4 shadow-sm space-y-3">
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-xs font-medium text-text-secondary mb-1">
                   Plan start date
                 </label>
                 <input
@@ -701,7 +701,7 @@ export default function DoctorWeekPlanner({ initialPatientName }) {
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-600 mb-1">
+                <label className="block text-xs font-medium text-text-secondary mb-1">
                   Plan length (days)
                 </label>
                 <input
@@ -729,7 +729,7 @@ export default function DoctorWeekPlanner({ initialPatientName }) {
                   Use main diet plan for all days
                 </Button> */}
                 {!patient?.dietPlan && (
-                  <p className="text-[11px] text-gray-500 mt-1">
+                  <p className="text-[11px] text-text-secondary mt-1">
                     No main diet plan saved yet. Configure it in the Diet
                     Planner first.
                   </p>
@@ -737,7 +737,7 @@ export default function DoctorWeekPlanner({ initialPatientName }) {
               </div>
             </div>
 
-            <p className="text-[11px] text-gray-500">
+            <p className="text-[11px] text-text-secondary">
               Tip: set the plan length and start date first, then fill meals and
               exercises. You can copy a configured day to all other days.
             </p>
@@ -748,7 +748,7 @@ export default function DoctorWeekPlanner({ initialPatientName }) {
             {days.map((d, idx) => (
               <div
                 key={d.date || idx}
-                className="bg-white rounded-xl border border-border p-4 shadow-sm"
+                className="bg-card rounded-xl border border-border p-4 shadow-sm"
               >
                 <div className="flex items-center justify-between mb-3">
                   <div>
@@ -759,7 +759,7 @@ export default function DoctorWeekPlanner({ initialPatientName }) {
                   </div>
                   <button
                     type="button"
-                    className="text-[11px] text-blue-600 underline"
+                    className="text-[11px] text-primary underline"
                     onClick={() => copyDayToAll(idx)}
                   >
                     Copy this day to all
@@ -774,20 +774,20 @@ export default function DoctorWeekPlanner({ initialPatientName }) {
                     return (
                       <div
                         key={mk}
-                        className="p-3 bg-[#FAF5EE] rounded-lg flex flex-col"
+                        className="p-3 bg-muted rounded-lg flex flex-col"
                       >
                         <div className="flex items-center justify-between mb-1">
                           <div className="text-sm font-medium capitalize">
                             {mk}
                           </div>
-                          <div className="text-[11px] text-gray-500">
+                          <div className="text-[11px] text-text-secondary">
                             {items.length} item
                             {items.length === 1 ? "" : "s"}
                           </div>
                         </div>
 
                         <button
-                          className="text-xs text-blue-600 underline mb-2 self-start"
+                          className="text-xs text-primary underline mb-2 self-start"
                           type="button"
                           onClick={() => {
                             setActiveDayIndex(idx);
@@ -816,23 +816,23 @@ export default function DoctorWeekPlanner({ initialPatientName }) {
                               return (
                                 <div
                                   key={`${mk}-${itemIdx}-${name}`}
-                                  className="bg-white rounded-lg px-3 py-2 border border-border/60 shadow-sm flex gap-3"
+                                  className="bg-card rounded-lg px-3 py-2 border border-border/60 shadow-sm flex gap-3"
                                 >
                                   <div className="flex-1">
                                     <div className="flex items-start justify-between gap-2">
                                       <div>
-                                        <div className="font-medium text-[12px] text-gray-900">
+                                        <div className="font-medium text-[12px] text-text-primary">
                                           {name}
                                         </div>
                                         {servingText && (
-                                          <div className="text-[11px] text-gray-500 mt-0.5">
+                                          <div className="text-[11px] text-text-secondary mt-0.5">
                                             {servingText}
                                           </div>
                                         )}
                                       </div>
                                     </div>
 
-                                    <div className="mt-1 text-[11px] text-gray-700">
+                                    <div className="mt-1 text-[11px] text-text-primary">
                                       {calories != null && (
                                         <span>
                                           {calories} kcal
@@ -854,7 +854,7 @@ export default function DoctorWeekPlanner({ initialPatientName }) {
                                     </div>
 
                                     {dosha && (
-                                      <div className="mt-1 inline-flex items-center px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-100 text-[11px]">
+                                      <div className="mt-1 inline-flex items-center px-1.5 py-0.5 rounded-md bg-primary/10 text-primary border border-border text-[11px]">
                                         Dosha: {String(dosha)}
                                       </div>
                                     )}
@@ -862,7 +862,7 @@ export default function DoctorWeekPlanner({ initialPatientName }) {
 
                                   <button
                                     type="button"
-                                    className="text-xs text-gray-400 hover:text-red-500 self-start"
+                                    className="text-xs text-text-secondary hover:text-error self-start"
                                     onClick={() =>
                                       removeMealItem(idx, mk, itemIdx)
                                     }
@@ -888,7 +888,7 @@ export default function DoctorWeekPlanner({ initialPatientName }) {
                     </div>
                   </div>
                   <button
-                    className="text-xs text-blue-600 underline"
+                    className="text-xs text-primary underline"
                     type="button"
                     onClick={() => {
                       const name = window.prompt(
@@ -911,7 +911,7 @@ export default function DoctorWeekPlanner({ initialPatientName }) {
           {/* Submit */}
           <div className="pt-2">
             {error && saving && (
-              <div className="text-red-600 mb-2 text-sm">{error}</div>
+              <div className="text-error mb-2 text-sm">{error}</div>
             )}
             <Button onClick={handleSubmit} disabled={saving || !token}>
               {saving ? "Saving…" : "Create plan"}

@@ -1,63 +1,59 @@
 import React, { useRef } from "react";
-import { gsap, useGSAP, MOTION_OK } from "../../../lib/motion";
+import Icon from "../../../components/AppIcon";
+import Ambient from "../../../components/Ambient";
 import { useApi } from "../../../lib/api";
+import { useReveal } from "../../../lib/motion";
 
-// Every number is counted live by GET /api/stats/public. Nothing is typed in.
-const FACTS = [
-  { key: "foods", label: "foods in the library, each with nutrient and Ayurvedic data" },
-  { key: "practitioners", label: "practitioners registered on the platform" },
-  { key: "patients", label: "patients who have signed up" },
-  { key: "weeklyPlans", label: "weekly diet plans written so far" },
-];
-
+// Facts about the food library itself, read live from GET /api/foods/stats.
+// Deliberately no user/customer counts and no count-up animation.
 const FactsStrip = () => {
   const ref = useRef(null);
-  const { data, loading, error } = useApi("/api/stats/public");
-
-  useGSAP(
-    () => {
-      if (!data) return;
-      const mm = gsap.matchMedia();
-      mm.add(MOTION_OK, () => {
-        gsap.utils.toArray("[data-count]", ref.current).forEach((el) => {
-          const end = Number(el.dataset.count) || 0;
-          const obj = { v: 0 };
-          gsap.to(obj, {
-            v: end,
-            duration: end > 100 ? 1.6 : 1,
-            ease: "power2.out",
-            scrollTrigger: { trigger: el, start: "top 92%", once: true },
-            onUpdate: () => {
-              el.textContent = Math.round(obj.v).toLocaleString("en-IN");
-            },
-          });
-        });
-      });
-      return () => mm.revert();
-    },
-    { scope: ref, dependencies: [data] }
-  );
-
-  // Don't show made-up fallbacks if the backend can't be reached.
+  const { data, error } = useApi("/api/foods/stats");
+  useReveal(ref, [!!data]);
   if (error) return null;
 
+  const categories = data ? Object.entries(data.categories).sort((a, b) => b[1] - a[1]) : [];
+  const facts = data
+    ? [
+        { icon: "Database", value: data.total.toLocaleString("en-IN"), label: "foods and recipes in the library" },
+        { icon: "LayoutGrid", value: categories.length, label: "food categories, from meals to seeds" },
+        { icon: "Leaf", value: data.complete.toLocaleString("en-IN"), label: "records with rasa, guna, virya and vipaka filled in" },
+      ]
+    : [];
+
   return (
-    <section ref={ref} className="border-y border-border bg-card/70" aria-busy={loading}>
-      <div className="page-container grid grid-cols-2 gap-x-6 gap-y-8 py-10 lg:grid-cols-4">
-        {FACTS.map((f) => (
-          <div key={f.key}>
-            <p className="font-display text-3xl font-semibold text-primary sm:text-4xl">
-              {data ? (
-                <span data-count={data[f.key]}>{Number(data[f.key] || 0).toLocaleString("en-IN")}</span>
-              ) : (
-                <span className="inline-block h-9 w-20 animate-pulse rounded-md bg-muted align-middle" />
-              )}
-            </p>
-            <p className="mt-2 max-w-[16rem] text-sm leading-snug text-text-secondary">{f.label}</p>
-          </div>
-        ))}
+    <section ref={ref} className="relative isolate overflow-hidden border-b border-border bg-muted/40">
+      <Ambient
+        fields={[
+          { tone: "gold", className: "-left-20 -top-24 h-64 w-96" },
+          { tone: "green", className: "right-0 top-4 h-56 w-80" },
+        ]}
+      />
+      <div data-reveal-group className="page-container relative grid gap-4 py-10 sm:grid-cols-3">
+        {data
+          ? facts.map((f) => (
+              <div key={f.label} className="glass lift flex items-start gap-4 rounded-xl p-5">
+                <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-primary/10 text-primary">
+                  <Icon name={f.icon} size={18} />
+                </span>
+                <div>
+                  <p className="font-display text-3xl font-semibold text-text-primary">{f.value}</p>
+                  <p className="mt-1 text-sm text-text-secondary">{f.label}</p>
+                </div>
+              </div>
+            ))
+          : [0, 1, 2].map((i) => (
+              <div key={i} aria-hidden="true" className="glass rounded-xl p-5">
+                <div className="h-8 w-20 animate-pulse rounded bg-muted" />
+                <div className="mt-2 h-4 w-48 animate-pulse rounded bg-muted" />
+              </div>
+            ))}
       </div>
-      <p className="page-container pb-4 text-right text-[11px] text-text-secondary/70">Live figures from the AyurNutri database</p>
+      {categories.length > 0 && (
+        <p className="page-container relative pb-6 text-xs text-text-secondary">
+          {categories.map(([name, n]) => `${name} ${n}`).join("  ·  ")}
+        </p>
+      )}
     </section>
   );
 };

@@ -1,430 +1,8 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Select from '../../../components/ui/Select';
-
-// ---------- FOOD KNOWLEDGE BASE (25 ITEMS) ----------
-
-const foodDatabase = [
-  // Dairy
-  {
-    value: 'milk',
-    label: 'Milk (Cow)',
-    category: 'dairy',
-    taste: ['sweet'],
-    virya: 'cooling',
-    heaviness: 'heavy',
-    gi: 'low',
-    tags: ['animalDairy', 'protein', 'liquid', 'sweet'],
-    avoidWithTags: ['fish', 'meat', 'sourFruit'],
-    ayurvedaNote:
-      'Best taken warm, alone, not mixed with sour fruits, fish, or salty foods. Nourishing for ojas.',
-    modernNote:
-      'Good source of protein and calcium; may cause issues in lactose intolerance or dairy allergy.'
-  },
-  {
-    value: 'yogurt',
-    label: 'Yogurt (Curd)',
-    category: 'dairy',
-    taste: ['sour'],
-    virya: 'heating',
-    heaviness: 'heavy',
-    gi: 'medium',
-    tags: ['fermented', 'probiotic', 'animalDairy'],
-    avoidWithTags: ['fish', 'fruit'],
-    ayurvedaNote:
-      'Heavy and heating; generally avoided at night and not combined with fruits or fish.',
-    modernNote: 'Provides probiotics; pairing with sugary fruits increases sugar load.'
-  },
-  {
-    value: 'ghee',
-    label: 'Ghee',
-    category: 'fat',
-    taste: ['sweet'],
-    virya: 'cooling',
-    heaviness: 'heavy',
-    gi: 'none',
-    tags: ['fat', 'clarifiedButter'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Considered sattvic; supports agni and tissues when used in moderation.',
-    modernNote:
-      'Rich in saturated fats; moderation is key especially in metabolic syndrome.'
-  },
-  {
-    value: 'cheese',
-    label: 'Cheese (Hard)',
-    category: 'dairy',
-    taste: ['salty', 'sour'],
-    virya: 'heating',
-    heaviness: 'heavy',
-    gi: 'low',
-    tags: ['animalDairy', 'salted', 'fat', 'fermented'],
-    avoidWithTags: ['fish'],
-    ayurvedaNote:
-      'Heavy, kapha-increasing; best minimized in congestion and high cholesterol.',
-    modernNote:
-      'High in saturated fat and sodium; excessive intake linked with heart risk.'
-  },
-
-  // Animal protein
-  {
-    value: 'fish',
-    label: 'Fish',
-    category: 'animalProtein',
-    taste: ['salty', 'sweet'],
-    virya: 'heating',
-    heaviness: 'medium',
-    gi: 'none',
-    tags: ['fish', 'protein'],
-    avoidWithTags: ['animalDairy'],
-    ayurvedaNote:
-      'Classically incompatible with milk and other dairy due to blood impurity risk.',
-    modernNote:
-      'Good omega-3 source; combining with heavy cream-based sauces increases fat load.'
-  },
-  {
-    value: 'chicken',
-    label: 'Chicken',
-    category: 'animalProtein',
-    taste: ['sweet', 'salty'],
-    virya: 'heating',
-    heaviness: 'medium',
-    gi: 'none',
-    tags: ['meat', 'protein'],
-    avoidWithTags: ['milk'],
-    ayurvedaNote:
-      'Nourishing but heating; excess may aggravate pitta and ama if digestion is weak.',
-    modernNote: 'Lean protein if grilled/boiled; deep frying adds unhealthy fats.'
-  },
-  {
-    value: 'egg',
-    label: 'Egg',
-    category: 'animalProtein',
-    taste: ['sweet'],
-    virya: 'heating',
-    heaviness: 'medium',
-    gi: 'none',
-    tags: ['meat', 'protein'],
-    avoidWithTags: ['milk', 'yogurt'],
-    ayurvedaNote:
-      'Heavy and heating; better taken alone, not with dairy in sensitive individuals.',
-    modernNote:
-      'Rich in protein and micronutrients; cholesterol concerns depend on overall diet.'
-  },
-
-  // Grains
-  {
-    value: 'rice',
-    label: 'Rice (White)',
-    category: 'grain',
-    taste: ['sweet'],
-    virya: 'cooling',
-    heaviness: 'medium',
-    gi: 'high',
-    tags: ['carb', 'refined'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Easy to digest; suitable for most but can increase kapha in excess.',
-    modernNote:
-      'High glycemic index; pairing with fiber and protein helps blunt sugar spikes.'
-  },
-  {
-    value: 'brownRice',
-    label: 'Rice (Brown)',
-    category: 'grain',
-    taste: ['sweet'],
-    virya: 'warming',
-    heaviness: 'medium',
-    gi: 'medium',
-    tags: ['carb', 'wholeGrain', 'fiberRich'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Heavier than white rice; better for stronger digestion, supports sustained energy.',
-    modernNote:
-      'More fiber and micronutrients; better for blood sugar and satiety.'
-  },
-  {
-    value: 'wheat',
-    label: 'Whole Wheat',
-    category: 'grain',
-    taste: ['sweet'],
-    virya: 'warming',
-    heaviness: 'heavy',
-    gi: 'medium',
-    tags: ['carb', 'wholeGrain', 'gluten'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Strength-building but kapha-increasing when in excess or in sedentary lifestyle.',
-    modernNote: 'Whole wheat provides fiber; problematic in gluten sensitivity.'
-  },
-
-  // Legumes
-  {
-    value: 'lentils',
-    label: 'Lentils (Dal)',
-    category: 'legume',
-    taste: ['astringent'],
-    virya: 'heating',
-    heaviness: 'light',
-    gi: 'low',
-    tags: ['plantProtein', 'fiberRich'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Light and drying; good for kapha, may aggravate vata without ghee/spices.',
-    modernNote:
-      'High in fiber and protein; supports metabolic and gut health.'
-  },
-  {
-    value: 'chickpeas',
-    label: 'Chickpeas',
-    category: 'legume',
-    taste: ['sweet', 'astringent'],
-    virya: 'heating',
-    heaviness: 'medium',
-    gi: 'low',
-    tags: ['plantProtein', 'fiberRich'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Drying and gas-forming for some; soaking and spices improve digestibility.',
-    modernNote:
-      'Great fiber and plant protein; supports satiety and blood sugar control.'
-  },
-
-  // Fruits
-  {
-    value: 'banana',
-    label: 'Banana (Ripe)',
-    category: 'fruit',
-    taste: ['sweet'],
-    virya: 'cooling',
-    heaviness: 'heavy',
-    gi: 'medium',
-    tags: ['fruit', 'sweetFruit'],
-    avoidWithTags: ['animalDairy'],
-    ayurvedaNote:
-      'Heavy and kapha-increasing; classically not mixed with milk or yogurt.',
-    modernNote:
-      'Potassium rich; with milk/yogurt becomes calorie dense and may spike sugar in some.'
-  },
-  {
-    value: 'apple',
-    label: 'Apple',
-    category: 'fruit',
-    taste: ['sweet', 'astringent'],
-    virya: 'cooling',
-    heaviness: 'light',
-    gi: 'low',
-    tags: ['fruit', 'fiberRich'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Generally tridosha-friendly, especially baked/warmed for vata.',
-    modernNote: 'Good fiber source, supports gut and heart health.'
-  },
-  {
-    value: 'lemon',
-    label: 'Lemon',
-    category: 'fruit',
-    taste: ['sour'],
-    virya: 'heating',
-    heaviness: 'light',
-    gi: 'low',
-    tags: ['sourFruit', 'citrus'],
-    avoidWithTags: ['milk'],
-    ayurvedaNote:
-      'Enhances agni; not mixed with milk as it can curdle and disturb digestion.',
-    modernNote:
-      'Vitamin C rich; with milk can cause curdling but generally safe as long as digestion tolerates.'
-  },
-  {
-    value: 'pomegranate',
-    label: 'Pomegranate',
-    category: 'fruit',
-    taste: ['sweet', 'astringent'],
-    virya: 'cooling',
-    heaviness: 'light',
-    gi: 'low',
-    tags: ['fruit', 'antioxidant'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Highly praised; balances all three doshas when moderately sweet.',
-    modernNote:
-      'Rich in polyphenols; beneficial for cardiovascular health.'
-  },
-  {
-    value: 'mango',
-    label: 'Mango (Ripe)',
-    category: 'fruit',
-    taste: ['sweet'],
-    virya: 'heating',
-    heaviness: 'medium',
-    gi: 'medium',
-    tags: ['fruit', 'sweetFruit'],
-    avoidWithTags: ['yogurt', 'fish'],
-    ayurvedaNote:
-      'Ojas-building when ripe and taken alone; avoid mixing with heavy proteins/fish.',
-    modernNote: 'High natural sugar; best balanced with fiber-rich foods.'
-  },
-
-  // Vegetables
-  {
-    value: 'spinach',
-    label: 'Spinach',
-    category: 'vegetable',
-    taste: ['bitter', 'astringent'],
-    virya: 'heating',
-    heaviness: 'light',
-    gi: 'low',
-    tags: ['leafyGreen', 'fiberRich'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Reduces pitta in moderation; excess raw can aggravate vata.',
-    modernNote:
-      'Iron, folate, and phytonutrient rich; oxalates may affect kidney stone-prone individuals.'
-  },
-  {
-    value: 'potato',
-    label: 'Potato (White)',
-    category: 'vegetable',
-    taste: ['sweet'],
-    virya: 'cooling',
-    heaviness: 'heavy',
-    gi: 'high',
-    tags: ['starchyVeg', 'carb'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Increases kapha and vata when fried or eaten in excess.',
-    modernNote:
-      'High glycemic; deep frying adds unhealthy fats.'
-  },
-  {
-    value: 'tomato',
-    label: 'Tomato',
-    category: 'vegetable',
-    taste: ['sour'],
-    virya: 'heating',
-    heaviness: 'light',
-    gi: 'low',
-    tags: ['nightshade', 'sourFruit'],
-    avoidWithTags: ['milk'],
-    ayurvedaNote:
-      'Pitta-aggravating in sensitive individuals; often avoided in high inflammation.',
-    modernNote:
-      'Lycopene rich; acidity can trigger reflux in some.'
-  },
-  {
-    value: 'broccoli',
-    label: 'Broccoli',
-    category: 'vegetable',
-    taste: ['bitter', 'pungent'],
-    virya: 'cooling',
-    heaviness: 'light',
-    gi: 'low',
-    tags: ['cruciferous', 'fiberRich'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Can increase vata if eaten raw; better cooked with oil and spices.',
-    modernNote:
-      'Cruciferous compounds support detox and may reduce cancer risk.'
-  },
-
-  // Nuts & seeds
-  {
-    value: 'almonds',
-    label: 'Almonds (Soaked)',
-    category: 'nut',
-    taste: ['sweet'],
-    virya: 'heating',
-    heaviness: 'medium',
-    gi: 'low',
-    tags: ['nut', 'fat'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Soaked and peeled almonds are considered sattvic and brain-nourishing.',
-    modernNote:
-      'Healthy fats and vitamin E; energy dense so portion control matters.'
-  },
-  {
-    value: 'walnuts',
-    label: 'Walnuts',
-    category: 'nut',
-    taste: ['bitter', 'astringent'],
-    virya: 'heating',
-    heaviness: 'medium',
-    gi: 'low',
-    tags: ['nut', 'omega3'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Warming; best in small amounts, especially in colder seasons.',
-    modernNote: 'Cardio-protective omega-3 fats; useful in moderation.'
-  },
-  {
-    value: 'sesame',
-    label: 'Sesame Seeds',
-    category: 'seed',
-    taste: ['sweet', 'bitter'],
-    virya: 'heating',
-    heaviness: 'medium',
-    gi: 'low',
-    tags: ['seed', 'calciumRich'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Very warming and nourishing; used in vata disorders and cold climates.',
-    modernNote: 'Mineral rich; may be allergenic for some.'
-  },
-
-  // Oils / sweets / extras
-  {
-    value: 'honey',
-    label: 'Honey (Raw)',
-    category: 'sweetener',
-    taste: ['sweet', 'astringent'],
-    virya: 'heating',
-    heaviness: 'light',
-    gi: 'high',
-    tags: ['sweetener'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Should never be heated; used in small amounts to scrape kapha.',
-    modernNote:
-      'High in sugar; slightly lower GI than white sugar but still raises blood glucose.'
-  },
-  {
-    value: 'sugar',
-    label: 'Sugar (Refined)',
-    category: 'sweetener',
-    taste: ['sweet'],
-    virya: 'cooling',
-    heaviness: 'light',
-    gi: 'high',
-    tags: ['sweetener', 'refined'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Considered less wholesome than jaggery; increases kapha and ama in excess.',
-    modernNote:
-      'High glycemic and strongly linked to metabolic issues when overused.'
-  },
-  {
-    value: 'oliveOil',
-    label: 'Olive Oil',
-    category: 'fat',
-    taste: ['bitter'],
-    virya: 'heating',
-    heaviness: 'medium',
-    gi: 'none',
-    tags: ['fat', 'monounsaturated'],
-    avoidWithTags: [],
-    ayurvedaNote:
-      'Mildly heating; generally acceptable, particularly for pitta-kapha types in moderation.',
-    modernNote:
-      'Heart-healthy monounsaturated fat, beneficial in Mediterranean-style patterns.'
-  }
-];
-
-const foodOptions = foodDatabase.map((f) => ({
-  value: f.value,
-  label: f.label
-}));
+import { useFoodLibrary } from '../../../lib/foods';
 
 // ---------- SEASON OPTIONS ----------
 
@@ -435,204 +13,232 @@ const seasonOptions = [
   { value: 'winter', label: 'Winter (December–February)' }
 ];
 
-// ---------- HELPER FUNCTIONS FOR COMPATIBILITY ----------
+// ---------- FOOD COMPATIBILITY (runs on the live food library) ----------
+// Each food comes from GET /api/foods and carries rasa, guna, virya and a
+// dosha effect. The rules below are the classical viruddha ahara pairs that
+// can be read from those fields, plus virya and heaviness checks. There is no
+// numeric score: the result is a level and the reasons behind it.
 
-const getFoodByValue = (value) =>
-  foodDatabase.find((f) => f.value === value) || null;
-
-const isHeating = (virya) => virya === 'heating' || virya === 'warming';
-const isCooling = (virya) => virya === 'cooling';
-
-const heavinessScore = {
-  light: 1,
-  medium: 2,
-  heavy: 3
-};
-const giScore = {
-  low: 1,
-  medium: 2,
-  high: 3,
-  none: 0
+const RASA_EN = {
+  Madhura: 'sweet',
+  Amla: 'sour',
+  Lavana: 'salty',
+  Katu: 'pungent',
+  Tikta: 'bitter',
+  Kashaya: 'astringent'
 };
 
-/**
- * Evaluate compatibility between two foods using:
- * - Ayurvedic rules (virya, heaviness, classical incompatibilities)
- * - Modern nutrition (GI, sugar+fat load)
- *
- * Exported so ayurBotEngine.js can reuse it.
- */
-export const evaluateCompatibility = (valueA, valueB) => {
-  const a = getFoodByValue(valueA);
-  const b = getFoodByValue(valueB);
+const isMilk = (f) =>
+  /(^|[^a-z])(milk|doodh)/i.test(f.name) &&
+  !/butter\s*milk|coconut milk|almond milk/i.test(f.name);
+const isCurd = (f) => /curd|yogurt|dahi|raita|pachadi/i.test(f.name);
+const hasRasa = (f, r) => (f.ayurveda?.rasa || []).includes(r);
+const hasGuna = (f, g) => (f.ayurveda?.guna || []).includes(g);
+const doshaLabel = (k) => k[0].toUpperCase() + k.slice(1);
+const viryaText = (v) => (v === 'Ushna' ? 'heating (Ushna)' : 'cooling (Sheeta)');
 
-  if (!a || !b) {
-    return {
-      level: 'caution',
-      score: 50,
-      summary: 'Insufficient data',
-      reason:
-        'One of the selected items is missing in the knowledge base. Use personal discretion.',
-      recommendation:
-        'Combine with awareness and observe how your digestion and energy respond.'
-    };
-  }
+export const evaluateCompatibility = (a, b) => {
+  if (!a || !b) return null;
+  const avoid = [];
+  const caution = [];
+  const notes = [];
 
-  let score = 80; // start from "generally okay"
-  const issues = [];
-  const positives = [];
-
-  // 1. Classical incompatibilities via tags
-  const tagIntersection = (tags1, tags2) =>
-    tags1?.some((t) => tags2?.includes(t));
-
-  const aAvoidsB =
-    a.avoidWithTags && tagIntersection(a.avoidWithTags, b.tags || []);
-  const bAvoidsA =
-    b.avoidWithTags && tagIntersection(b.avoidWithTags, a.tags || []);
-
-  let isStrongAvoid = false;
-
-  if (aAvoidsB || bAvoidsA) {
-    score -= 40;
-    isStrongAvoid = true;
-    issues.push(
-      'Classically considered a viruddha ahara (incompatible combination) in Ayurveda.'
-    );
-  }
-
-  // 2. Virya mismatch (heating vs cooling)
-  if (isHeating(a.virya) && isCooling(b.virya)) {
-    score -= 10;
-    issues.push(
-      `${a.label} is heating while ${b.label} is cooling, which may confuse digestive fire in sensitive people.`
-    );
-  } else if (isCooling(a.virya) && isHeating(b.virya)) {
-    score -= 10;
-    issues.push(
-      `${a.label} is cooling while ${b.label} is heating, creating a mixed signal for agni.`
-    );
-  } else {
-    positives.push(
-      'Their thermal (virya) nature is reasonably aligned, which supports smoother digestion.'
-    );
-    score += 5;
-  }
-
-  // 3. Heaviness synergy
-  const heavyA = heavinessScore[a.heaviness] || 2;
-  const heavyB = heavinessScore[b.heaviness] || 2;
-
-  if (heavyA + heavyB >= 5) {
-    score -= 10;
-    issues.push(
-      'Both foods are relatively heavy, which can slow digestion, especially at night or in low activity.'
-    );
-  } else if (heavyA === 1 && heavyB === 1) {
-    positives.push('Both are light and generally easier to digest together.');
-    score += 5;
-  }
-
-  // 4. Glycemic / metabolic load (modern science)
-  const giA = giScore[a.gi] || 0;
-  const giB = giScore[b.gi] || 0;
-
-  if (giA + giB >= 5) {
-    score -= 10;
-    issues.push(
-      'The combined glycemic load is relatively high, which may spike blood sugar in sensitive individuals.'
-    );
-  } else if (giA + giB <= 2) {
-    positives.push(
-      'The combined glycemic impact is modest, which is supportive for metabolic balance.'
-    );
-    score += 5;
-  }
-
-  // 5. Fat + sugar load (modern science)
-  const sweetTagCombo =
-    (a.tags || []).includes('sweetener') || (b.tags || []).includes('sweetener');
-  const fatTagCombo =
-    (a.tags || []).includes('fat') ||
-    (a.tags || []).includes('clarifiedButter') ||
-    (b.tags || []).includes('fat') ||
-    (b.tags || []).includes('clarifiedButter');
-
-  if (sweetTagCombo && fatTagCombo) {
-    score -= 8;
-    issues.push(
-      'Rich combination of sugar and fat can be very dense in calories and may promote weight gain if frequent.'
-    );
-  }
-
-  // 6. Mixed animal protein + dairy (classical + modern)
-  const isDairyA = (a.tags || []).includes('animalDairy');
-  const isDairyB = (b.tags || []).includes('animalDairy');
-  const isMeatA =
-    (a.tags || []).includes('meat') || (a.tags || []).includes('fish');
-  const isMeatB =
-    (b.tags || []).includes('meat') || (b.tags || []).includes('fish');
-
-  if ((isDairyA && isMeatB) || (isDairyB && isMeatA)) {
-    score -= 20;
-    issues.push(
-      'Combination of dairy with meat/fish is generally discouraged in Ayurveda and can feel heavy for digestion.'
-    );
-    isStrongAvoid =
-      isStrongAvoid ||
-      (isDairyA && (b.tags || []).includes('fish')) ||
-      (isDairyB && (a.tags || []).includes('fish'));
-  }
-
-  // Clip score into 0–100
-  if (score > 100) score = 100;
-  if (score < 0) score = 0;
-
-  // Determine level
-  let level = 'good';
-  if (score < 50 || isStrongAvoid) {
-    level = 'avoid';
-  } else if (score < 75) {
-    level = 'caution';
-  }
-
-  // Compose summary / reason / recommendation
-  let summary;
-  if (level === 'good') {
-    summary = 'Generally compatible combination';
-  } else if (level === 'caution') {
-    summary = 'Use this combination with caution';
-  } else {
-    summary = 'Better to avoid this combination';
-  }
-
-  const reasonParts = [];
-  if (issues.length) reasonParts.push(issues.join(' '));
-  if (positives.length) reasonParts.push('Positive notes: ' + positives.join(' '));
-
-  const reason =
-    reasonParts.join(' ') ||
-    'This combination does not show any major red flags based on the current rules.';
-
-  let recommendation;
-  if (level === 'avoid') {
-    recommendation =
-      'Prefer to avoid this pair, especially regularly. If you do have them together, keep quantity small and observe how your body responds.';
-  } else if (level === 'caution') {
-    recommendation =
-      'You can use this combination occasionally, preferably at lunchtime with good appetite and light accompaniments.';
-  } else {
-    recommendation =
-      'This looks compatible for most people. Still, keep portions balanced and notice your digestion and energy levels.';
-  }
-
-  return {
-    level,
-    score,
-    summary,
-    reason,
-    recommendation
+  const milkWith = (o) => {
+    if (o.category === 'Fruit' || hasRasa(o, 'Amla')) {
+      avoid.push(`Milk with fruit or sour foods (${o.name}) is a classical viruddha ahara (incompatible combination).`);
+    }
+    if (hasRasa(o, 'Lavana')) {
+      avoid.push(`Milk with salty foods (${o.name}) is listed as incompatible in classical texts.`);
+    }
   };
+  if (isMilk(a)) milkWith(b);
+  if (isMilk(b)) milkWith(a);
+
+  if ((isCurd(a) && b.category === 'Fruit') || (isCurd(b) && a.category === 'Fruit')) {
+    caution.push('Curd with fruit is traditionally discouraged because it can weaken digestion.');
+  }
+
+  const va = a.ayurveda?.virya;
+  const vb = b.ayurveda?.virya;
+  if (va && vb && va !== vb) {
+    caution.push(
+      `${a.name} is ${viryaText(va)} while ${b.name} is ${viryaText(vb)}. Opposite potencies in one meal can unsettle digestion in sensitive people.`
+    );
+  } else if (va && vb) {
+    notes.push(`Both foods share the same potency (${va === 'Ushna' ? 'heating' : 'cooling'}).`);
+  }
+
+  if (hasGuna(a, 'Guru') && hasGuna(b, 'Guru')) {
+    caution.push('Both foods are heavy (Guru). Together they can be slow to digest, especially at night.');
+  } else if (hasGuna(a, 'Laghu') && hasGuna(b, 'Laghu')) {
+    notes.push('Both foods are light (Laghu) and generally easy to digest together.');
+  }
+
+  const combined = ['vata', 'pitta', 'kapha'].map((k) => ({
+    key: k,
+    value: (a.ayurveda?.doshaEffect?.[k] || 0) + (b.ayurveda?.doshaEffect?.[k] || 0)
+  }));
+  const raises = combined.filter((d) => d.value > 0).map((d) => doshaLabel(d.key));
+  const calms = combined.filter((d) => d.value < 0).map((d) => doshaLabel(d.key));
+
+  const level = avoid.length ? 'avoid' : caution.length ? 'caution' : 'good';
+  const summary =
+    level === 'avoid'
+      ? 'Better to avoid this combination'
+      : level === 'caution'
+      ? 'Use this combination with care'
+      : 'No known conflict between these foods';
+  const recommendation =
+    level === 'avoid'
+      ? 'Have these at separate meals rather than together.'
+      : level === 'caution'
+      ? 'Fine occasionally. Keep portions moderate and prefer having them at lunch, when digestion is strongest.'
+      : 'This pair looks compatible. Keep portions balanced and notice how your digestion responds.';
+
+  return { level, summary, reasons: [...avoid, ...caution, ...notes], recommendation, raises, calms };
+};
+
+const FoodFacts = ({ food }) => {
+  const a = food.ayurveda || {};
+  const n = food.nutritionPerServing || {};
+  return (
+    <div className="bg-muted/40 rounded-lg p-3 text-sm text-text-secondary space-y-0.5">
+      <div className="font-semibold text-primary mb-1">{food.name}</div>
+      <div><span className="font-medium">Category: </span>{food.category}</div>
+      <div><span className="font-medium">Rasa: </span>{(a.rasa || []).map((r) => `${r} (${RASA_EN[r] || r})`).join(', ')}</div>
+      <div><span className="font-medium">Guna: </span>{(a.guna || []).join(', ')}</div>
+      <div><span className="font-medium">Virya: </span>{a.virya ? viryaText(a.virya) : ''}</div>
+      {n.caloriesKcal != null && (
+        <div className="text-xs pt-1">
+          {n.caloriesKcal} kcal per {food.serving?.description || 'serving'}
+        </div>
+      )}
+    </div>
+  );
+};
+
+const FoodCompatibilityTool = () => {
+  const { foods, loading, error } = useFoodLibrary();
+  const [food1, setFood1] = useState('');
+  const [food2, setFood2] = useState('');
+  const [result, setResult] = useState(null);
+
+  const options = useMemo(
+    () =>
+      [...foods]
+        .sort((x, y) => x.name.localeCompare(y.name))
+        .map((f) => ({ value: f.id, label: f.name, description: f.category })),
+    [foods]
+  );
+  const byId = (id) => foods.find((f) => f.id === id) || null;
+  const selectedA = byId(food1);
+  const selectedB = byId(food2);
+
+  const pick = (setter) => (v) => {
+    setter(v);
+    setResult(null);
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-10 text-text-secondary">
+        <Icon name="Loader2" size={18} className="animate-spin" />
+        Loading the food library
+      </div>
+    );
+  }
+  if (error) {
+    return <p className="rounded-lg border border-error/30 bg-error/5 p-4 text-sm text-error">{error}</p>;
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="grid sm:grid-cols-2 gap-4">
+        <Select
+          label="First food"
+          options={options}
+          value={food1}
+          onChange={pick(setFood1)}
+          placeholder="Search the food library"
+          searchable
+        />
+        <Select
+          label="Second food"
+          options={options}
+          value={food2}
+          onChange={pick(setFood2)}
+          placeholder="Search the food library"
+          searchable
+        />
+      </div>
+
+      <div className="text-center">
+        <Button
+          onClick={() => setResult(evaluateCompatibility(selectedA, selectedB))}
+          disabled={!selectedA || !selectedB || food1 === food2}
+          iconName="Search"
+          iconPosition="left"
+        >
+          Check compatibility
+        </Button>
+      </div>
+
+      {selectedA && selectedB && (
+        <div className="grid sm:grid-cols-2 gap-4">
+          <FoodFacts food={selectedA} />
+          <FoodFacts food={selectedB} />
+        </div>
+      )}
+
+      {result && (
+        <div
+          className={`p-6 rounded-xl border-2 ${
+            result.level === 'good'
+              ? 'bg-success/10 border-success/30'
+              : result.level === 'caution'
+              ? 'bg-warning/10 border-warning/30'
+              : 'bg-error/10 border-error/30'
+          }`}
+        >
+          <div className="flex items-center gap-3 mb-3">
+            <Icon
+              name={result.level === 'avoid' ? 'AlertTriangle' : result.level === 'caution' ? 'AlertCircle' : 'CheckCircle'}
+              size={24}
+              className={result.level === 'avoid' ? 'text-error' : result.level === 'caution' ? 'text-warning' : 'text-success'}
+            />
+            <h4 className="text-lg font-semibold text-primary">{result.summary}</h4>
+          </div>
+
+          {result.reasons.length > 0 && (
+            <ul className="list-disc pl-5 space-y-1 text-text-secondary mb-3">
+              {result.reasons.map((r) => (
+                <li key={r}>{r}</li>
+              ))}
+            </ul>
+          )}
+
+          {(result.raises.length > 0 || result.calms.length > 0) && (
+            <p className="text-sm text-text-secondary mb-3">
+              Taken together, by the library's dosha effects, this pair
+              {result.raises.length > 0 && <> tends to raise <strong className="text-text-primary">{result.raises.join(', ')}</strong></>}
+              {result.raises.length > 0 && result.calms.length > 0 && ' and'}
+              {result.calms.length > 0 && <> tends to calm <strong className="text-text-primary">{result.calms.join(', ')}</strong></>}.
+            </p>
+          )}
+
+          <div className="bg-background/60 p-3 rounded-lg text-sm">
+            <span className="font-medium text-primary">Suggestion: </span>
+            <span className="text-text-secondary">{result.recommendation}</span>
+          </div>
+
+          <p className="text-xs text-text-secondary mt-3">
+            General guidance from classical Ayurvedic rules and the food library's data. Individual
+            needs vary, so follow your practitioner's advice.
+          </p>
+        </div>
+      )}
+    </div>
+  );
 };
 
 // ---------- SEASONAL WELLNESS (DYNAMIC) ----------
@@ -742,7 +348,6 @@ export const getSeasonalGuidance = (season, dosha = 'vata') => {
 
 const InteractiveTools = () => {
   const [activeTab, setActiveTab] = useState('compatibility');
-  const [compatibilityResult, setCompatibilityResult] = useState(null);
   const [assessmentStep, setAssessmentStep] = useState(1);
   const [assessmentData, setAssessmentData] = useState({});
 
@@ -767,157 +372,6 @@ const InteractiveTools = () => {
     }
   ];
 
-  // ---------- TOOL 1: FOOD COMPATIBILITY ----------
-
-  const FoodCompatibilityTool = () => {
-    const [food1, setFood1] = useState('');
-    const [food2, setFood2] = useState('');
-
-    const handleCheck = () => {
-      if (food1 && food2 && food1 !== food2) {
-        const result = evaluateCompatibility(food1, food2);
-        setCompatibilityResult(result);
-      }
-    };
-
-    const selectedA = getFoodByValue(food1);
-    const selectedB = getFoodByValue(food2);
-
-    return (
-      <div className="space-y-6">
-        <div className="grid sm:grid-cols-2 gap-4">
-          <Select
-            label="First Food"
-            options={foodOptions}
-            value={food1}
-            onChange={setFood1}
-            placeholder="Select first food"
-            className="border-b border-gray-300 bg-transparent focus:outline-none focus:border-emerald-600"
-          />
-          <Select
-            label="Second Food"
-            options={foodOptions}
-            value={food2}
-            onChange={setFood2}
-            placeholder="Select second food"
-            className="border-b border-gray-300 bg-transparent focus:outline-none focus:border-emerald-600"
-          />
-        </div>
-
-        <div className="text-center">
-          <Button
-            onClick={handleCheck}
-            disabled={!food1 || !food2 || food1 === food2}
-            iconName="Search"
-            iconPosition="left"
-          >
-            Check Compatibility
-          </Button>
-        </div>
-
-        {selectedA && selectedB && (
-          <div className="grid sm:grid-cols-2 gap-4 text-sm text-text-secondary">
-            <div className="bg-muted/40 rounded-lg p-3">
-              <div className="font-semibold text-primary mb-1">
-                {selectedA.label}
-              </div>
-              <div>
-                <span className="font-medium">Category: </span>
-                {selectedA.category}
-              </div>
-              <div>
-                <span className="font-medium">Virya (Potency): </span>
-                {selectedA.virya}
-              </div>
-              <div>
-                <span className="font-medium">Ayurvedic note: </span>
-                {selectedA.ayurvedaNote}
-              </div>
-              <div className="mt-1 text-xs opacity-80">{selectedA.modernNote}</div>
-            </div>
-            <div className="bg-muted/40 rounded-lg p-3">
-              <div className="font-semibold text-primary mb-1">
-                {selectedB.label}
-              </div>
-              <div>
-                <span className="font-medium">Category: </span>
-                {selectedB.category}
-              </div>
-              <div>
-                <span className="font-medium">Virya (Potency): </span>
-                {selectedB.virya}
-              </div>
-              <div>
-                <span className="font-medium">Ayurvedic note: </span>
-                {selectedB.ayurvedaNote}
-              </div>
-              <div className="mt-1 text-xs opacity-80">{selectedB.modernNote}</div>
-            </div>
-          </div>
-        )}
-
-        {compatibilityResult && (
-          <div
-            className={`p-6 rounded-xl border-2 ${
-              compatibilityResult.level === 'good'
-                ? 'bg-success/10 border-success/30'
-                : compatibilityResult.level === 'caution'
-                ? 'bg-warning/10 border-warning/30'
-                : 'bg-error/10 border-error/30'
-            }`}
-          >
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center space-x-3">
-                <Icon
-                  name={
-                    compatibilityResult.level === 'avoid'
-                      ? 'AlertTriangle'
-                      : compatibilityResult.level === 'caution'
-                      ? 'AlertCircle'
-                      : 'CheckCircle'
-                  }
-                  size={24}
-                  className={
-                    compatibilityResult.level === 'avoid'
-                      ? 'text-error'
-                      : compatibilityResult.level === 'caution'
-                      ? 'text-warning'
-                      : 'text-success'
-                  }
-                />
-                <div>
-                  <h4 className="text-lg font-semibold text-primary">
-                    {compatibilityResult.summary}
-                  </h4>
-                  <p className="text-xs text-text-secondary">
-                    Compatibility score: {compatibilityResult.score}/100
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <p className="text-text-secondary mb-3">
-              {compatibilityResult.reason}
-            </p>
-
-            <div className="bg-background/60 p-3 rounded-lg text-sm">
-              <span className="font-medium text-primary">Recommendation: </span>
-              <span className="text-text-secondary">
-                {compatibilityResult.recommendation}
-              </span>
-            </div>
-
-            <p className="text-xs text-text-secondary mt-3">
-              This tool provides educational guidance based on Ayurvedic principles and
-              general nutrition; individual needs can vary—always consider your own
-              digestion and medical advice.
-            </p>
-          </div>
-        )}
-      </div>
-    );
-  };
-
   // ---------- TOOL 2: SEASONAL WELLNESS GUIDE ----------
 
   const SeasonalWellnessTool = () => {
@@ -939,7 +393,7 @@ const InteractiveTools = () => {
           value={selectedSeason}
           onChange={setSelectedSeason}
           placeholder="Select current season"
-          className="border-b border-gray-300 bg-transparent focus:outline-none focus:border-emerald-600"
+          className="border-b border-border bg-transparent focus:outline-none focus:border-primary"
         />
         <div className="text-center">
           <Button
@@ -952,7 +406,7 @@ const InteractiveTools = () => {
           </Button>
         </div>
         {guidance && (
-          <div className="bg-gradient-to-br from-brand-cream to-brand-ivory rounded-xl p-6 border border-brand-gold/20">
+          <div className="bg-muted rounded-xl p-6 border border-brand-gold/20">
             <h4 className="text-lg font-semibold text-primary mb-4 flex items-center">
               <Icon name="Target" size={20} className="mr-2" />
               {guidance.focus}
@@ -1003,7 +457,7 @@ const InteractiveTools = () => {
                 {guidance.lifestyle?.map((tip, index) => (
                   <span
                     key={index}
-                    className="text-sm bg-brand-sage/20 text-primary px-3 py-1 rounded-full"
+                    className="text-sm bg-brand-sage/20 text-primary px-3 py-1 rounded-md"
                   >
                     {tip}
                   </span>
@@ -1100,7 +554,7 @@ const InteractiveTools = () => {
       const result = getResult();
       return (
         <div className="text-center space-y-6">
-          <div className="bg-gradient-to-br from-brand-gold/10 to-brand-sage/10 rounded-xl p-8 border border-brand-gold/20">
+          <div className="bg-muted rounded-xl p-8 border border-brand-gold/20">
             <Icon name="Award" size={48} className="text-brand-gold mx-auto mb-4" />
             <h4 className="text-2xl font-display font-semibold text-primary mb-3">
               {result?.name}
@@ -1125,7 +579,19 @@ const InteractiveTools = () => {
             >
               Retake Assessment
             </Button>
-            <Button iconName="Download" iconPosition="left">
+            <Button
+              iconName="Download"
+              iconPosition="left"
+              onClick={() => {
+                const text = `${result?.name}\n\n${result?.traits}\n\nLifestyle focus: ${result?.recommendations}\n\nA short screening result from AyurNutri, not a clinical assessment.\n`;
+                const url = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'ayurnutri-dosha-summary.txt';
+                a.click();
+                URL.revokeObjectURL(url);
+              }}
+            >
               Download Summary
             </Button>
           </div>

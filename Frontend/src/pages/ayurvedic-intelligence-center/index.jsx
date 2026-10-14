@@ -9,7 +9,7 @@ import IntelligenceCenterDashboard from "./IntelligenceCenterDashboard";
 const IntelligenceCenterPage = () => (
   <div className="min-h-screen bg-background">
     <Helmet>
-      <title>Learn Ayurveda — AyurNutri</title>
+      <title>Learn Ayurveda | AyurNutri</title>
     </Helmet>
     <Header />
     <main className="page-container pt-24">

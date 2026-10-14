@@ -1,6 +1,6 @@
 // Diet plan builder. Two ways in:
-//  - /doctor/diet-builder/:patientId  (from a patient's record) — full page
-//  - the "Plan Generation" section of the dashboard — embedded, no patient
+//  - /doctor/diet-builder/:patientId  (from a patient's record) - full page
+//  - the "Plan Generation" section of the dashboard - embedded, no patient
 //    chosen yet, so it shows a picker.
 //
 // Before: it printed the patient's raw database id as their name, and its

@@ -28,7 +28,7 @@ const chatMessageSchema = new mongoose.Schema(
       default: "text",
     },
 
-    // ⭐ MESSAGE STATUS (for ticks)
+    // MESSAGE STATUS (for ticks)
     status: {
       type: String,
       enum: ["sent", "delivered", "seen"],
@@ -37,13 +37,13 @@ const chatMessageSchema = new mongoose.Schema(
     deliveredAt: { type: Date, default: null },
     seenAt: { type: Date, default: null },
 
-    // ⭐ MUST have default: []
+    //  MUST have default: []
     deletedFor: {
       type: [mongoose.Schema.Types.ObjectId],
       default: [],
     },
 
-    // ⭐ MUST have default false
+    // MUST have default false
     isDeletedForEveryone: {
       type: Boolean,
       default: false,

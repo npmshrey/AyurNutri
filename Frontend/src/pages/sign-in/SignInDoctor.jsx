@@ -97,7 +97,7 @@ const SignInDoctor = () => {
           </div>
         </div>
         <div data-auth-item>
-          <Button type="submit" loading={loading} fullWidth size="lg" className="rounded-full">
+          <Button type="submit" loading={loading} fullWidth size="lg" className="rounded-md">
             Sign in
           </Button>
         </div>

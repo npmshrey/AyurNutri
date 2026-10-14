@@ -69,14 +69,12 @@ const VideoLibrary = () => {
         "7-Day Ayurvedic Diet Plan | Fix Your Digestion, Skin, Sleep & Immunity Naturally",
       description:
         "A complete 7-day Ayurvedic meal plan designed to improve digestion, cleanse the gut, enhance immunity, and balance doshas naturally through mindful eating practices.",
-      duration: "9:01", // ✅ YouTube actual duration (from video)
+      duration: "9:01", // YouTube actual duration (from video)
       category: "nutrition",
       instructor: "Dr Hansaji",
       credentials: "Ayurvedic Wellness Expert & Holistic Nutrition Specialist",
-      youtubeId: "gWu0zRWB-eM", // ✅ Extracted from your link
+      youtubeId: "gWu0zRWB-eM", // Extracted from your link
       thumbnail: "https://img.youtube.com/vi/gWu0zRWB-eM/hqdefault.jpg",
-      views: "92K", // approximate YouTube views (can be updated anytime)
-      rating: 4.9,
       topics: [
         "7-Day Diet Plan",
         "Dosha Balancing",
@@ -90,12 +88,12 @@ const VideoLibrary = () => {
       title:
         "Weak or Strong Digestion? Find Out What Ayurveda Says About Your Agni",
       description:
-        "Explore how the concept of Agni (digestive/metabolic fire) in Ayurveda determines whether your digestion is weak or strong — with signs, causes, and dietary tips for balancing it.",
-      duration: "25:09", // ✅ exact duration from YouTube
+        "Explore how the concept of Agni (digestive/metabolic fire) in Ayurveda determines whether your digestion is weak or strong, with signs, causes and dietary tips for balancing it.",
+      duration: "25:09", // exact duration from YouTube
       category: "fundamentals",
       instructor: "Dr. Rini Shivastava",
       credentials: "Advisor, Scientific Maharishi Ayurveda",
-      youtubeId: "_H_yFqQ1ozw", // ✅ from the link: https://www.youtube.com/watch?v=_H_yFqQ1ozw
+      youtubeId: "_H_yFqQ1ozw", // from the link: https://www.youtube.com/watch?v=_H_yFqQ1ozw
       thumbnail: "https://img.youtube.com/vi/_H_yFqQ1ozw/hqdefault.jpg",
       topics: [
         "Agni Types",
@@ -116,8 +114,6 @@ const VideoLibrary = () => {
       credentials: "MD Endocrinology, CAP",
       youtubeId: "l5qIcj-RylA", // TODO: add ID when you have a real video
       thumbnail: "https://img.youtube.com/vi/l5qIcj-RylA/hqdefault.jpg",
-      views: "3.1M",
-      // rating: 4.6,
       topics: [
         "Blood Sugar Management",
         "Balanced Diet for Diabetes",
@@ -220,26 +216,15 @@ const VideoLibrary = () => {
               </div>
             </div>
           </div>
-          <div className="flex items-center space-x-1 text-sm text-text-secondary">
-            {/* <Icon
-              name="Star"
-              size={14}
-              className="text-brand-gold fill-current"
-            />
-            <span>{video?.rating}</span> */}
-          </div>
         </div>
 
         <div className="flex items-center justify-between text-sm text-text-secondary">
-          <div className="flex items-center space-x-1">
-            {/* <Icon name="Eye" size={14} />
-            <span>{video?.views} Views </span> */}
-          </div>
+          <div />
           <div className="flex flex-wrap gap-1">
             {video?.topics?.slice(0, 2)?.map((topic, index) => (
               <span
                 key={index}
-                className="bg-muted px-2 py-1 rounded-full text-xs"
+                className="bg-muted px-2 py-1 rounded-md text-xs"
               >
                 {topic}
               </span>
@@ -337,7 +322,7 @@ const VideoLibrary = () => {
                   {video?.topics?.map((topic, index) => (
                     <span
                       key={index}
-                      className="bg-brand-sage/20 text-brand-sage px-3 py-1 rounded-full text-sm"
+                      className="bg-brand-sage/20 text-brand-sage px-3 py-1 rounded-md text-sm"
                     >
                       {topic}
                     </span>
@@ -365,23 +350,8 @@ const VideoLibrary = () => {
               </div>
 
               <div className="bg-muted/50 rounded-xl p-4">
-                <h3 className="font-semibold text-primary mb-3">Video Stats</h3>
+                <h3 className="font-semibold text-primary mb-3">Video details</h3>
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-text-secondary">Views</span>
-                    <span className="font-medium">{video?.views}</span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="text-text-secondary">Rating</span>
-                    <div className="flex items-center space-x-1">
-                      <Icon
-                        name="Star"
-                        size={14}
-                        className="text-brand-gold fill-current"
-                      />
-                      <span className="font-medium">{video?.rating}</span>
-                    </div>
-                  </div>
                   <div className="flex items-center justify-between">
                     <span className="text-text-secondary">Duration</span>
                     <span className="font-medium">{video?.duration}</span>
@@ -413,7 +383,7 @@ const VideoLibrary = () => {
           <button
             key={category?.id}
             onClick={() => setSelectedCategory(category?.id)}
-            className={`px-4 py-2 rounded-full organic-transition ${
+            className={`px-4 py-2 rounded-md organic-transition ${
               selectedCategory === category?.id
                 ? "bg-brand-gold text-white"
                 : "bg-muted text-text-secondary hover:bg-brand-gold/20 hover:text-primary"

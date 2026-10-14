@@ -16,7 +16,7 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:9000";
 const Stat = ({ label, value }) => (
   <div className="rounded-2xl border border-border bg-background/60 p-4">
     <p className="text-xs text-text-secondary">{label}</p>
-    <p className="mt-1 font-medium text-text-primary">{value || "—"}</p>
+    <p className="mt-1 font-medium text-text-primary">{value || "-"}</p>
   </div>
 );
 
@@ -70,7 +70,7 @@ export default function PatientCaseProfile() {
             <p className="mt-2 text-sm text-text-secondary">
               Add them from Patient Management using the email or phone they signed up with.
             </p>
-            <Button className="mt-6 rounded-full" onClick={() => navigate("/professional-dashboard-portal?section=patients")}>
+            <Button className="mt-6 rounded-md" onClick={() => navigate("/professional-dashboard-portal?section=patients")}>
               Go to Patient Management
             </Button>
           </div>
@@ -95,10 +95,10 @@ export default function PatientCaseProfile() {
                 </p>
               </div>
               <div className="flex flex-wrap gap-2">
-                <Button variant="outline" className="rounded-full" onClick={() => navigate(`/doctor/diet-builder/${patient._id}`)}>
+                <Button variant="outline" className="rounded-md" onClick={() => navigate(`/doctor/diet-builder/${patient._id}`)}>
                   <Icon name="Salad" size={16} className="mr-2" /> Diet builder
                 </Button>
-                <Button className="rounded-full" onClick={() => navigate(`/doctor/week-planner/${patient._id}`)}>
+                <Button className="rounded-md" onClick={() => navigate(`/doctor/week-planner/${patient._id}`)}>
                   <Icon name="CalendarDays" size={16} className="mr-2" /> Week planner
                 </Button>
               </div>
@@ -109,7 +109,7 @@ export default function PatientCaseProfile() {
               <Stat label="Dosha" value={patient.dosha} />
               <Stat label="Condition" value={patient.condition} />
               <Stat label="Status" value={patient.status} />
-              <Stat label="Height / weight" value={patient.heightCm || patient.weightKg ? `${patient.heightCm || "—"} cm · ${patient.weightKg || "—"} kg` : ""} />
+              <Stat label="Height / weight" value={patient.heightCm || patient.weightKg ? `${patient.heightCm || "-"} cm · ${patient.weightKg || "-"} kg` : ""} />
               <Stat label="Blood pressure" value={patient.bloodPressure} />
               <Stat label="Allergies" value={patient.allergies} />
               <Stat label="Medications" value={patient.medications} />

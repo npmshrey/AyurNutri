@@ -18,7 +18,7 @@ const useAuth = () => {
     safeParse(localStorage.getItem(AUTH_USER_KEY))
   );
 
-  // 🔥 Sync auth state ONCE on mount + whenever storage changes
+  // Sync auth state ONCE on mount + whenever storage changes
   useEffect(() => {
     const handleStorageChange = () => {
       setToken(localStorage.getItem(AUTH_TOKEN_KEY));
@@ -29,7 +29,7 @@ const useAuth = () => {
     return () => window.removeEventListener("storage", handleStorageChange);
   }, []);
 
-  // 🔥 LOGIN: save user + token + role
+  // LOGIN: save user + token + role
   const login = (token, userObj) => {
     if (!token || !userObj) return;
 
@@ -40,7 +40,7 @@ const useAuth = () => {
     setUser(userObj);
   };
 
-  // 🔥 CLEAN LOGOUT: clears all, redirects to homepage
+  // CLEAN LOGOUT: clears all, redirects to homepage
   const logout = () => {
     localStorage.removeItem(AUTH_TOKEN_KEY);
     localStorage.removeItem(AUTH_USER_KEY);

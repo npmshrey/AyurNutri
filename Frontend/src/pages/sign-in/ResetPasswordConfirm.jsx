@@ -77,7 +77,7 @@ const ResetPasswordConfirm = () => {
               />
             </div>
             <div data-auth-item>
-              <Button type="submit" loading={status === "loading"} disabled={!token} fullWidth size="lg" className="rounded-full">
+              <Button type="submit" loading={status === "loading"} disabled={!token} fullWidth size="lg" className="rounded-md">
                 Update password
               </Button>
             </div>

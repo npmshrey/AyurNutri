@@ -5,7 +5,7 @@
 //    of hooks and can crash the page ("Rendered more hooks than during the
 //    previous render"). Access control now lives in the route guard.
 //  - On phones the section sidebar was simply hidden, with no way to open
-//    it — a doctor couldn't reach Patient Management at all.
+//    it - a doctor couldn't reach Patient Management at all.
 //  - The current section lives in the URL (?section=patients), so refresh
 //    and the browser Back button keep you where you were.
 //  - The breadcrumb linked to a route that doesn't exist.
@@ -161,7 +161,7 @@ const ProfessionalDashboardPortal = () => {
   return (
     <div className="min-h-screen bg-background">
       <Helmet>
-        <title>{`${current.name} — Practitioner portal`}</title>
+        <title>{`${current.name} | Practitioner portal`}</title>
       </Helmet>
 
       <Header fluid />

@@ -1,7 +1,3 @@
-// Must be the very first import. ES modules evaluate every import before
-// any code in this file runs, so a dotenv.config() call further down is too
-// late for modules that read process.env when they load (JWT secret, Groq
-// and Gemini clients). Loading it here guarantees .env is in place first.
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
@@ -199,6 +195,9 @@ connectDB()
     );
   })
   .catch((err) => {
-    console.error("MongoDB connection error:", err);
-    process.exit(1);
+    console.error("MongoDB connection error:", err?.name, "-", err?.message);
+    // Exiting straight away can cut this message off on hosts like Render
+    // (stdout is a pipe there and writes are asynchronous), which is why
+    // failed deploys showed no error at all. Give it a moment to flush.
+    setTimeout(() => process.exit(1), 500);
   });

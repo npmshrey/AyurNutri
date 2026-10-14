@@ -23,6 +23,8 @@ import SignupDoctor from "./pages/sign-in/SignupDoctor";
 import ResetPassword from "./pages/sign-in/ResetPassword";
 import ResetPasswordConfirm from "./pages/sign-in/ResetPasswordConfirm";
 import AuthSelection from "./pages/auth-selection";
+import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
+import TermsAndConditions from "./pages/legal/TermsAndConditions";
 
 import FoodScan from "./pages/personal-wellness-hub/components/FoodScan";
 import FoodScanResult from "./pages/personal-wellness-hub/components/FoodScanResult";
@@ -41,6 +43,8 @@ const AppRoutes = () => {
             {/* Public */}
             <Route path="/" element={<HomepageAyurNutriPlatform />} />
             <Route path="/ayurvedic-intelligence-center" element={<IntelligenceCenterPage />} />
+            <Route path="/privacy" element={<PrivacyPolicy />} />
+            <Route path="/terms" element={<TermsAndConditions />} />
 
             {/* Auth */}
             <Route path="/auth-selection" element={<AuthSelection />} />

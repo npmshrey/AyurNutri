@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
+import Icon from "../../../components/AppIcon";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 import useAuth from "../../../hooks/useAuth";
@@ -22,7 +23,7 @@ const CommunicationTools = () => {
   const chatBoxRef = useRef(null);
   const fileInputRef = useRef(null);
 
-  // ⭐ context menu
+  // context menu
   const [contextMenu, setContextMenu] = useState(null);
 
   // ------------------ helpers ------------------ //
@@ -319,7 +320,7 @@ const CommunicationTools = () => {
           (m._id || m.id) === msgId
             ? {
                 ...m,
-                text: "🚫 Message deleted",
+                text: "Message deleted",
                 fileUrl: null,
                 fileType: null,
               }
@@ -340,14 +341,14 @@ const CommunicationTools = () => {
       : `${API_BASE}${msg.fileUrl}`;
 
     return (
-      <div className="px-3 py-2 rounded-2xl shadow-sm bg-emerald-600 text-white max-w-xs">
+      <div className="px-3 py-2 rounded-2xl shadow-sm bg-primary text-white max-w-xs">
         {isImage && (
           <img src={fileUrl} className="rounded-xl max-h-48 mb-1" alt="" />
         )}
 
         {isPdf && (
           <a href={fileUrl} target="_blank" rel="noreferrer">
-            📄 PDF Document
+            <Icon name="FileText" size={14} className="inline mr-1.5 -mt-0.5" />PDF document
           </a>
         )}
 
@@ -363,13 +364,13 @@ const CommunicationTools = () => {
     if (!status) return null;
 
     if (status === "sent") {
-      return <span className="ml-1 text-[10px] text-gray-500">✓</span>;
+      return <Icon name="Check" size={12} className="ml-1 inline text-text-secondary" />;
     }
     if (status === "delivered") {
-      return <span className="ml-1 text-[10px] text-gray-500">✓✓</span>;
+      return <Icon name="CheckCheck" size={12} className="ml-1 inline text-text-secondary" />;
     }
     if (status === "seen") {
-      return <span className="ml-1 text-[10px] text-blue-500">✓✓</span>;
+      return <Icon name="CheckCheck" size={12} className="ml-1 inline text-primary" />;
     }
     return null;
   };
@@ -406,7 +407,7 @@ const CommunicationTools = () => {
                 key={conv.id}
                 onClick={() => handleSelectConversation(conv)}
                 className={`p-4 cursor-pointer ${
-                  selectedConversation?.id === conv.id ? "bg-gray-100" : ""
+                  selectedConversation?.id === conv.id ? "bg-muted" : ""
                 }`}
               >
                 <p className="font-medium">{conv.patient.name}</p>
@@ -430,7 +431,7 @@ const CommunicationTools = () => {
                   {selectedConversation.patient.name}
                 </p>
                 {isPatientTyping && (
-                  <p className="text-xs text-emerald-600">Typing...</p>
+                  <p className="text-xs text-primary">Typing...</p>
                 )}
               </div>
 
@@ -465,8 +466,8 @@ const CommunicationTools = () => {
                         <div
                           className={`px-4 py-2 rounded-2xl max-w-md shadow-sm ${
                             isDoctor
-                              ? "bg-emerald-600 text-white"
-                              : "bg-slate-100 text-slate-900"
+                              ? "bg-primary text-white"
+                              : "bg-muted text-text-primary"
                           }`}
                         >
                           <p className="text-sm">{msg.text}</p>
@@ -487,7 +488,7 @@ const CommunicationTools = () => {
                   onClick={() => fileInputRef.current.click()}
                   className="p-2 border rounded-lg"
                 >
-                  📎
+                  <Icon name="Paperclip" size={18} />
                 </button>
                 <input
                   type="file"
@@ -515,31 +516,31 @@ const CommunicationTools = () => {
         </div>
       </div>
 
-      {/* ⭐ CONTEXT MENU */}
+      {/* CONTEXT MENU */}
       {contextMenu && (
         <div
-          className="fixed bg-white border rounded-lg shadow-lg z-50"
+          className="fixed bg-card border rounded-lg shadow-lg z-50"
           style={{ top: contextMenu.y, left: contextMenu.x }}
         >
           <button
-            className="px-4 py-2 w-full text-left hover:bg-gray-100"
+            className="px-4 py-2 w-full text-left hover:bg-muted"
             onClick={() => {
               deleteForMe(contextMenu.msg._id || contextMenu.msg.id);
               setContextMenu(null);
             }}
           >
-            🗑 Delete for Me
+            <Icon name="Trash2" size={14} className="inline mr-1.5 -mt-0.5" />Delete for me
           </button>
 
           {contextMenu.msg.senderRole === "doctor" && (
             <button
-              className="px-4 py-2 w-full text-left text-red-600 hover:bg-gray-100"
+              className="px-4 py-2 w-full text-left text-error hover:bg-muted"
               onClick={() => {
                 deleteForEveryone(contextMenu.msg._id || contextMenu.msg.id);
                 setContextMenu(null);
               }}
             >
-              ❌ Delete for Everyone
+              <Icon name="Trash" size={14} className="inline mr-1.5 -mt-0.5" />Delete for everyone
             </button>
           )}
         </div>

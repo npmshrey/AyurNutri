@@ -1,7 +1,7 @@
 // src/pages/personal-wellness-hub/components/FoodScan.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
+import { api } from "../../../lib/api";
 
 const STORAGE = "pw_hub_food_scans_v1";
 
@@ -30,7 +30,10 @@ const FoodScan = () => {
 
     setLoading(true);
     try {
-      const res = await axios.post("/api/food-scan/analyze", formData, {
+      // Through the shared client: it adds the sign-in token (the endpoint now
+      // requires it) and the real backend URL. The old relative "/api/..."
+      // path only worked through the local dev proxy, not on the live site.
+      const res = await api.post("/api/food-scan/analyze", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
@@ -43,9 +46,9 @@ const FoodScan = () => {
         preview: previewDataUrl,
         calories: analysis?.nutrition?.calories ?? null,
         doshaText: {
-          vata: analysis?.doshaImpact?.vata || "—",
-          pitta: analysis?.doshaImpact?.pitta || "—",
-          kapha: analysis?.doshaImpact?.kapha || "—",
+          vata: analysis?.doshaImpact?.vata || "-",
+          pitta: analysis?.doshaImpact?.pitta || "-",
+          kapha: analysis?.doshaImpact?.kapha || "-",
         },
       };
 
@@ -94,7 +97,7 @@ const FoodScan = () => {
           Take a photo or upload an image to analyze its Ayurvedic properties
         </p>
 
-        <div className="border-dashed border-2 border-gray-300 rounded-md p-6 text-center bg-white">
+        <div className="border-dashed border-2 border-border rounded-md p-6 text-center bg-card">
           {preview ? (
             <>
               <img
@@ -104,12 +107,12 @@ const FoodScan = () => {
               />
               <div className="text-sm text-text-secondary mb-2">{name}</div>
               {loading && (
-                <div className="text-xs text-emerald-700 mb-2">
+                <div className="text-xs text-primary mb-2">
                   Analyzing image...
                 </div>
               )}
               <div className="flex justify-center gap-3">
-                <label className="bg-emerald-700 text-white px-4 py-2 rounded cursor-pointer">
+                <label className="bg-primary text-white px-4 py-2 rounded cursor-pointer">
                   {loading ? "Processing..." : "Replace Image"}
                   <input
                     type="file"
@@ -139,7 +142,7 @@ const FoodScan = () => {
                   width="64"
                   height="64"
                   viewBox="0 0 24 24"
-                  className="mx-auto text-gray-300"
+                  className="mx-auto text-text-secondary/50"
                 >
                   <path
                     d="M7 7h10l1 1v8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V8l1-1z"
@@ -159,7 +162,7 @@ const FoodScan = () => {
               </div>
               <div className="mb-2 text-sm text-text-secondary">Ready to scan</div>
               <div className="flex justify-center gap-3">
-                <label className="bg-emerald-700 text-white px-6 py-3 rounded cursor-pointer">
+                <label className="bg-primary text-white px-6 py-3 rounded cursor-pointer">
                   Take Photo / Upload
                   <input
                     type="file"

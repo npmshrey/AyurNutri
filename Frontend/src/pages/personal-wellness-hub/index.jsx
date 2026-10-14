@@ -1,12 +1,15 @@
 // src/pages/personal-wellness-hub/index.jsx
-import React, { useState } from "react";
+// Patient area. RequirePatient already guards this route, so there is no
+// role check here. The open section lives in ?section= so a refresh or a
+// shared link lands on the same screen, and the back button works.
+import React, { useRef } from "react";
 import { Helmet } from "react-helmet";
-import { AnimatePresence, motion } from "framer-motion";
-import { Navigate } from "react-router-dom";
-import useAuth from "../../hooks/useAuth";
+import { useSearchParams } from "react-router-dom";
+import { gsap } from "gsap";
+import { useGSAP } from "@gsap/react";
+import { MOTION_OK } from "../../lib/motion";
 
-// Local components
-import NavbarPatient from "./components/NavbarPatient";
+import NavbarPatient, { PATIENT_SECTIONS } from "./components/NavbarPatient";
 import DashboardHome from "./components/DashboardHome";
 import FoodScan from "./components/FoodScan";
 import Analytics from "./components/Analytics";
@@ -14,33 +17,32 @@ import Sessions from "./components/Sessions";
 import Messages from "./components/Messages";
 import IntelligenceCenterDashboard from "../ayurvedic-intelligence-center/IntelligenceCenterDashboard";
 
-const pageMotion = {
-  initial: { opacity: 0, y: 10, scale: 0.995 },
-  animate: { opacity: 1, y: 0, scale: 1 },
-  exit: { opacity: 0, y: -8, scale: 0.995 },
-  transition: { duration: 0.36, ease: "easeOut" },
-};
-
 const PersonalWellnessHub = () => {
-  const { user, isPatient } = useAuth();
+  const [params, setParams] = useSearchParams();
+  const requested = params.get("section");
+  const active = PATIENT_SECTIONS.some((s) => s.id === requested) ? requested : "dashboard";
+  const contentRef = useRef(null);
 
-  // Agar doctor ya unauthenticated aaya toh redirect
-  if (!isPatient) {
-    if (user?.role === "doctor") {
-      return <Navigate to="/professional-dashboard-portal" replace />;
-    }
-    return <Navigate to="/signin" replace />;
-  }
+  const setActive = (id) => {
+    setParams(id === "dashboard" ? {} : { section: id });
+    window.scrollTo({ top: 0 });
+  };
 
-  // Kaunsa screen open hai (dashboard / food-scan / analytics ...)
-  const [active, setActive] = useState("dashboard");
+  // Short fade when switching sections. Opacity only: a transform here
+  // would trap any position:fixed modal inside the section.
+  useGSAP(
+    () => {
+      const mm = gsap.matchMedia();
+      mm.add(MOTION_OK, () => {
+        gsap.from(contentRef.current, { autoAlpha: 0, duration: 0.3, clearProps: "opacity,visibility" });
+      });
+      return () => mm.revert();
+    },
+    { dependencies: [active] }
+  );
 
-  // Active ke hisaab se component dikhana
   const renderActive = () => {
     switch (active) {
-      case "dashboard":
-        // ✅ yahan se DashboardHome ko onNavigate milta hai (cards ko control karega)
-        return <DashboardHome onNavigate={setActive} />;
       case "food-scan":
         return <FoodScan />;
       case "analytics":
@@ -56,42 +58,21 @@ const PersonalWellnessHub = () => {
     }
   };
 
-  // Theme colors
-  const themeVars = {
-    "--ayur-primary": "#0F6C3F",
-    "--ayur-mint": "#E8F7EE",
-    "--ayur-beige": "#E8E2D9",
-    "--ayur-border": "#D6D1C9",
-    "--ayur-text-dark": "#2A2A2A",
-    "--ayur-text-med": "#555555",
-    "--ayur-bg": "#FAF9F6",
-  };
+  const label = PATIENT_SECTIONS.find((s) => s.id === active)?.label;
 
   return (
-    <div style={themeVars} className="min-h-screen" aria-live="polite">
+    <div className="min-h-screen bg-background">
       <Helmet>
-        <title>Personal Wellness Hub</title>
+        <title>{`${label} | AyurNutri`}</title>
       </Helmet>
 
-      {/* Top patient navbar (jo pehle se tha) */}
       <NavbarPatient active={active} onNavigate={setActive} />
 
-      <main className="pt-6 pb-12 bg-[var(--ayur-bg)]">
+      <main className="pt-6 pb-12">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {/* 👇 Middle wala extra navbar hata diya, sirf content bacha */}
-
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={active}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              variants={pageMotion}
-              transition={pageMotion.transition}
-            >
-              <div className="space-y-8">{renderActive()}</div>
-            </motion.div>
-          </AnimatePresence>
+          <div ref={contentRef} key={active} className="space-y-8">
+            {renderActive()}
+          </div>
         </div>
       </main>
     </div>

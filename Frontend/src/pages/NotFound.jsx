@@ -30,11 +30,11 @@ const NotFound = () => {
           The link may be old, or the address has a typo. Here are a couple of ways back.
         </p>
         <div data-enter className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Button variant="outline" className="rounded-full px-6" onClick={goBack}>
+          <Button variant="outline" className="rounded-md px-6" onClick={goBack}>
             <Icon name="ArrowLeft" size={16} className="mr-2" />
             Go back
           </Button>
-          <Button className="rounded-full px-6" onClick={() => navigate("/")}>
+          <Button className="rounded-md px-6" onClick={() => navigate("/")}>
             <Icon name="Home" size={16} className="mr-2" />
             Homepage
           </Button>

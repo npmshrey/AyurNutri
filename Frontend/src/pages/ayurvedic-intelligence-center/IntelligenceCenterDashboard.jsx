@@ -84,9 +84,9 @@ const IntelligenceCenterDashboard = () => {
           ref={tabsRef}
           role="tablist"
           aria-label="Learning sections"
-          className="relative flex max-w-full gap-1 overflow-x-auto rounded-full border border-border bg-card p-1 [scrollbar-width:none]"
+          className="relative flex max-w-full gap-1 overflow-x-auto rounded-md border border-border bg-card p-1 [scrollbar-width:none]"
         >
-          <span ref={pillRef} aria-hidden="true" className="absolute left-0 top-1 bottom-1 rounded-full bg-primary" />
+          <span ref={pillRef} aria-hidden="true" className="absolute left-0 top-1 bottom-1 rounded-md bg-primary" />
           {SECTIONS.map((s) => (
             <button
               key={s.id}
@@ -95,7 +95,7 @@ const IntelligenceCenterDashboard = () => {
               data-tab={s.id}
               aria-selected={active === s.id}
               onClick={() => setActive(s.id)}
-              className={`relative z-10 flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+              className={`relative z-10 flex shrink-0 items-center gap-2 whitespace-nowrap rounded-md px-4 py-2 text-sm font-medium transition-colors duration-200 ${
                 active === s.id ? "text-primary-foreground" : "text-text-secondary hover:text-text-primary"
               }`}
             >

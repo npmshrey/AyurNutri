@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from "react";
+import Icon from "../../../components/AppIcon";
 import axios from "axios";
 import { useFoodLibrary } from "../../../lib/foods";
 
 // Was falling back to :5000 while every other component in the app falls
-// back to :9000 (the backend's actual default port) — a copy-paste
+// back to :9000 (the backend's actual default port) - a copy-paste
 // mismatch that silently pointed this component at the wrong port whenever
 // VITE_API_BASE_URL wasn't set.
 const API_BASE =
@@ -12,23 +13,23 @@ const API_BASE =
 // Small pill chip
 const Chip = ({ children, variant = "default" }) => {
   const base =
-    "inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium";
+    "inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium";
   const styles =
     variant === "soft-green"
-      ? "bg-green-50 text-green-700 border border-green-200"
+      ? "bg-primary/10 text-primary border border-border"
       : variant === "soft-blue"
-      ? "bg-blue-50 text-blue-700 border border-blue-200"
-      : variant === "soft-purple"
-      ? "bg-purple-50 text-purple-700 border border-purple-200"
-      : "bg-gray-100 text-gray-700";
+      ? "bg-primary/10 text-primary border border-border"
+      : variant === "soft-amber"
+      ? "bg-muted text-warning border border-warning/30"
+      : "bg-muted text-text-primary";
   return <span className={`${base} ${styles}`}>{children}</span>;
 };
 
 // Nutrition stat box (used in modal)
 const InfoBox = ({ label, value }) => (
-  <div className="p-4 rounded-xl bg-gray-50 flex flex-col items-center text-center shadow-sm">
-    <div className="text-lg font-semibold text-gray-800">{value}</div>
-    <div className="text-xs text-gray-500">{label}</div>
+  <div className="p-4 rounded-xl bg-muted flex flex-col items-center text-center shadow-sm">
+    <div className="text-lg font-semibold text-text-primary">{value}</div>
+    <div className="text-xs text-text-secondary">{label}</div>
   </div>
 );
 
@@ -188,12 +189,12 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
   // ------- STYLE HELPERS -------
 
   const cardBase =
-    "border rounded-2xl p-4 bg-white shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between";
+    "border rounded-2xl p-4 bg-card shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between";
   const mealButtonClasses = (meal) =>
-    `px-4 py-2 rounded-full border text-sm transition ${
+    `px-4 py-2 rounded-md border text-sm transition ${
       currentMeal === meal
-        ? "bg-green-600 text-white border-green-700 shadow"
-        : "bg-white border-gray-300 hover:bg-gray-100"
+        ? "bg-primary text-white border-primary shadow"
+        : "bg-card border-border hover:bg-muted"
     }`;
 
   // ------------------------------------------------
@@ -207,7 +208,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
         {/* Search + filters */}
         <div className="flex flex-wrap gap-3 items-center">
           <input
-            className="flex-1 p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-green-400"
+            className="flex-1 p-3 border rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
             placeholder="Search by name, rasa, cuisine, tags..."
             value={query}
             onChange={(e) => {
@@ -252,7 +253,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
 
         {/* Meal Selector */}
         <div className="flex flex-wrap gap-3 items-center">
-          <span className="text-sm text-gray-700">Assign to:</span>
+          <span className="text-sm text-text-primary">Assign to:</span>
           <button
             type="button"
             className={mealButtonClasses("breakfast")}
@@ -294,7 +295,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
                 <div>
                   <header className="mb-3">
                     <div className="flex items-start justify-between gap-2">
-                      <h2 className="text-lg font-semibold text-gray-900 leading-snug">
+                      <h2 className="text-lg font-semibold text-text-primary leading-snug">
                         {item.name}
                       </h2>
                     </div>
@@ -303,7 +304,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
                       <Chip variant="soft-green">{item.cuisine}</Chip>
                       <Chip variant="soft-blue">{item.category}</Chip>
                       {item.mealSlots?.slice(0, 1).map((slot) => (
-                        <Chip key={slot} variant="soft-purple">
+                        <Chip key={slot} variant="soft-amber">
                           {slot}
                         </Chip>
                       ))}
@@ -312,21 +313,21 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
 
                   {/* Macro row (like cards in screenshot) */}
                   <div className="grid grid-cols-3 gap-2 mb-3">
-                    <div className="bg-orange-50 rounded-xl p-2 text-center">
-                      <div className="text-xs text-gray-500">Calories</div>
-                      <div className="text-sm font-semibold text-gray-800">
+                    <div className="bg-muted rounded-xl p-2 text-center">
+                      <div className="text-xs text-text-secondary">Calories</div>
+                      <div className="text-sm font-semibold text-text-primary">
                         {n.caloriesKcal ?? "–"}
                       </div>
                     </div>
-                    <div className="bg-blue-50 rounded-xl p-2 text-center">
-                      <div className="text-xs text-gray-500">Protein</div>
-                      <div className="text-sm font-semibold text-gray-800">
+                    <div className="bg-primary/10 rounded-xl p-2 text-center">
+                      <div className="text-xs text-text-secondary">Protein</div>
+                      <div className="text-sm font-semibold text-text-primary">
                         {n.proteinG ?? "–"}g
                       </div>
                     </div>
-                    <div className="bg-green-50 rounded-xl p-2 text-center">
-                      <div className="text-xs text-gray-500">Carbs</div>
-                      <div className="text-sm font-semibold text-gray-800">
+                    <div className="bg-primary/10 rounded-xl p-2 text-center">
+                      <div className="text-xs text-text-secondary">Carbs</div>
+                      <div className="text-sm font-semibold text-text-primary">
                         {n.carbsG ?? "–"}g
                       </div>
                     </div>
@@ -339,9 +340,9 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
                       <Chip key={d.dosha}>
                         {d.dosha}{" "}
                         {d.effect === -1
-                          ? "↓ (pacifies)"
+                          ? "Pacifies"
                           : d.effect === 1
-                          ? "↑ (aggravates)"
+                          ? "Aggravates"
                           : "• (neutral)"}
                       </Chip>
                     ))}
@@ -349,7 +350,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
 
                   {/* Short description, built from indications */}
                   {item.indications && item.indications.length > 0 && (
-                    <p className="text-xs text-gray-600 line-clamp-2">
+                    <p className="text-xs text-text-secondary line-clamp-2">
                       {item.indications.join(" • ")}
                     </p>
                   )}
@@ -362,7 +363,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
                     e.stopPropagation(); // prevent opening modal
                     addToCurrentMeal(item);
                   }}
-                  className="mt-4 w-full py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium shadow"
+                  className="mt-4 w-full py-2 rounded-lg bg-primary hover:bg-primary/90 text-white text-sm font-medium shadow"
                 >
                   Add to{" "}
                   {currentMeal.charAt(0).toUpperCase() +
@@ -374,7 +375,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
         </div>
 
         {filtered.length === 0 && (
-          <div className="text-center text-gray-500 text-sm mt-6">
+          <div className="text-center text-text-secondary text-sm mt-6">
             {libraryLoading
               ? "Loading the food library…"
               : libraryError
@@ -406,21 +407,21 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
       </div>
 
       {/* RIGHT – CURRENT DIET PLAN SUMMARY */}
-      <aside className="p-6 bg-gradient-to-br from-green-50 to-emerald-100 border border-green-200 rounded-2xl shadow-xl h-fit">
-        <h2 className="text-xl font-semibold text-green-900 mb-2">
+      <aside className="p-6 bg-muted border border-border rounded-2xl shadow-xl h-fit">
+        <h2 className="text-xl font-semibold text-primary mb-2">
           Current Diet Plan
         </h2>
-        <p className="text-xs text-green-700 mb-4">
+        <p className="text-xs text-primary mb-4">
           These meals will be saved to the patient&apos;s record.
         </p>
 
         {["breakfast", "lunch", "dinner"].map((meal) => (
           <div key={meal} className="mb-5">
             <div className="flex justify-between items-center">
-              <h3 className="font-semibold text-gray-800">
+              <h3 className="font-semibold text-text-primary">
                 {meal.charAt(0).toUpperCase() + meal.slice(1)}
               </h3>
-              <span className="text-xs text-gray-600">
+              <span className="text-xs text-text-secondary">
                 {dietPlan[meal].length} items •{" "}
                 {totalCaloriesByMeal(meal)} cal
               </span>
@@ -428,7 +429,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
 
             <div className="mt-2 space-y-2 max-h-32 overflow-y-auto pr-1">
               {dietPlan[meal].length === 0 && (
-                <p className="text-xs italic text-gray-500">
+                <p className="text-xs italic text-text-secondary">
                   No items added.
                 </p>
               )}
@@ -436,11 +437,11 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
               {dietPlan[meal].map((item, i) => (
                 <div
                   key={`${meal}-${item.id}-${i}`}
-                  className="flex justify-between items-center bg-white rounded-lg shadow p-2 border"
+                  className="flex justify-between items-center bg-card rounded-lg shadow p-2 border"
                 >
                   <span className="truncate text-sm">{item.name}</span>
                   <button
-                    className="text-red-500 text-xs ml-2"
+                    className="text-error text-xs ml-2"
                     onClick={() => removeFromMeal(meal, i)}
                   >
                     Remove
@@ -454,13 +455,13 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
         <button
           onClick={handleSaveDietPlan}
           disabled={saving}
-          className="w-full py-3 bg-green-700 hover:bg-green-800 text-white rounded-xl shadow-lg disabled:opacity-60 text-sm font-medium"
+          className="w-full py-3 bg-primary hover:bg-primary/90 text-white rounded-xl shadow-lg disabled:opacity-60 text-sm font-medium"
         >
           {saving ? "Saving..." : "Save Diet Plan"}
         </button>
 
         {saveMsg && (
-          <p className="text-xs text-center mt-3 text-green-900">
+          <p className="text-xs text-center mt-3 text-primary">
             {saveMsg}
           </p>
         )}
@@ -469,9 +470,9 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
       {/* DETAIL MODAL (like Quinoa Upma UI) */}
       {selectedFood && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 px-4 py-6">
-          <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="bg-card w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
             {/* HEADER BAR */}
-            <div className="p-5 bg-teal-500 text-white flex items-center justify-between">
+            <div className="p-5 bg-primary text-primary-foreground flex items-center justify-between">
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold">
                   {selectedFood.name}
@@ -480,7 +481,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
                   <Chip variant="soft-green">{selectedFood.cuisine}</Chip>
                   <Chip variant="soft-blue">{selectedFood.category}</Chip>
                   {selectedFood.mealSlots?.map((slot) => (
-                    <Chip key={slot} variant="soft-purple">
+                    <Chip key={slot} variant="soft-amber">
                       {slot}
                     </Chip>
                   ))}
@@ -491,7 +492,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
                 className="text-white text-2xl leading-none ml-4"
                 onClick={() => setSelectedFood(null)}
               >
-                ✕
+                <Icon name="X" size={18} />
               </button>
             </div>
 
@@ -500,10 +501,10 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
               {/* Description (built from indications) */}
               {selectedFood.indications && (
                 <section>
-                  <h3 className="font-semibold mb-1 text-gray-800">
+                  <h3 className="font-semibold mb-1 text-text-primary">
                     Description / Indications
                   </h3>
-                  <p className="text-sm text-gray-700">
+                  <p className="text-sm text-text-primary">
                     {selectedFood.indications.join(" • ")}
                   </p>
                 </section>
@@ -511,7 +512,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
 
               {/* NUTRITION SECTION */}
               <section>
-                <h3 className="font-semibold text-gray-800 mb-3">
+                <h3 className="font-semibold text-text-primary mb-3">
                   Nutritional Information (per serving)
                 </h3>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -546,28 +547,28 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
 
               {/* AYURVEDIC PROPERTIES */}
               <section>
-                <h3 className="font-semibold text-gray-800 mb-3">
+                <h3 className="font-semibold text-text-primary mb-3">
                   Ayurvedic Properties
                 </h3>
                 <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                  <div className="p-4 rounded-xl bg-green-50">
+                  <div className="p-4 rounded-xl bg-primary/10">
                     <p className="font-semibold mb-1">Rasa (Tastes)</p>
-                    <p>{(selectedFood.ayurveda?.rasa || []).join(", ") || "—"}</p>
+                    <p>{(selectedFood.ayurveda?.rasa || []).join(", ") || "-"}</p>
                   </div>
-                  <div className="p-4 rounded-xl bg-blue-50">
+                  <div className="p-4 rounded-xl bg-primary/10">
                     <p className="font-semibold mb-1">Guna (Qualities)</p>
-                    <p>{(selectedFood.ayurveda?.guna || []).join(", ") || "—"}</p>
+                    <p>{(selectedFood.ayurveda?.guna || []).join(", ") || "-"}</p>
                   </div>
-                  <div className="p-4 rounded-xl bg-purple-50">
+                  <div className="p-4 rounded-xl bg-muted">
                     <p className="font-semibold mb-1">Virya / Vipaka</p>
                     <p>
-                      {selectedFood.ayurveda?.virya || "—"}{" "}
+                      {selectedFood.ayurveda?.virya || "-"}{" "}
                       {selectedFood.ayurveda?.vipaka
                         ? `• ${selectedFood.ayurveda.vipaka} vipaka`
                         : ""}
                     </p>
                   </div>
-                  <div className="p-4 rounded-xl bg-orange-50">
+                  <div className="p-4 rounded-xl bg-muted">
                     <p className="font-semibold mb-1">Dosha Effect</p>
                     <div className="flex flex-wrap gap-1 mt-1">
                       {getDoshaChips(selectedFood.ayurveda?.doshaEffect).map(
@@ -575,9 +576,9 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
                           <Chip key={d.dosha}>
                             {d.dosha}{" "}
                             {d.effect === -1
-                              ? "↓ pacifies"
+                              ? "Pacifies"
                               : d.effect === 1
-                              ? "↑ aggravates"
+                              ? "Aggravates"
                               : "• neutral"}
                           </Chip>
                         )
@@ -585,7 +586,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
                     </div>
                   </div>
                   {selectedFood.ayurveda?.suitablePrakriti && (
-                    <div className="p-4 rounded-xl bg-teal-50">
+                    <div className="p-4 rounded-xl bg-muted">
                       <p className="font-semibold mb-1">Suitable Prakriti</p>
                       <p>
                         {selectedFood.ayurveda.suitablePrakriti.join(", ")}
@@ -593,7 +594,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
                     </div>
                   )}
                   {selectedFood.ayurveda?.avoidIn && (
-                    <div className="p-4 rounded-xl bg-rose-50">
+                    <div className="p-4 rounded-xl bg-muted">
                       <p className="font-semibold mb-1">Avoid / Use Caution</p>
                       <ul className="list-disc pl-4 space-y-1">
                         {selectedFood.ayurveda.avoidIn.map((x) => (
@@ -608,13 +609,13 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
               {/* INGREDIENTS (if recipe) */}
               {selectedFood.isRecipe && selectedFood.ingredients && (
                 <section>
-                  <h3 className="font-semibold text-gray-800 mb-2">
+                  <h3 className="font-semibold text-text-primary mb-2">
                     Ingredients
                   </h3>
                   <div className="overflow-x-auto">
                     <table className="w-full text-sm">
                       <thead>
-                        <tr className="text-left text-gray-500 border-b">
+                        <tr className="text-left text-text-secondary border-b">
                           <th className="py-2 pr-4">Ingredient</th>
                           <th className="py-2 pr-4">Quantity</th>
                         </tr>
@@ -640,7 +641,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
               {/* Tags */}
               {selectedFood.tags && selectedFood.tags.length > 0 && (
                 <section>
-                  <h3 className="font-semibold text-gray-800 mb-2">
+                  <h3 className="font-semibold text-text-primary mb-2">
                     Keywords
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -654,7 +655,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
 
             {/* Modal footer: Add to selection */}
             <div className="border-t p-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-text-secondary">
                 Serving:{" "}
                 {selectedFood.serving?.description ||
                   `${selectedFood.serving?.amount || ""} ${
@@ -664,7 +665,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
               <div className="flex gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => setSelectedFood(null)}
-                  className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-gray-300 text-sm hover:bg-gray-50"
+                  className="flex-1 sm:flex-none px-4 py-2 rounded-lg border border-border text-sm hover:bg-muted"
                 >
                   Close
                 </button>
@@ -673,7 +674,7 @@ export default function FoodCardList({ dataSource, patientId, onDietSaved }) {
                     addToCurrentMeal(selectedFood);
                     setSelectedFood(null);
                   }}
-                  className="flex-1 sm:flex-none px-4 py-2 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium shadow"
+                  className="flex-1 sm:flex-none px-4 py-2 rounded-lg bg-primary hover:bg-primary/90 text-white text-sm font-medium shadow"
                 >
                   Add to{" "}
                   {currentMeal.charAt(0).toUpperCase() +

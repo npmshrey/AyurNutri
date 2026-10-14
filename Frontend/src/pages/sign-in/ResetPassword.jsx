@@ -50,7 +50,7 @@ const ResetPassword = () => {
             If an account exists for <strong>{email.trim()}</strong>, a reset link is on its way. Check your
             inbox and spam folder. The link expires in an hour.
           </FormMessage>
-          <Button variant="outline" fullWidth className="rounded-full" onClick={() => setStatus("idle")}>
+          <Button variant="outline" fullWidth className="rounded-md" onClick={() => setStatus("idle")}>
             Use a different email
           </Button>
         </div>
@@ -70,7 +70,7 @@ const ResetPassword = () => {
               />
             </div>
             <div data-auth-item>
-              <Button type="submit" loading={status === "loading"} fullWidth size="lg" className="rounded-full">
+              <Button type="submit" loading={status === "loading"} fullWidth size="lg" className="rounded-md">
                 Send reset link
               </Button>
             </div>

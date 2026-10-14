@@ -31,7 +31,7 @@ const useTheme = () => {
     try {
       localStorage.setItem("theme", next);
     } catch {
-      /* storage blocked — still switch for this session */
+      /* storage blocked - still switch for this session */
     }
     document.documentElement.setAttribute("data-theme", next);
     setThemeState(next);

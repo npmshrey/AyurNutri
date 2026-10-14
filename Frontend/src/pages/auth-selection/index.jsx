@@ -73,10 +73,10 @@ const AuthSelectionPage = () => {
                 ))}
               </ul>
               <div className="mt-8 grid gap-3 sm:grid-cols-2">
-                <Button className="rounded-full" onClick={() => navigate(p.signIn)}>
+                <Button className="rounded-md" onClick={() => navigate(p.signIn)}>
                   Sign in
                 </Button>
-                <Button variant="outline" className="rounded-full" onClick={() => navigate(p.signUp)}>
+                <Button variant="outline" className="rounded-md" onClick={() => navigate(p.signUp)}>
                   Create account
                 </Button>
               </div>

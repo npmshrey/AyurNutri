@@ -143,7 +143,7 @@ const DashboardOverview = () => {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-primary/5 via-secondary/5 to-primary/5 rounded-2xl p-6 border border-border">
+      <div className="bg-muted rounded-2xl p-6 border border-border">
         <h2 className="text-2xl font-display font-semibold text-primary">
           Welcome back, Dr. {user?.fullName}
         </h2>
@@ -166,7 +166,7 @@ const DashboardOverview = () => {
           {todaysAppointments.map((apt) => (
             <div
               key={apt._id}
-              className="p-4 bg-white rounded-lg border hover:border-green-700"
+              className="p-4 bg-card rounded-lg border hover:border-primary"
             >
               {/* Top Section */}
               <div
@@ -175,7 +175,7 @@ const DashboardOverview = () => {
               >
                 <div>
                   <h4 className="font-medium">{apt.patientId?.fullName}</h4>
-                  <p className="text-xs text-gray-500">{apt.sessionType}</p>
+                  <p className="text-xs text-text-secondary">{apt.sessionType}</p>
                 </div>
                 <p className="text-sm font-medium">{apt.time}</p>
               </div>
@@ -184,14 +184,14 @@ const DashboardOverview = () => {
               <div className="flex gap-2 mt-3">
                 <button
                   onClick={() => acceptAppointment(apt)}
-                  className="px-3 py-1 rounded bg-green-600 text-white text-sm hover:bg-green-700"
+                  className="px-3 py-1 rounded bg-primary text-white text-sm hover:bg-primary/90"
                 >
                   Accept
                 </button>
 
                 <button
                   onClick={() => rejectAppointment(apt)}
-                  className="px-3 py-1 rounded bg-red-600 text-white text-sm hover:bg-red-700"
+                  className="px-3 py-1 rounded bg-error text-white text-sm hover:bg-error/90"
                 >
                   Reject
                 </button>
@@ -202,7 +202,7 @@ const DashboardOverview = () => {
       </div>
 
       {error && (
-        <div className="text-sm text-red-600 bg-red-50 border p-2 rounded">
+        <div className="text-sm text-error bg-error/10 border p-2 rounded">
           {error}
         </div>
       )}

@@ -15,7 +15,7 @@ import Button from "./Button";
 import useAuth from "../../hooks/useAuth";
 import useTheme from "../../hooks/useTheme";
 import Logo from "../../assets/logo.jpg";
-import { gsap, MOTION_OK } from "../../lib/motion";
+import { gsap } from "../../lib/motion";
 
 const NAV_LINKS = [
   { to: "/", label: "Home", end: true },
@@ -24,15 +24,11 @@ const NAV_LINKS = [
   { to: "/professional-dashboard-portal", label: "For Practitioners" },
 ];
 
-let hasAnimatedIn = false; // animate the header in once per visit, not per page
-
 const Header = ({ className = "", fluid = false, showNav = true }) => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
 
   const headerRef = useRef(null);
-  const navRef = useRef(null);
-  const pillRef = useRef(null);
   const menuRef = useRef(null);
 
   const { pathname } = useLocation();
@@ -86,43 +82,6 @@ const Header = ({ className = "", fluid = false, showNav = true }) => {
     return () => window.removeEventListener("keydown", onKey);
   }, [menuOpen]);
 
-  // First-visit entrance.
-  useLayoutEffect(() => {
-    if (hasAnimatedIn) return;
-    hasAnimatedIn = true;
-    const mm = gsap.matchMedia();
-    mm.add(MOTION_OK, () => {
-      gsap.from(headerRef.current, { yPercent: -100, duration: 0.7, ease: "power3.out", clearProps: "transform" });
-    });
-    return () => mm.revert();
-  }, []);
-
-  // Sliding highlight behind the active desktop link.
-  useLayoutEffect(() => {
-    const nav = navRef.current;
-    const pill = pillRef.current;
-    if (!nav || !pill) return;
-    const place = (animate) => {
-      const active = nav.querySelector("[data-active='true']");
-      if (!active) {
-        gsap.to(pill, { autoAlpha: 0, duration: 0.2 });
-        return;
-      }
-      const props = {
-        x: active.offsetLeft,
-        width: active.offsetWidth,
-        autoAlpha: 1,
-      };
-      if (animate) gsap.to(pill, { ...props, duration: 0.45, ease: "power3.out" });
-      else gsap.set(pill, props);
-    };
-    place(false);
-    const onResize = () => place(false);
-    window.addEventListener("resize", onResize);
-    document.fonts?.ready?.then(() => place(false));
-    return () => window.removeEventListener("resize", onResize);
-  }, [pathname, isAuthenticated]);
-
   // Mobile menu open/close animation.
   useLayoutEffect(() => {
     const el = menuRef.current;
@@ -150,40 +109,32 @@ const Header = ({ className = "", fluid = false, showNav = true }) => {
       ref={headerRef}
       className={`fixed inset-x-0 top-0 z-50 transition-[background-color,box-shadow,border-color] duration-300 ${
         scrolled || menuOpen
-          ? "bg-background/90 backdrop-blur-md border-b border-border shadow-[0_1px_0_rgba(0,0,0,0.02)]"
-          : "bg-background/70 backdrop-blur-sm border-b border-transparent"
+          ? "bg-background/60 backdrop-blur-xl backdrop-saturate-150 border-b border-border/70 shadow-[0_10px_30px_-18px_rgba(20,48,31,0.35)]"
+          : "bg-background/30 backdrop-blur-sm border-b border-transparent"
       } ${className}`}
     >
       <div className={inner}>
         <div className="flex h-16 items-center justify-between gap-4">
-          <Link to="/" className="flex items-center gap-3 shrink-0 group" aria-label="AyurNutri home">
+          <Link to="/" className="flex items-center gap-3 shrink-0" aria-label="AyurNutri home">
             <img
               src={Logo}
               alt=""
-              className="h-9 w-9 rounded-full object-contain transition-transform duration-300 group-hover:rotate-[-8deg]"
+              className="h-9 w-9 rounded-full object-contain"
             />
-            <span className="flex flex-col leading-none">
-              <span className="font-display text-lg font-semibold text-primary">AyurNutri</span>
-              <span className="hidden sm:block font-accent text-[11px] text-text-secondary mt-0.5">
-                Ayurveda, measured
-              </span>
-            </span>
+            <span className="font-display text-lg font-semibold text-primary">AyurNutri</span>
           </Link>
 
           {showNav && (
-            <nav ref={navRef} className="relative hidden lg:flex items-center gap-1 rounded-full border border-border bg-card/60 p-1">
-              <span
-                ref={pillRef}
-                aria-hidden="true"
-                className="absolute left-0 top-1 bottom-1 rounded-full bg-primary/10 opacity-0"
-              />
+            <nav className="hidden lg:flex items-center gap-7" aria-label="Main">
               {visibleLinks.map((link) => (
                 <NavLink
                   key={link.to}
                   to={resolveNavTarget(link.to)}
-                  data-active={isActive(link) ? "true" : "false"}
-                  className={`relative z-10 rounded-full px-4 py-1.5 text-sm font-medium transition-colors duration-200 ${
-                    isActive(link) ? "text-primary" : "text-text-secondary hover:text-text-primary"
+                  aria-current={isActive(link) ? "page" : undefined}
+                  className={`relative py-5 text-sm font-medium transition-colors duration-200 after:absolute after:inset-x-0 after:bottom-3 after:h-0.5 after:rounded after:bg-primary after:transition-opacity ${
+                    isActive(link)
+                      ? "text-text-primary after:opacity-100"
+                      : "text-text-secondary hover:text-text-primary after:opacity-0"
                   }`}
                 >
                   {link.label}
@@ -196,7 +147,7 @@ const Header = ({ className = "", fluid = false, showNav = true }) => {
             <button
               type="button"
               onClick={toggleTheme}
-              className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-text-secondary transition-colors hover:text-primary hover:bg-muted"
+              className="flex h-9 w-9 items-center justify-center rounded-md border border-border text-text-secondary transition-colors hover:text-primary hover:bg-muted"
               aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
             >
               <Icon name={theme === "dark" ? "Sun" : "Moon"} size={16} />
@@ -204,18 +155,18 @@ const Header = ({ className = "", fluid = false, showNav = true }) => {
 
             {isAuthenticated ? (
               <div className="hidden lg:flex items-center gap-2">
-                <Button variant="ghost" size="sm" onClick={() => navigate(dashboardPath)} className="rounded-full">
+                <Button variant="ghost" size="sm" onClick={() => navigate(dashboardPath)} className="rounded-md">
                   <Icon name="LayoutDashboard" size={15} className="mr-2" />
                   {displayName}
                 </Button>
-                <Button variant="outline" size="sm" onClick={logout} className="rounded-full">
+                <Button variant="outline" size="sm" onClick={logout} className="rounded-md">
                   Log out
                 </Button>
               </div>
             ) : (
               <Button
                 size="sm"
-                className="hidden lg:inline-flex rounded-full px-5"
+                className="hidden lg:inline-flex rounded-md px-4"
                 onClick={() => navigate("/auth-selection")}
               >
                 Sign in
@@ -225,7 +176,7 @@ const Header = ({ className = "", fluid = false, showNav = true }) => {
             <button
               type="button"
               onClick={() => setMenuOpen((v) => !v)}
-              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-full hover:bg-muted"
+              className="lg:hidden flex h-9 w-9 items-center justify-center rounded-md hover:bg-muted"
               aria-label={menuOpen ? "Close menu" : "Open menu"}
               aria-expanded={menuOpen}
             >
